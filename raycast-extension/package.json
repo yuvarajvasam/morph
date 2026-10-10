@@ -1,0 +1,47 @@
+{
+  "name": "morph-raycast",
+  "title": "Morph",
+  "description": "Privacy-first offline image and PDF utility powered by Morph",
+  "icon": "icon.png",
+  "author": "morph",
+  "categories": [
+    "Productivity",
+    "Media"
+  ],
+  "license": "MIT",
+  "commands": [
+    {
+      "name": "compress",
+      "title": "Compress Image or PDF",
+      "subtitle": "Morph",
+      "description": "Quickly reduce file size with Light, Balanced, or Maximum presets",
+      "mode": "view"
+    },
+    {
+      "name": "convert",
+      "title": "Convert Image Format",
+      "subtitle": "Morph",
+      "description": "Convert images between JPEG, PNG, HEIC, and WebP",
+      "mode": "view"
+    },
+    {
+      "name": "merge-pdf",
+      "title": "Merge PDFs",
+      "subtitle": "Morph",
+      "description": "Combine multiple PDFs into a single document",
+      "mode": "view"
+    }
+  ],
+  "dependencies": {
+    "@raycast/api": "^1.70.0"
+  },
+  "scripts": {
+    "build": "ray build -e dist",
+    "dev": "ray develop"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "typescript": "^7.0.2"
+  }
+}
