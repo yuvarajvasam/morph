@@ -11,7 +11,6 @@ public enum QRErrorCorrection: String, CaseIterable, Identifiable, Sendable {
     case high = "H (30%)"
 
     public var id: String { rawValue }
-    public var displayName: String { rawValue }
 
     public var code: String {
         switch self {

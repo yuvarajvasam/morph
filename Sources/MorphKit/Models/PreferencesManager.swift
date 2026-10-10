@@ -27,9 +27,9 @@ public enum LauncherSizePreset: String, CaseIterable, Identifiable {
 
     public var dimensions: (width: CGFloat, height: CGFloat) {
         switch self {
-        case .compact: return (660, 480)
-        case .comfortable: return (720, 520)
-        case .large: return (780, 560)
+        case .compact: return (620, 420)
+        case .comfortable: return (680, 460)
+        case .large: return (760, 520)
         }
     }
 }
@@ -125,24 +125,6 @@ public final class PreferencesManager: ObservableObject {
     @Published public var showNotifications: Bool {
         didSet {
             defaults.set(showNotifications, forKey: "showNotifications")
-        }
-    }
-
-    @Published public var defaultViewMode: String {
-        didSet {
-            defaults.set(defaultViewMode, forKey: "defaultViewMode")
-        }
-    }
-
-    @Published public var defaultCategory: String {
-        didSet {
-            defaults.set(defaultCategory, forKey: "defaultCategory")
-        }
-    }
-
-    @Published public var autoDismissOnOpenTool: Bool {
-        didSet {
-            defaults.set(autoDismissOnOpenTool, forKey: "autoDismissOnOpenTool")
         }
     }
 
@@ -316,9 +298,6 @@ public final class PreferencesManager: ObservableObject {
         self.autoDismissOnBlur = defaults.bool(forKey: "autoDismissOnBlur")
         self.playSounds = defaults.object(forKey: "playSounds") != nil ? defaults.bool(forKey: "playSounds") : true
         self.showNotifications = defaults.object(forKey: "showNotifications") != nil ? defaults.bool(forKey: "showNotifications") : true
-        self.defaultViewMode = defaults.string(forKey: "defaultViewMode") ?? "Grid"
-        self.defaultCategory = defaults.string(forKey: "defaultCategory") ?? "All"
-        self.autoDismissOnOpenTool = defaults.object(forKey: "autoDismissOnOpenTool") != nil ? defaults.bool(forKey: "autoDismissOnOpenTool") : false
 
         // Appearance
         if let modeRaw = defaults.string(forKey: "appearanceMode"), let mode = AppearanceMode(rawValue: modeRaw) {

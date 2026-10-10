@@ -1,5 +1,4 @@
 import Foundation
-import SwiftUI
 
 public enum ConversionCategory: String, CaseIterable, Identifiable, Sendable {
     case image = "Images"
@@ -99,34 +98,3 @@ public struct ConversionCommand: Identifiable, Sendable, Equatable {
         return allTokensMatch
     }
 }
-
-public extension ConversionCommand {
-    var subtleColor: Color {
-        switch id {
-        case "image.compress", "image.heicToJpg", "qr.generate":
-            return SubtleTheme.blue
-        case "image.resize", "image.removeBg", "qr.scan", "pdf.split":
-            return SubtleTheme.purple
-        case "image.convert", "image.formatConverter", "pdf.toImage", "archive.inspect":
-            return SubtleTheme.green
-        case "image.crop", "pdf.merge", "pdf.extractPages":
-            return SubtleTheme.orange
-        case "image.rotate", "pdf.compress", "pdf.removePages":
-            return SubtleTheme.red
-        case "image.watermark", "archive.compress", "archive.extract", "barcode.generate", "pdf.reorderPages":
-            return SubtleTheme.cyan
-        default:
-            switch category {
-            case .image: return SubtleTheme.blue
-            case .pdf: return SubtleTheme.red
-            case .archive: return SubtleTheme.orange
-            case .qrBarcode: return SubtleTheme.cyan
-            }
-        }
-    }
-
-    var subtleTintColor: Color {
-        subtleColor.opacity(0.18)
-    }
-}
-

@@ -48,10 +48,6 @@ public struct FileItem: Identifiable, Sendable, Equatable {
         ByteCountFormatter.string(fromByteCount: fileSize, countStyle: .file)
     }
 
-    public var formattedFileSize: String {
-        formattedSize
-    }
-
     public var dimensionsDescription: String? {
         guard let dims = imageDimensions else { return nil }
         return "\(Int(dims.width)) × \(Int(dims.height)) px"

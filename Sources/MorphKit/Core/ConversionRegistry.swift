@@ -63,72 +63,6 @@ public final class ConversionRegistry: @unchecked Sendable {
                 supportsMultipleFiles: false
             ),
             ConversionCommand(
-                id: "image.crop",
-                title: "Crop Image",
-                subtitle: "Trim borders or crop to 1:1, 4:3, 16:9 aspect ratios",
-                category: .image,
-                systemIcon: "crop",
-                keywords: ["crop", "aspect", "ratio", "cut", "trim", "square"],
-                synonyms: ["crop photo", "make square", "trim photo", "cut image"],
-                supportedExtensions: ["jpg", "jpeg", "png", "heic", "webp", "tiff", "tif"],
-                supportsMultipleFiles: false
-            ),
-            ConversionCommand(
-                id: "image.rotate",
-                title: "Rotate Image",
-                subtitle: "Rotate photo by 90°, 180°, or flip orientation",
-                category: .image,
-                systemIcon: "rotate.right",
-                keywords: ["rotate", "turn", "flip", "orientation", "portrait", "landscape"],
-                synonyms: ["turn photo", "rotate picture", "flip photo"],
-                supportedExtensions: ["jpg", "jpeg", "png", "heic", "webp", "tiff", "tif"],
-                supportsMultipleFiles: false
-            ),
-            ConversionCommand(
-                id: "image.watermark",
-                title: "Watermark Image",
-                subtitle: "Apply text or logo watermark with customizable opacity",
-                category: .image,
-                systemIcon: "drop.fill",
-                keywords: ["watermark", "stamp", "copyright", "brand", "logo", "text"],
-                synonyms: ["add watermark", "stamp photo", "protect image"],
-                supportedExtensions: ["jpg", "jpeg", "png", "heic", "webp", "tiff", "tif"],
-                supportsMultipleFiles: false
-            ),
-            ConversionCommand(
-                id: "image.removeBg",
-                title: "Remove Background",
-                subtitle: "Isolate subjects and create transparent cutout backgrounds",
-                category: .image,
-                systemIcon: "wand.and.stars",
-                keywords: ["background", "remove", "cutout", "transparent", "alpha", "subject"],
-                synonyms: ["remove photo background", "make transparent", "isolate person"],
-                supportedExtensions: ["jpg", "jpeg", "png", "heic", "webp", "tiff", "tif"],
-                supportsMultipleFiles: false
-            ),
-            ConversionCommand(
-                id: "image.formatConverter",
-                title: "Format Converter",
-                subtitle: "Universal file format converter for modern and legacy graphics",
-                category: .image,
-                systemIcon: "doc.badge.gearshape",
-                keywords: ["format", "converter", "transcode", "png", "jpeg", "webp"],
-                synonyms: ["convert format", "change extension", "image converter"],
-                supportedExtensions: ["jpg", "jpeg", "png", "heic", "webp", "tiff", "tif"],
-                supportsMultipleFiles: false
-            ),
-            ConversionCommand(
-                id: "image.heicToJpg",
-                title: "HEIC to JPG",
-                subtitle: "Quick 1-click conversion from Apple HEIC to universal JPEG",
-                category: .image,
-                systemIcon: "photo.badge.arrow.forward",
-                keywords: ["heic", "jpg", "jpeg", "apple", "iphone", "convert"],
-                synonyms: ["heic to jpg", "iphone photo to jpg", "convert heic"],
-                supportedExtensions: ["heic", "heif"],
-                supportsMultipleFiles: false
-            ),
-            ConversionCommand(
                 id: "image.toPDF",
                 title: "Image to PDF",
                 subtitle: "Assemble photos or scans into a single multi-page PDF",
@@ -501,21 +435,4 @@ public final class ConversionRegistry: @unchecked Sendable {
         }
         return allCommands.first(where: { $0.id == id })
     }
-
-    /// Top 5 Most Used Commands (Screen 1 Launcher reference)
-    public var mostUsedCommands: [ConversionCommand] {
-        [
-            command(id: "image.compress"),
-            command(id: "image.resize"),
-            command(id: "image.convert"),
-            command(id: "pdf.compress"),
-            command(id: "pdf.merge")
-        ].compactMap { $0 }
-    }
-
-    /// Commands belonging to a given category
-    public func commands(for category: ConversionCategory) -> [ConversionCommand] {
-        allCommands.filter { $0.category == category }
-    }
 }
-

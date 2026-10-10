@@ -1,6 +1,5 @@
 import SwiftUI
 import UniformTypeIdentifiers
-import AppKit
 
 public struct LauncherView: View {
     @ObservedObject public var viewModel: LauncherViewModel
@@ -16,7 +15,7 @@ public struct LauncherView: View {
 
     public var body: some View {
         VStack(spacing: 10) {
-            // MARK: - TOP BAR
+            // TOP AREA: Search Capsule OR Tool Navigation Capsule
             if isToolOrResultOpen {
                 toolNavigationCapsuleView
                     .transition(.asymmetric(
@@ -30,16 +29,15 @@ public struct LauncherView: View {
                         removal: .move(edge: .top).combined(with: .opacity)
                     ))
 
-                // Category Filter Pills (Screens 1, 2, 3, 8)
+                // Category Quick Discovery Pills (when in search / browse mode)
                 categoryDiscoveryPillsView
             }
 
-            // MARK: - MAIN CONTENT SURFACE
+            // MAIN CONTENT SURFACE
             resultsSurfaceView
         }
         .animation(.spring(response: 0.30, dampingFraction: 0.82), value: isToolOrResultOpen)
         .animation(.spring(response: 0.28, dampingFraction: 0.82), value: viewModel.selectedCategory)
-        .animation(.spring(response: 0.28, dampingFraction: 0.82), value: viewModel.viewMode)
         .padding(14)
         .frame(width: viewModel.preferences.launcherSize.dimensions.width)
         .frame(minHeight: viewModel.preferences.launcherSize.dimensions.height - 40, maxHeight: viewModel.preferences.launcherSize.dimensions.height)
@@ -63,175 +61,170 @@ public struct LauncherView: View {
         .overlay {
             if viewModel.isTargetedForDrop {
                 RoundedRectangle(cornerRadius: LiquidGlass.windowRadius, style: .continuous)
-                    .stroke(SubtleTheme.accentBlue, lineWidth: 2)
-                    .background(SubtleTheme.accentBlue.opacity(0.12))
+                    .stroke(Color.accentColor, lineWidth: 2)
+                    .background(Color.accentColor.opacity(0.12))
                     .overlay {
                         VStack(spacing: 8) {
                             Image(systemName: "arrow.down.doc.fill")
                                 .font(.system(size: 40))
-                                .foregroundStyle(SubtleTheme.accentBlue)
+                                .foregroundStyle(Color.accentColor)
                             Text("Drop files to inspect & process with Morph")
                                 .font(.system(size: 15, weight: .semibold))
-                                .foregroundStyle(SubtleTheme.textPrimary)
                         }
                     }
+            }
+        }
+        .overlay {
+            // Dismissal backdrop when Action Panel is open
+            if viewModel.isShowingActionPanel {
+                Color.black.opacity(0.18)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+                            viewModel.isShowingActionPanel = false
+                        }
+                    }
+            }
+        }
+        .overlay(alignment: .bottomTrailing) {
+            // Raycast Contextual Action Panel (⌘K) anchored at bottom-right
+            if viewModel.isShowingActionPanel {
+                ActionPanelView(viewModel: viewModel) {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+                        viewModel.isShowingActionPanel = false
+                    }
+                }
+                .padding(.trailing, 14)
+                .padding(.bottom, 46)
+                .transition(.asymmetric(
+                    insertion: .opacity.combined(with: .scale(scale: 0.95, anchor: .bottomTrailing)),
+                    removal: .opacity.combined(with: .scale(scale: 0.95, anchor: .bottomTrailing))
+                ))
             }
         }
         .overlay(alignment: .top) {
+            // Transient Toast status (e.g. "Path Copied")
             if let msg = viewModel.copyStatusMessage {
-                HStack(spacing: 6) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(SubtleTheme.accentGreen)
-                    Text(msg)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(SubtleTheme.textPrimary)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(
-                    Capsule(style: .continuous)
-                        .fill(SubtleTheme.bgCard)
-                        .overlay(
-                            Capsule(style: .continuous)
-                                .stroke(SubtleTheme.borderSubtle, lineWidth: 1)
-                        )
-                )
-                .padding(.top, 50)
-                .transition(.move(edge: .top).combined(with: .opacity))
-                .onAppear {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
-                        withAnimation {
-                            viewModel.copyStatusMessage = nil
+                GlassPill(msg, style: .accent)
+                    .padding(.top, 60)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .onAppear {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
+                            withAnimation {
+                                viewModel.copyStatusMessage = nil
+                            }
                         }
                     }
-                }
             }
         }
     }
 
-    // MARK: - Top Area: Search Capsule (Screens 1, 2, 3, 8)
+    // MARK: - Top Area: Search Capsule
 
     private var searchCapsuleView: some View {
-        HStack(spacing: 8) {
-            // View Mode Toggle Button [::] (Screen 1, 2, 3)
-            Button {
-                withAnimation(.spring(response: 0.28, dampingFraction: 0.8)) {
-                    viewModel.toggleViewMode()
-                }
-            } label: {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(SubtleTheme.accentBlue)
-                        .frame(width: 28, height: 28)
-                    Image(systemName: viewModeIcon)
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(Color.white)
-                }
-            }
-            .buttonStyle(.plain)
-            .help("Toggle view mode: Launcher / Grid / List (⌘V)")
-
-            // Search Bar Input
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 13))
-                    .foregroundStyle(SubtleTheme.textSecondary)
-
-                TextField("Search tools or drop a file...", text: $viewModel.searchQuery)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 13))
-                    .foregroundStyle(SubtleTheme.textPrimary)
-                    .focused($isSearchFocused)
-
-                if !viewModel.searchQuery.isEmpty {
-                    Button {
-                        viewModel.searchQuery = ""
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 13))
-                            .foregroundStyle(SubtleTheme.textSecondary)
-                    }
-                    .buttonStyle(.plain)
-                    .help("Clear search (⎋)")
-                }
+        HStack(spacing: 10) {
+            // Subtle Morph Identity Icon
+            ZStack {
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(Color.accentColor.opacity(0.18))
+                    .frame(width: 24, height: 24)
+                Image(systemName: "circle.grid.2x2.fill")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Color.accentColor)
             }
 
-            // Trailing "..." Menu
+            TextField(searchPlaceholder, text: $viewModel.searchQuery)
+                .textFieldStyle(.plain)
+                .font(.figmaBody())
+                .focused($isSearchFocused)
+
+            if !viewModel.searchQuery.isEmpty {
+                Button {
+                    viewModel.searchQuery = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Clear search (⎋)")
+            }
+
+            if !viewModel.droppedFiles.isEmpty {
+                HStack(spacing: 4) {
+                    Image(systemName: "paperclip")
+                        .font(.system(size: 10))
+                    Text("\(viewModel.droppedFiles.count) file\(viewModel.droppedFiles.count > 1 ? "s" : "")")
+                        .font(.figmaCaption1(emphasized: true))
+                        .monospacedDigit()
+                }
+                .padding(.horizontal, 7)
+                .padding(.vertical, 3)
+                .background(Capsule().fill(Color.accentColor.opacity(0.18)))
+                .foregroundStyle(Color.accentColor)
+            }
+
+            // Category Filter Dropdown Pill (Screenshot 2026-10-10 at 9.02.08 PM, image-4.png, image-9.png)
             Menu {
-                Button("Preferences... (⌘,)") {
-                    withAnimation(.spring(response: 0.30, dampingFraction: 0.82)) {
-                        viewModel.isShowingSettings = true
+                Button("All Categories") {
+                    withAnimation {
+                        viewModel.selectedCategory = nil
+                        viewModel.selectedIndex = 0
                     }
                 }
-                Divider()
-                Button("Launcher View") {
-                    withAnimation { viewModel.viewMode = .launcher }
-                }
-                Button("Grid View") {
-                    withAnimation { viewModel.viewMode = .grid }
-                }
-                Button("List View") {
-                    withAnimation { viewModel.viewMode = .list }
-                }
-                Divider()
-                Button("Choose Files... (⌘O)") {
-                    viewModel.openFilePicker()
-                }
-                if !viewModel.droppedFiles.isEmpty {
-                    Button("Clear Dropped Files") {
-                        viewModel.clearAll()
+                ForEach(ConversionCategory.allCases) { cat in
+                    Button {
+                        withAnimation {
+                            viewModel.selectedCategory = cat
+                            viewModel.selectedIndex = 0
+                        }
+                    } label: {
+                        Label(cat.displayName, systemImage: cat.icon)
                     }
-                }
-                Divider()
-                Button("Quit Morph (⌘Q)") {
-                    NSApplication.shared.terminate(nil)
                 }
             } label: {
-                Image(systemName: "ellipsis")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(SubtleTheme.textSecondary)
-                    .frame(width: 28, height: 28)
-                    .background(
-                        RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .fill(SubtleTheme.bgCard)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                    .stroke(SubtleTheme.borderSubtle, lineWidth: 1)
-                            )
-                    )
+                HStack(spacing: 4) {
+                    Image(systemName: viewModel.selectedCategory?.icon ?? "square.grid.2x2")
+                        .font(.system(size: 10, weight: .semibold))
+                    Text(viewModel.selectedCategory?.displayName ?? "All Categories")
+                        .font(.system(size: 11, weight: .medium))
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Capsule().fill(Color.primary.opacity(0.06)))
+                .foregroundStyle(.primary)
             }
             .menuStyle(.borderlessButton)
-            .fixedSize()
+
+            GlassButton("Open", icon: "folder", shortcutBadge: "⌘O", variant: .ghost, size: .small, tooltip: "Choose files (⌘O)") {
+                viewModel.openFilePicker()
+            }
+
+            GlassButton("", icon: "ellipsis", shortcutBadge: "⌘,", variant: .ghost, size: .small, tooltip: "Settings (⌘,)") {
+                SettingsWindowController.shared.show()
+            }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 7)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(SubtleTheme.bgCard)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(SubtleTheme.borderSubtle, lineWidth: 1)
-                )
-        )
+        .padding(.horizontal, 14)
+        .frame(minHeight: LiquidGlass.searchFieldHeight)
+        .background {
+            RoundedRectangle(cornerRadius: LiquidGlass.cardRadius, style: .continuous)
+                .fill(.thickMaterial)
+                .overlay {
+                    RoundedRectangle(cornerRadius: LiquidGlass.cardRadius, style: .continuous)
+                        .stroke(.quaternary, lineWidth: 0.5)
+                }
+                .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 2)
+        }
     }
 
-    private var viewModeIcon: String {
-        switch viewModel.viewMode {
-        case .launcher: return "circle.grid.2x2.fill"
-        case .grid: return "square.grid.3x3.fill"
-        case .list: return "list.bullet"
-        }
-    }
-
-    // MARK: - Category Discovery Pills (Screens 1, 2, 3, 8)
+    // MARK: - Category Quick Discovery Pills
 
     private var categoryDiscoveryPillsView: some View {
         HStack(spacing: 6) {
             // "All" Pill
-            let allMatchCount = viewModel.searchMatchCount(for: nil)
-            let isSearching = !viewModel.searchQuery.isEmpty
-            let isAllSelected = (viewModel.selectedCategory == nil)
-
             Button {
                 withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                     viewModel.selectedCategory = nil
@@ -239,199 +232,182 @@ public struct LauncherView: View {
                 }
             } label: {
                 HStack(spacing: 5) {
-                    Image(systemName: "circle.grid.2x2.fill")
-                        .font(.system(size: 10, weight: .semibold))
-                    Text(isSearching ? "All \(allMatchCount)" : "All")
-                        .font(.system(size: 12, weight: isAllSelected ? .semibold : .medium))
+                    Image(systemName: "square.grid.2x2")
+                        .font(.system(size: 11, weight: .semibold))
+                    Text("All")
+                        .font(.system(size: 12, weight: viewModel.selectedCategory == nil ? .semibold : .regular))
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
                 .background {
-                    if isAllSelected {
+                    if viewModel.selectedCategory == nil {
                         Capsule(style: .continuous)
-                            .fill(SubtleTheme.accentBlue)
+                            .fill(Color.accentColor.opacity(0.20))
+                            .overlay {
+                                Capsule(style: .continuous)
+                                    .stroke(Color.accentColor.opacity(0.50), lineWidth: 1)
+                            }
                     } else {
                         Capsule(style: .continuous)
-                            .fill(SubtleTheme.bgCard)
-                            .overlay(
-                                Capsule(style: .continuous)
-                                    .stroke(SubtleTheme.borderSubtle, lineWidth: 1)
-                            )
+                            .fill(.quaternary)
                     }
                 }
-                .foregroundStyle(isAllSelected ? Color.white : SubtleTheme.textSecondary)
+                .foregroundStyle(viewModel.selectedCategory == nil ? Color.accentColor : Color.secondary)
             }
             .buttonStyle(.plain)
 
-            // Category Pills (Images, PDFs, Archives, QR & Barcodes)
+            // Category Pills
             ForEach(ConversionCategory.allCases) { cat in
-                let isCatSelected = (viewModel.selectedCategory == cat)
-                let catMatchCount = viewModel.searchMatchCount(for: cat)
-
                 Button {
                     withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
-                        viewModel.selectedCategory = isCatSelected ? nil : cat
+                        viewModel.selectedCategory = cat
                         viewModel.selectedIndex = 0
                     }
                 } label: {
                     HStack(spacing: 5) {
                         Image(systemName: cat.icon)
-                            .font(.system(size: 10, weight: .semibold))
-                        Text(isSearching ? "\(cat.displayName) \(catMatchCount)" : cat.displayName)
-                            .font(.system(size: 12, weight: isCatSelected ? .semibold : .medium))
+                            .font(.system(size: 11, weight: .semibold))
+                        Text(cat.displayName)
+                            .font(.system(size: 12, weight: viewModel.selectedCategory == cat ? .semibold : .regular))
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
                     .background {
-                        if isCatSelected {
+                        if viewModel.selectedCategory == cat {
                             Capsule(style: .continuous)
-                                .fill(SubtleTheme.accentBlue)
+                                .fill(Color.accentColor.opacity(0.20))
+                                .overlay {
+                                    Capsule(style: .continuous)
+                                        .stroke(Color.accentColor.opacity(0.50), lineWidth: 1)
+                                }
                         } else {
                             Capsule(style: .continuous)
-                                .fill(SubtleTheme.bgCard)
-                                .overlay(
-                                    Capsule(style: .continuous)
-                                        .stroke(SubtleTheme.borderSubtle, lineWidth: 1)
-                                )
+                                .fill(.quaternary)
                         }
                     }
-                    .foregroundStyle(isCatSelected ? Color.white : SubtleTheme.textSecondary)
+                    .foregroundStyle(viewModel.selectedCategory == cat ? Color.accentColor : Color.secondary)
                 }
                 .buttonStyle(.plain)
             }
 
             Spacer()
         }
-        .padding(.horizontal, 2)
+        .padding(.horizontal, 4)
     }
 
-    // MARK: - Top Area: Tool Navigation Capsule (Screens 4, 5, 6, 7, 9)
+    // MARK: - Top Area: Tool Navigation Capsule
 
     private var toolNavigationCapsuleView: some View {
         HStack(spacing: 10) {
-            Button {
-                withAnimation(.spring(response: 0.30, dampingFraction: 0.82)) {
+            GlassButton("Back", icon: "chevron.left", shortcutBadge: "⎋", variant: .secondary, size: .small) {
+                withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
                     viewModel.goBack()
                 }
-            } label: {
-                HStack(spacing: 5) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 11, weight: .semibold))
-                    Text("Back")
-                        .font(.system(size: 12, weight: .medium))
-                }
-                .foregroundStyle(SubtleTheme.textSecondary)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(SubtleTheme.bgCard)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                .stroke(SubtleTheme.borderSubtle, lineWidth: 1)
-                        )
-                )
             }
-            .buttonStyle(.plain)
-            .help("Back (⎋)")
 
             if let activeCmd = viewModel.activeCommand {
                 HStack(spacing: 8) {
                     ZStack {
                         RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(activeCmd.subtleColor)
+                            .fill(Color.accentColor.opacity(0.18))
                             .frame(width: 24, height: 24)
                         Image(systemName: activeCmd.systemIcon)
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(Color.white)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Color.accentColor)
                     }
 
                     Text(activeCmd.title)
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(SubtleTheme.textPrimary)
-                }
-            } else if viewModel.isShowingSettings {
-                HStack(spacing: 8) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(SubtleTheme.accentBlue)
-                            .frame(width: 24, height: 24)
-                        Image(systemName: "gearshape.fill")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(Color.white)
-                    }
+                        .font(.figmaHeadline)
+                        .foregroundStyle(.primary)
 
-                    Text("Settings")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(SubtleTheme.textPrimary)
+                    GlassPill(activeCmd.category.displayName, style: .accent)
                 }
             } else if viewModel.currentResult != nil {
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 16))
-                        .foregroundStyle(SubtleTheme.accentGreen)
+                        .font(.system(size: 15))
+                        .foregroundStyle(.green)
                     Text("Result Preview")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(SubtleTheme.textPrimary)
+                        .font(.figmaHeadline)
+                        .foregroundStyle(.primary)
+                }
+            } else if viewModel.isShowingSettings {
+                HStack(spacing: 8) {
+                    Image(systemName: "gearshape.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color.accentColor)
+                    Text("Preferences")
+                        .font(.figmaHeadline)
+                        .foregroundStyle(.primary)
                 }
             }
 
             Spacer()
 
-            // Trailing "..." Menu
-            Menu {
-                if viewModel.isShowingSettings {
-                    Button("Close Settings (⎋)") {
-                        withAnimation { viewModel.isShowingSettings = false }
+            if viewModel.activeCommand != nil {
+                GlassButton("Actions", icon: "command", shortcutBadge: "⌘K", variant: .ghost, size: .small, tooltip: "Actions (⌘K)") {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+                        viewModel.isShowingActionPanel.toggle()
                     }
-                } else {
-                    Button("Settings (⌘,)") {
-                        withAnimation { viewModel.isShowingSettings = true }
+                }
+
+                if !viewModel.droppedFiles.isEmpty {
+                    GlassButton("", icon: "eye", shortcutBadge: "Space", variant: .ghost, size: .small, tooltip: "Quick Look preview (Space)") {
+                        if let first = viewModel.droppedFiles.first {
+                            QuickLookManager.shared.toggle(url: first.url)
+                        }
                     }
-                    Button("Reset Tool") {
-                        viewModel.resetCurrentTool()
+
+                    GlassButton("Change", icon: "folder", shortcutBadge: "⌘O", variant: .ghost, size: .small, tooltip: "Change file (⌘O)") {
+                        viewModel.openFilePicker()
                     }
-                    Button("Clear Dropped Files") {
+                } else if viewModel.activeCommand?.id != "qr.generate" && viewModel.activeCommand?.id != "barcode.generate" {
+                    GlassButton("Open File...", icon: "folder", shortcutBadge: "⌘O", variant: .secondary, size: .small) {
+                        viewModel.openFilePicker()
+                    }
+                }
+            } else if viewModel.currentResult != nil {
+                GlassButton("New Action", icon: "plus", shortcutBadge: "⌘N", variant: .primary, size: .small) {
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
                         viewModel.clearAll()
                     }
                 }
-            } label: {
-                Image(systemName: "ellipsis")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(SubtleTheme.textSecondary)
-                    .frame(width: 28, height: 28)
-                    .background(
-                        RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .fill(SubtleTheme.bgCard)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                    .stroke(SubtleTheme.borderSubtle, lineWidth: 1)
-                            )
-                    )
             }
-            .menuStyle(.borderlessButton)
-            .fixedSize()
+
+            GlassButton("", icon: "gearshape", shortcutBadge: "⌘,", variant: .ghost, size: .small, tooltip: "Settings (⌘,)") {
+                SettingsWindowController.shared.show()
+            }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 7)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(SubtleTheme.bgCard)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(SubtleTheme.borderSubtle, lineWidth: 1)
-                )
-        )
+        .padding(.horizontal, 14)
+        .frame(minHeight: LiquidGlass.searchFieldHeight)
+        .background {
+            RoundedRectangle(cornerRadius: LiquidGlass.cardRadius, style: .continuous)
+                .fill(.thickMaterial)
+                .overlay {
+                    RoundedRectangle(cornerRadius: LiquidGlass.cardRadius, style: .continuous)
+                        .stroke(.quaternary, lineWidth: 0.5)
+                }
+                .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 2)
+        }
     }
 
-    // MARK: - Main Content Surface Routing
+    private var searchPlaceholder: String {
+        if !viewModel.droppedFiles.isEmpty {
+            return "Filter actions for \(viewModel.droppedFiles.first?.filename ?? "file")..."
+        }
+        if let cat = viewModel.selectedCategory {
+            return "Search in \(cat.displayName)..."
+        }
+        return "Search Morph or drop a file..."
+    }
+
+    // MARK: - Bottom Area: Results Surface
 
     @ViewBuilder
     private var resultsSurfaceView: some View {
         GlassCard(cornerRadius: 14) {
-            Group {
+            VStack(spacing: 0) {
                 if viewModel.isShowingSettings {
-                    // Screen 9: Settings
                     SettingsView(preferences: viewModel.preferences) {
                         withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
                             viewModel.isShowingSettings = false
@@ -440,488 +416,468 @@ public struct LauncherView: View {
                 } else if let result = viewModel.currentResult {
                     ResultPreviewView(viewModel: viewModel, result: result)
                 } else if let activeCmd = viewModel.activeCommand {
-                    // Screens 4, 5, 6, 7: Tool Workflows
-                    switch activeCmd.category {
-                    case .image:
-                        ImageOperationsView(viewModel: viewModel)
-                    case .pdf:
-                        PDFOperationsView(viewModel: viewModel)
-                    case .archive:
-                        ArchiveOperationsView(viewModel: viewModel)
-                    case .qrBarcode:
+                    if activeCmd.category == .qrBarcode && (activeCmd.id == "qr.generate" || activeCmd.id == "barcode.generate") {
                         QRCodeOperationsView(viewModel: viewModel)
+                    } else if !viewModel.droppedFiles.isEmpty {
+                        switch activeCmd.category {
+                        case .image:
+                            ImageOperationsView(viewModel: viewModel)
+                        case .pdf:
+                            PDFOperationsView(viewModel: viewModel)
+                        case .archive:
+                            ArchiveOperationsView(viewModel: viewModel)
+                        case .qrBarcode:
+                            QRCodeOperationsView(viewModel: viewModel)
+                        }
+                    } else {
+                        toolEmptyDropTargetView(command: activeCmd)
                     }
-                } else if !viewModel.searchQuery.isEmpty {
-                    // Screen 8: Search Results
-                    searchResultsView
+                } else if !viewModel.droppedFiles.isEmpty && viewModel.activeCommand == nil {
+                    fileDroppedContextualView
                 } else {
-                    // Screens 1, 2, 3: Launcher / Grid / List
-                    switch viewModel.viewMode {
-                    case .launcher:
-                        launcherDefaultView
-                    case .grid:
-                        toolsGridView
-                    case .list:
-                        toolsListView
-                    }
+                    commandListView
                 }
+
+                // Raycast Bottom Action Bar
+                Divider().overlay(.quaternary)
+                raycastActionBar
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
-    // MARK: - Screen 1: Launcher (Default)
+    // MARK: - Tool Empty Drop Target View
 
-    private var launcherDefaultView: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            // "Most Used" row header
-            HStack {
-                Text("Most Used")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(SubtleTheme.textPrimary)
+    private func toolEmptyDropTargetView(command: ConversionCommand) -> some View {
+        VStack(spacing: 16) {
+            Spacer()
 
-                Spacer()
-
-                Button("See All") {
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.8)) {
-                        viewModel.viewMode = .grid
-                    }
-                }
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(SubtleTheme.accentBlue)
-                .buttonStyle(.plain)
-            }
-            .padding(.horizontal, 4)
-
-            // 5 Most Used Cards (Screen 1)
-            HStack(spacing: 10) {
-                ForEach(ConversionRegistry.shared.mostUsedCommands) { cmd in
-                    Button {
-                        viewModel.selectCommand(cmd)
-                    } label: {
-                        VStack(spacing: 8) {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .fill(cmd.subtleColor)
-                                    .frame(width: 40, height: 40)
-                                Image(systemName: cmd.systemIcon)
-                                    .font(.system(size: 17, weight: .semibold))
-                                    .foregroundStyle(Color.white)
-                            }
-
-                            Text(cmd.title)
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundStyle(SubtleTheme.textPrimary)
-                                .multilineTextAlignment(.center)
-                                .lineLimit(2)
-                                .frame(height: 28)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 4)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(SubtleTheme.bgCard)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .stroke(SubtleTheme.borderSubtle, lineWidth: 1)
-                                )
-                        )
-                    }
-                    .buttonStyle(.plain)
-                }
+            ZStack {
+                Circle()
+                    .fill(.quaternary)
+                    .frame(width: 68, height: 68)
+                Image(systemName: command.systemIcon)
+                    .symbolRenderingMode(.hierarchical)
+                    .font(.system(size: 32, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
             }
 
-            // Mode Switcher Pills: [ Drop Files ] vs [ Browse Tools ]
-            HStack {
-                Spacer()
-                HStack(spacing: 0) {
-                    Button {
-                        withAnimation {
-                            viewModel.activeLauncherTab = .dropFiles
-                        }
-                    } label: {
-                        Text("Drop Files")
-                            .font(.system(size: 12, weight: .medium))
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 5)
-                            .background(
-                                Capsule(style: .continuous)
-                                    .fill(viewModel.activeLauncherTab == .dropFiles ? SubtleTheme.accentBlue : Color.clear)
-                            )
-                            .foregroundStyle(viewModel.activeLauncherTab == .dropFiles ? Color.white : SubtleTheme.textSecondary)
-                    }
-                    .buttonStyle(.plain)
+            VStack(spacing: 6) {
+                Text("Select a file for \(command.title)")
+                    .font(.figmaTitle3(emphasized: true))
+                    .foregroundStyle(.primary)
 
-                    Button {
-                        withAnimation {
-                            viewModel.viewMode = .grid
-                        }
-                    } label: {
-                        Text("Browse Tools")
-                            .font(.system(size: 12, weight: .medium))
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 5)
-                            .background(
-                                Capsule(style: .continuous)
-                                    .fill(Color.clear)
-                            )
-                            .foregroundStyle(SubtleTheme.textSecondary)
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(3)
-                .background(
-                    Capsule(style: .continuous)
-                        .fill(SubtleTheme.bgCard)
-                        .overlay(
-                            Capsule(style: .continuous)
-                                .stroke(SubtleTheme.borderSubtle, lineWidth: 1)
-                        )
-                )
-                Spacer()
+                Text(dropPromptDescription(for: command))
+                    .font(.figmaCallout())
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 380)
             }
-            .padding(.top, 2)
 
-            // Large File Drop Area (Screen 1)
-            VStack(spacing: 12) {
-                Spacer()
-
-                Image(systemName: "doc.badge.plus")
-                    .font(.system(size: 38, weight: .light))
-                    .foregroundStyle(SubtleTheme.textSecondary.opacity(0.8))
-
-                VStack(spacing: 4) {
-                    Text("Drop files here")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(SubtleTheme.textPrimary)
-
-                    Text("Images, PDFs, Archives and more")
-                        .font(.system(size: 12))
-                        .foregroundStyle(SubtleTheme.textSecondary)
-                }
-
-                Button {
+            HStack(spacing: 12) {
+                GlassButton("Choose File...", icon: "folder", shortcutBadge: "⌘O", variant: .primary, size: .regular) {
                     viewModel.openFilePicker()
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "folder")
-                            .font(.system(size: 12, weight: .medium))
-                        Text("Choose Files...")
-                            .font(.system(size: 13, weight: .semibold))
-                    }
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 8)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(SubtleTheme.accentBlue)
-                    )
-                    .foregroundStyle(Color.white)
-                }
-                .buttonStyle(.plain)
-
-                Spacer()
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(SubtleTheme.bgCard)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(SubtleTheme.borderSubtle, lineWidth: 1)
-                    )
-            )
-        }
-        .padding(14)
-    }
-
-    // MARK: - Screen 2: Tools - Grid View
-
-    private var toolsGridView: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                let targetCat = viewModel.selectedCategory ?? .image
-                categorySectionHeader(category: targetCat)
-
-                let commands = ConversionRegistry.shared.commands(for: targetCat)
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
-                    ForEach(commands) { cmd in
-                        Button {
-                            viewModel.selectCommand(cmd)
-                        } label: {
-                            VStack(spacing: 8) {
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                        .fill(cmd.subtleColor)
-                                        .frame(width: 36, height: 36)
-                                    Image(systemName: cmd.systemIcon)
-                                        .font(.system(size: 16, weight: .semibold))
-                                        .foregroundStyle(Color.white)
-                                }
-
-                                Text(cmd.title)
-                                    .font(.system(size: 11, weight: .medium))
-                                    .foregroundStyle(SubtleTheme.textPrimary)
-                                    .multilineTextAlignment(.center)
-                                    .lineLimit(2)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 82)
-                            .padding(6)
-                            .background(
-                                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .fill(SubtleTheme.bgCard)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                            .stroke(SubtleTheme.borderSubtle, lineWidth: 1)
-                                    )
-                            )
-                        }
-                        .buttonStyle(.plain)
-                    }
                 }
 
-                // Accordion rows for other categories
-                VStack(spacing: 6) {
-                    ForEach(ConversionCategory.allCases.filter { $0 != targetCat }) { otherCat in
-                        categoryAccordionRow(category: otherCat)
-                    }
-                }
-                .padding(.top, 4)
-            }
-            .padding(14)
-        }
-    }
-
-    // MARK: - Screen 3: Tools - List View
-
-    private var toolsListView: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                let targetCat = viewModel.selectedCategory ?? .image
-                categorySectionHeader(category: targetCat)
-
-                let commands = ConversionRegistry.shared.commands(for: targetCat)
-                VStack(spacing: 5) {
-                    ForEach(Array(commands.enumerated()), id: \.element.id) { index, cmd in
-                        let isSelected = (index == viewModel.selectedIndex)
-                        Button {
-                            viewModel.selectedIndex = index
-                            viewModel.selectCommand(cmd)
-                        } label: {
-                            HStack(spacing: 12) {
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                        .fill(cmd.subtleColor)
-                                        .frame(width: 28, height: 28)
-                                    Image(systemName: cmd.systemIcon)
-                                        .font(.system(size: 13, weight: .semibold))
-                                        .foregroundStyle(Color.white)
-                                }
-
-                                Text(cmd.title)
-                                    .font(.system(size: 13, weight: .medium))
-                                    .foregroundStyle(SubtleTheme.textPrimary)
-
-                                Spacer()
-
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 11, weight: .semibold))
-                                    .foregroundStyle(SubtleTheme.textSecondary)
-                            }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                    .fill(isSelected ? SubtleTheme.accentBlue.opacity(0.18) : SubtleTheme.bgCard)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                            .stroke(isSelected ? SubtleTheme.accentBlue.opacity(0.4) : SubtleTheme.borderSubtle, lineWidth: 1)
-                                    )
-                            )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-
-                // Accordion rows for other categories
-                VStack(spacing: 6) {
-                    ForEach(ConversionCategory.allCases.filter { $0 != targetCat }) { otherCat in
-                        categoryAccordionRow(category: otherCat)
-                    }
-                }
-                .padding(.top, 4)
-            }
-            .padding(14)
-        }
-    }
-
-    // MARK: - Screen 8: Search Results
-
-    private var searchResultsView: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                let matches = viewModel.filteredCommands
-
-                if matches.isEmpty {
-                    VStack(spacing: 10) {
-                        Spacer()
-                        Image(systemName: "magnifyingglass")
-                            .font(.system(size: 32))
-                            .foregroundStyle(SubtleTheme.textSecondary)
-                        Text("No matching tools found for \"\(viewModel.searchQuery)\"")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(SubtleTheme.textSecondary)
-                        Spacer()
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 180)
-                } else {
-                    // Direct matches list with ↵ badge on selected
-                    VStack(spacing: 6) {
-                        ForEach(Array(matches.enumerated()), id: \.element.id) { index, cmd in
-                            let isSelected = (index == viewModel.selectedIndex)
-                            Button {
-                                viewModel.selectedIndex = index
-                                viewModel.selectCommand(cmd)
-                            } label: {
-                                HStack(spacing: 12) {
-                                    ZStack {
-                                        RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                            .fill(cmd.subtleColor)
-                                            .frame(width: 30, height: 30)
-                                        Image(systemName: cmd.systemIcon)
-                                            .font(.system(size: 14, weight: .semibold))
-                                            .foregroundStyle(Color.white)
-                                    }
-
-                                    Text(cmd.title)
-                                        .font(.system(size: 13, weight: .medium))
-                                        .foregroundStyle(SubtleTheme.textPrimary)
-
-                                    Spacer()
-
-                                    if isSelected {
-                                        Text("↵")
-                                            .font(.system(size: 11, weight: .bold))
-                                            .foregroundStyle(SubtleTheme.accentBlue)
-                                            .padding(.horizontal, 6)
-                                            .padding(.vertical, 2)
-                                            .background(
-                                                RoundedRectangle(cornerRadius: 4, style: .continuous)
-                                                    .fill(SubtleTheme.accentBlue.opacity(0.18))
-                                            )
-                                    }
-                                }
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                        .fill(isSelected ? SubtleTheme.accentBlue.opacity(0.18) : SubtleTheme.bgCard)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                                .stroke(isSelected ? SubtleTheme.accentBlue.opacity(0.4) : SubtleTheme.borderSubtle, lineWidth: 1)
-                                        )
-                                )
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-
-                    // Related Tools Section (Screen 8)
-                    let related = viewModel.relatedCommandsForSearch
-                    if !related.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Related Tools")
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(SubtleTheme.textSecondary)
-                                .padding(.top, 6)
-
-                            VStack(spacing: 6) {
-                                ForEach(related) { cmd in
-                                    Button {
-                                        viewModel.selectCommand(cmd)
-                                    } label: {
-                                        HStack(spacing: 12) {
-                                            ZStack {
-                                                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                                    .fill(cmd.subtleColor)
-                                                    .frame(width: 28, height: 28)
-                                                Image(systemName: cmd.systemIcon)
-                                                    .font(.system(size: 13, weight: .semibold))
-                                                    .foregroundStyle(Color.white)
-                                            }
-
-                                            Text(cmd.title)
-                                                .font(.system(size: 13, weight: .medium))
-                                                .foregroundStyle(SubtleTheme.textPrimary)
-
-                                            Spacer()
-                                        }
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 8)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                                .fill(SubtleTheme.bgCard)
-                                                .overlay(
-                                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                                        .stroke(SubtleTheme.borderSubtle, lineWidth: 1)
-                                                )
-                                        )
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
-                        }
+                GlassButton("Cancel", shortcutBadge: "⎋", variant: .secondary, size: .regular) {
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                        viewModel.goBack()
                     }
                 }
             }
-            .padding(14)
-        }
-    }
+            .padding(.top, 4)
 
-    // MARK: - Category Header & Accordion Helpers
-
-    private func categorySectionHeader(category: ConversionCategory) -> some View {
-        HStack(spacing: 6) {
-            Text(category.displayName)
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(SubtleTheme.textPrimary)
-            Image(systemName: "chevron.right")
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(SubtleTheme.textSecondary)
             Spacer()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(24)
     }
 
-    private func categoryAccordionRow(category: ConversionCategory) -> some View {
-        Button {
-            withAnimation(.spring(response: 0.28, dampingFraction: 0.8)) {
-                viewModel.selectedCategory = category
-            }
-        } label: {
-            HStack {
-                Text(category.displayName)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(SubtleTheme.textPrimary)
-
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(SubtleTheme.textSecondary)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(SubtleTheme.bgCard)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .stroke(SubtleTheme.borderSubtle, lineWidth: 1)
-                    )
-            )
+    private func dropPromptDescription(for command: ConversionCommand) -> String {
+        switch command.category {
+        case .image:
+            return "Drop PNG, JPEG, WebP, or HEIC images here, or browse files"
+        case .pdf:
+            return "Drop PDF documents here, or browse files"
+        case .archive:
+            return "Drop an archive or files to compress / extract"
+        case .qrBarcode:
+            return "Drop an image containing a QR code or barcode to scan"
         }
-        .buttonStyle(.plain)
+    }
+
+    // MARK: - File Dropped Contextual View
+
+    private var fileDroppedContextualView: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            // File Information Header
+            if let first = viewModel.droppedFiles.first {
+                HStack(spacing: 12) {
+                    if first.category == .image {
+                        ImageThumbnailView(url: first.url, maxPixelSize: 100, cornerRadius: 6)
+                            .frame(width: 44, height: 44)
+                    } else if first.category == .pdf {
+                        PDFPageThumbnailView(url: first.url, pageIndex: 0, pageNumber: 1, onTap: {
+                            QuickLookManager.shared.toggle(url: first.url)
+                        })
+                        .frame(width: 36, height: 46)
+                    } else {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 6).fill(Color.orange.opacity(0.2))
+                                .frame(width: 44, height: 44)
+                            Image(systemName: "archivebox.fill")
+                                .font(.system(size: 20))
+                                .foregroundStyle(.orange)
+                        }
+                    }
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack {
+                            Text(first.filename)
+                                .font(.figmaHeadline)
+                                .lineLimit(1)
+                            Spacer()
+                            Button {
+                                viewModel.droppedFiles = []
+                            } label: {
+                                Image(systemName: "xmark.circle")
+                                    .foregroundStyle(.secondary)
+                            }
+                            .buttonStyle(.plain)
+                            .help("Remove dropped file (⌘⌫)")
+                        }
+
+                        Text(first.summaryDescription)
+                            .font(.figmaSubheadline())
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                }
+                .padding(12)
+                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.quaternary))
+                .padding(.horizontal, 12)
+                .padding(.top, 10)
+            }
+
+            Text("Suggested actions for this file:")
+                .font(.figmaSubheadline(emphasized: true))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 14)
+
+            // Suggested Operations List
+            ScrollView {
+                LazyVStack(spacing: 3) {
+                    ForEach(Array(viewModel.filteredCommands.enumerated()), id: \.element.id) { index, command in
+                        commandRow(index: index, command: command)
+                    }
+                }
+                .padding(.horizontal, 10)
+            }
+        }
+    }
+
+    // MARK: - Command List View (Raycast Command Discovery)
+
+    private var commandListView: some View {
+        VStack(spacing: 0) {
+            let commands = viewModel.filteredCommands
+
+            if commands.isEmpty {
+                ContentUnavailableView {
+                    Label("No Matching Operations", systemImage: "magnifyingglass")
+                        .font(.figmaTitle3(emphasized: true))
+                } description: {
+                    Text("No operations matched \"\(viewModel.searchQuery)\".\nTry searching for 'compress', 'resize', 'convert', 'pdf', 'zip', or 'qr'")
+                        .font(.figmaCallout())
+                }
+                .frame(maxHeight: .infinity)
+            } else {
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 6) {
+                            // When search is empty and no category is filtered, show Favorites & Recents sections!
+                            if viewModel.searchQuery.isEmpty && viewModel.selectedCategory == nil && viewModel.droppedFiles.isEmpty {
+                                // FAVORITES SECTION
+                                if !viewModel.favoriteCommands.isEmpty {
+                                    sectionHeader(title: "FAVORITES", icon: "star.fill", color: .yellow)
+                                    ForEach(Array(viewModel.favoriteCommands.enumerated()), id: \.element.id) { index, cmd in
+                                        commandRow(index: index, command: cmd)
+                                    }
+                                }
+
+                                // RECENT TOOLS SECTION
+                                if !viewModel.recentCommands.isEmpty {
+                                    sectionHeader(title: "RECENT TOOLS", icon: "clock.arrow.circlepath", color: .secondary)
+                                    ForEach(Array(viewModel.recentCommands.prefix(4).enumerated()), id: \.element.id) { index, cmd in
+                                        let favCount = viewModel.favoriteCommands.count
+                                        commandRow(index: favCount + index, command: cmd)
+                                    }
+                                }
+
+                                // ALL TOOLS SECTION
+                                sectionHeader(title: "ALL TOOLS", icon: "square.grid.2x2", color: .secondary)
+                                ForEach(Array(commands.enumerated()), id: \.element.id) { index, cmd in
+                                    commandRow(index: index, command: cmd)
+                                }
+                            } else {
+                                // Filtered list (search query or category filter)
+                                ForEach(Array(commands.enumerated()), id: \.element.id) { index, command in
+                                    commandRow(index: index, command: command)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                    }
+                    .scrollIndicators(.hidden)
+                    .onChange(of: viewModel.selectedIndex) { _, newIndex in
+                        proxy.scrollTo(newIndex, anchor: .center)
+                    }
+                }
+            }
+        }
+    }
+
+    private func sectionHeader(title: String, icon: String, color: Color) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: icon)
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(color)
+            Text(title)
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 8)
+        .padding(.top, 6)
+    }
+
+    private func commandRow(index: Int, command: ConversionCommand) -> some View {
+        let isSelected = (index == viewModel.selectedIndex)
+        let isFavorite = viewModel.preferences.isFavorite(id: command.id)
+
+        return HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(isSelected ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.quaternary))
+                    .frame(width: 32, height: 32)
+
+                Image(systemName: command.systemIcon)
+                    .symbolRenderingMode(isSelected ? .monochrome : .hierarchical)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(isSelected ? AnyShapeStyle(Color.white) : AnyShapeStyle(Color.accentColor))
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(command.title)
+                        .font(.figmaHeadline)
+                        .foregroundStyle(.primary)
+
+                    if isFavorite {
+                        Image(systemName: "star.fill")
+                            .font(.system(size: 9))
+                            .foregroundStyle(.yellow)
+                    }
+
+                    Spacer()
+                    GlassPill(command.category.displayName, style: isSelected ? .accent : .standard)
+                }
+
+                Text(command.subtitle)
+                    .font(.figmaSubheadline())
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            if isSelected {
+                Text("↩")
+                    .font(.figmaCaption1(emphasized: true))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(RoundedRectangle(cornerRadius: 4, style: .continuous).fill(.quaternary))
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 7)
+        .background {
+            if isSelected {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.accentColor.opacity(0.16))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(Color.accentColor.opacity(0.40), lineWidth: 1.0)
+                    }
+            }
+        }
+        .contentShape(Rectangle())
+        .id(index)
+        .onTapGesture {
+            viewModel.selectedIndex = index
+            viewModel.selectCommand(command)
+        }
+    }
+
+    // MARK: - Raycast Action Bar
+
+    private var raycastActionBar: some View {
+        HStack(spacing: 8) {
+            // Left Pill: Contextual Identity & Status
+            HStack(spacing: 6) {
+                Image(systemName: contextIcon)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
+
+                Text(contextTitle)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.primary)
+
+                if let subtitle = contextSubtitle {
+                    Text(subtitle)
+                        .font(.system(size: 11, weight: .regular))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background {
+                Capsule(style: .continuous)
+                    .fill(.quaternary.opacity(0.6))
+                    .overlay {
+                        Capsule(style: .continuous)
+                            .stroke(Color.primary.opacity(0.06), lineWidth: 0.5)
+                    }
+            }
+
+            Spacer()
+
+            // Right Pill: Primary Action ↵ | Actions ⌘K
+            HStack(spacing: 8) {
+                Button {
+                    executePrimaryAction()
+                } label: {
+                    HStack(spacing: 5) {
+                        Text(primaryActionTitle)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(.primary)
+
+                        Text("↵")
+                            .font(.system(size: 10, weight: .bold))
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 1.5)
+                            .background(RoundedRectangle(cornerRadius: 3.5, style: .continuous).fill(Color.primary.opacity(0.12)))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .buttonStyle(.plain)
+                .disabled(viewModel.isProcessing)
+
+                // Divider line
+                Rectangle()
+                    .fill(Color.primary.opacity(0.15))
+                    .frame(width: 1, height: 12)
+
+                Button {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+                        viewModel.isShowingActionPanel.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 5) {
+                        Text("Actions")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.secondary)
+
+                        Text("⌘K")
+                            .font(.system(size: 10, weight: .bold))
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 1.5)
+                            .background(RoundedRectangle(cornerRadius: 3.5, style: .continuous).fill(Color.primary.opacity(0.12)))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background {
+                Capsule(style: .continuous)
+                    .fill(.quaternary.opacity(0.6))
+                    .overlay {
+                        Capsule(style: .continuous)
+                            .stroke(Color.primary.opacity(0.06), lineWidth: 0.5)
+                    }
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+    }
+
+    private var contextIcon: String {
+        if let cmd = viewModel.activeCommand {
+            return cmd.systemIcon
+        } else if viewModel.currentResult != nil {
+            return "checkmark.circle.fill"
+        } else if viewModel.isShowingSettings {
+            return "gearshape.fill"
+        } else if !viewModel.droppedFiles.isEmpty {
+            return "paperclip"
+        } else {
+            return "circle.grid.2x2.fill"
+        }
+    }
+
+    private var contextTitle: String {
+        if let cmd = viewModel.activeCommand {
+            return cmd.title
+        } else if viewModel.currentResult != nil {
+            return "Result Preview"
+        } else if viewModel.isShowingSettings {
+            return "Preferences"
+        } else if !viewModel.droppedFiles.isEmpty {
+            let count = viewModel.droppedFiles.count
+            return "\(count) File\(count > 1 ? "s" : "")"
+        } else {
+            return "Morph"
+        }
+    }
+
+    private var contextSubtitle: String? {
+        if viewModel.activeCommand != nil || viewModel.currentResult != nil || viewModel.isShowingSettings {
+            return nil
+        }
+        if !viewModel.droppedFiles.isEmpty {
+            return viewModel.droppedFiles.first?.filename
+        }
+        let count = viewModel.filteredCommands.count
+        return "\(count) tools"
+    }
+
+    private var primaryActionTitle: String {
+        if viewModel.currentResult != nil {
+            return "Open File"
+        } else if viewModel.isShowingSettings {
+            return "Done"
+        } else if viewModel.activeCommand != nil {
+            return viewModel.isProcessing ? "Processing..." : "Process"
+        } else {
+            return "Open"
+        }
+    }
+
+    private func executePrimaryAction() {
+        if let primary = viewModel.currentResult?.primaryOutputURL {
+            viewModel.openFile(url: primary)
+        } else if viewModel.isShowingSettings {
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                viewModel.isShowingSettings = false
+            }
+        } else if viewModel.activeCommand != nil {
+            guard !viewModel.isProcessing else { return }
+            Task {
+                await viewModel.runActiveCommand()
+            }
+        } else {
+            viewModel.selectCurrent()
+        }
     }
 
     // MARK: - Drag & Drop Handler
@@ -957,4 +913,3 @@ public struct LauncherView: View {
         }
     }
 }
-

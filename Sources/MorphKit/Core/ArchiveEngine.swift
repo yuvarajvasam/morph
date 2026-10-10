@@ -8,8 +8,6 @@ public enum ArchiveFormat: String, CaseIterable, Identifiable, Sendable {
 
     public var id: String { rawValue }
 
-    public var displayName: String { rawValue }
-
     public var fileExtension: String {
         switch self {
         case .zip: return "zip"

@@ -150,15 +150,15 @@ public struct GlassButton: View {
 
         switch variant {
         case .primary:
-            return AnyShapeStyle(SubtleTheme.accentGradient)
+            return AnyShapeStyle(Color.accentColor)
         case .secondary:
-            return hover.isHovered ? AnyShapeStyle(SubtleTheme.surfaceHover) : AnyShapeStyle(SubtleTheme.cardBackgroundSubtle)
+            return hover.isHovered ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(.thinMaterial)
         case .tinted:
-            return AnyShapeStyle(SubtleTheme.accentTint)
+            return AnyShapeStyle(Color.accentColor.opacity(hover.isHovered ? 0.22 : 0.14))
         case .destructive:
-            return AnyShapeStyle(SubtleTheme.redTint)
+            return AnyShapeStyle(Color.red.opacity(hover.isHovered ? 0.22 : 0.14))
         case .prominentDestructive:
-            return AnyShapeStyle(SubtleTheme.red)
+            return AnyShapeStyle(Color.red)
         case .ghost:
             return AnyShapeStyle(Color.clear)
         }
@@ -167,16 +167,14 @@ public struct GlassButton: View {
     // MARK: - Border Stroke
     private var borderStroke: AnyShapeStyle {
         switch variant {
-        case .primary:
-            return AnyShapeStyle(Color.white.opacity(0.20))
-        case .prominentDestructive:
-            return AnyShapeStyle(Color.white.opacity(0.20))
-        case .secondary:
-            return AnyShapeStyle(hover.isHovered ? SubtleTheme.cardBorderHover : SubtleTheme.cardBorder)
+        case .primary, .prominentDestructive:
+            return AnyShapeStyle(.quaternary)
         case .tinted:
-            return AnyShapeStyle(SubtleTheme.accentBorder)
+            return AnyShapeStyle(Color.accentColor.opacity(0.35))
         case .destructive:
-            return AnyShapeStyle(SubtleTheme.red.opacity(0.35))
+            return AnyShapeStyle(Color.red.opacity(0.35))
+        case .secondary:
+            return AnyShapeStyle(.quaternary)
         case .ghost:
             return AnyShapeStyle(Color.clear)
         }

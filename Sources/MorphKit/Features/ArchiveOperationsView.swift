@@ -1,5 +1,4 @@
 import SwiftUI
-import AppKit
 
 public struct ArchiveOperationsView: View {
     @ObservedObject var viewModel: LauncherViewModel
@@ -14,353 +13,226 @@ public struct ArchiveOperationsView: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    if isExtractionOrInspect {
-                        extractionInspectView
-                    } else {
-                        // Screen 6: Create Archive View
-                        createArchiveView
-                    }
+            // Header / Dropped Files Card
+            if let first = viewModel.droppedFiles.first {
+                GlassCard {
+                    HStack(spacing: 12) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(Color.orange.opacity(0.18))
+                                .frame(width: 48, height: 48)
+                            Image(systemName: isExtractionOrInspect ? "tray.and.arrow.up.fill" : "archivebox.fill")
+                                .font(.system(size: 22, weight: .semibold))
+                                .foregroundStyle(.orange)
+                        }
 
-                    // Output Location Section (Screen 6 Reference)
-                    outputLocationSection
-                }
-                .padding(.horizontal, 2)
-            }
-            .scrollIndicators(.hidden)
-
-            Spacer(minLength: 4)
-
-            // Execution / Action Bar (Screen 6: Reset on left, Create Archive on right)
-            bottomActionBar
-        }
-        .padding(16)
-    }
-
-    // MARK: - Screen 6: Create Archive View
-
-    private var createArchiveView: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Drop files or folders here
-            VStack(spacing: 8) {
-                if viewModel.droppedFiles.isEmpty {
-                    Image(systemName: "folder.fill")
-                        .font(.system(size: 32))
-                        .foregroundStyle(SubtleTheme.blue)
-                        .padding(.top, 6)
-
-                    Text("Drop files or folders here")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(SubtleTheme.textPrimary)
-
-                    Button {
-                        viewModel.openFilePicker()
-                    } label: {
-                        Text("or choose files...")
-                            .font(.system(size: 11))
-                            .foregroundStyle(SubtleTheme.accentLight)
-                            .underline()
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.bottom, 6)
-                } else {
-                    HStack(spacing: 10) {
-                        Image(systemName: "folder.fill")
-                            .font(.system(size: 20))
-                            .foregroundStyle(SubtleTheme.blue)
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("\(viewModel.droppedFiles.count) file\(viewModel.droppedFiles.count > 1 ? "s" : "") to archive")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundStyle(SubtleTheme.textPrimary)
-                            Text(viewModel.droppedFiles.map { $0.filename }.joined(separator: ", "))
-                                .font(.system(size: 10))
-                                .foregroundStyle(SubtleTheme.textSecondary)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(first.filename)
+                                .font(.system(size: 13, weight: .semibold))
                                 .lineLimit(1)
+                            Text(first.summaryDescription)
+                                .font(.system(size: 11))
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
                         }
 
                         Spacer()
 
-                        Button {
-                            viewModel.droppedFiles = []
-                        } label: {
-                            Text("Clear")
-                                .font(.system(size: 11))
-                                .foregroundStyle(SubtleTheme.red.opacity(0.85))
+                        if viewModel.droppedFiles.count > 1 {
+                            GlassPill("+\(viewModel.droppedFiles.count - 1) more files", style: .accent)
                         }
-                        .buttonStyle(.plain)
+                    }
+                    .padding(10)
+                }
+            }
+
+            // Options configuration
+            if isExtractionOrInspect {
+                extractionOptionsView
+            } else {
+                compressionOptionsView
+            }
+
+            Spacer(minLength: 4)
+
+            // Execution Bar
+            HStack {
+                if viewModel.isProcessing {
+                    HStack(spacing: 8) {
+                        Image(systemName: "sparkles")
+                            .foregroundStyle(Color.accentColor)
+                            .symbolEffect(.pulse)
+                        ProgressView(value: viewModel.progress)
+                            .progressViewStyle(.linear)
+                            .frame(maxWidth: 160)
+                        Text(isExtractionOrInspect ? "Extracting archive..." : "Creating archive...")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                    }
+                } else if let error = viewModel.errorMessage {
+                    HStack(spacing: 6) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.red)
+                            .symbolEffect(.pulse)
+                        Text(error)
+                            .font(.system(size: 12))
+                            .foregroundStyle(.red)
+                            .lineLimit(2)
+                    }
+                }
+
+                Spacer()
+
+                GlassButton("Cancel", shortcutBadge: "⎋", variant: .secondary) {
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                        viewModel.goBack()
+                    }
+                }
+
+                GlassButton(
+                    isExtractionOrInspect ? "Extract Now" : "Create Archive",
+                    icon: isExtractionOrInspect ? "tray.and.arrow.up" : "archivebox",
+                    shortcutBadge: "↩",
+                    variant: .primary
+                ) {
+                    Task {
+                        await viewModel.executeCurrentOperation()
+                    }
+                }
+                .disabled(viewModel.droppedFiles.isEmpty || viewModel.isProcessing)
+            }
+        }
+        .padding(14)
+        .onAppear {
+            if isExtractionOrInspect, let first = viewModel.droppedFiles.first {
+                loadArchiveEntries(url: first.url)
+            }
+        }
+    }
+
+    // MARK: - Compression Options
+
+    private var compressionOptionsView: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Archive Format")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: 8) {
+                ForEach(ArchiveFormat.allCases) { format in
+                    GlassButton(
+                        format.rawValue,
+                        variant: viewModel.archiveFormat == format ? .primary : .secondary,
+                        size: .regular
+                    ) {
+                        viewModel.archiveFormat = format
+                    }
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Archive Name")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.secondary)
+
+                HStack(spacing: 6) {
+                    TextField("Archive Name", text: $viewModel.customOutputFilename)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 12))
+                        .padding(8)
+                        .background(RoundedRectangle(cornerRadius: 6).fill(.quaternary))
+
+                    Text(".\(viewModel.archiveFormat.fileExtension)")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.top, 4)
+
+            // Multiple files summary
+            if viewModel.droppedFiles.count > 1 {
+                HStack(spacing: 6) {
+                    Image(systemName: "info.circle")
+                        .foregroundStyle(.secondary)
+                        .font(.system(size: 11))
+                    Text("\(viewModel.droppedFiles.count) items will be compressed together preserving structure.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.top, 2)
+            }
+        }
+    }
+
+    // MARK: - Extraction Options
+
+    private var extractionOptionsView: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Archive Contents")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
+                if !viewModel.archiveEntries.isEmpty {
+                    Text("\(viewModel.archiveEntries.count) items inside")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if viewModel.isLoadingArchiveEntries {
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text("Reading archive index...")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                }
+                .frame(height: 100)
+                .frame(maxWidth: .infinity)
+            } else if viewModel.archiveEntries.isEmpty {
+                Text("No preview entries found in this archive.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .frame(height: 80)
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(Array(viewModel.archiveEntries.prefix(25).enumerated()), id: \.offset) { _, entry in
+                            HStack(spacing: 6) {
+                                Image(systemName: entry.hasSuffix("/") ? "folder" : "doc")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(.secondary)
+                                Text(entry)
+                                    .font(.system(size: 11, design: .monospaced))
+                                    .lineLimit(1)
+                                    .foregroundStyle(.primary)
+                            }
+                        }
+                        if viewModel.archiveEntries.count > 25 {
+                            Text("... and \(viewModel.archiveEntries.count - 25) more items")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundStyle(.secondary)
+                                .padding(.top, 2)
+                        }
                     }
                     .padding(8)
                 }
-            }
-            .frame(maxWidth: .infinity)
-            .padding(14)
-            .background {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(SubtleTheme.cardBackgroundSubtle)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .stroke(SubtleTheme.cardBorder, lineWidth: 0.6)
-                    }
-            }
-
-            // Dropdowns row: Archive Format & Compression Level (Screen 6 Reference)
-            HStack(spacing: 12) {
-                // Archive Format
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Archive Format")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(SubtleTheme.textSecondary)
-
-                    Menu {
-                        Button("ZIP") { viewModel.archiveFormat = .zip }
-                        Button("TAR") { viewModel.archiveFormat = .tar }
-                        Button("TAR.GZ") { viewModel.archiveFormat = .tarGz }
-                    } label: {
-                        HStack {
-                            Text(viewModel.archiveFormat.displayName)
-                                .font(.system(size: 12))
-                                .foregroundStyle(SubtleTheme.textPrimary)
-                            Spacer()
-                            Image(systemName: "chevron.up.chevron.down")
-                                .font(.system(size: 10))
-                                .foregroundStyle(SubtleTheme.textSecondary)
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 7)
-                        .background {
-                            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .fill(SubtleTheme.cardBackgroundSubtle)
-                                .overlay {
-                                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                        .stroke(SubtleTheme.cardBorder, lineWidth: 0.6)
-                                }
-                        }
-                    }
-                    .menuStyle(.borderlessButton)
-                }
-
-                // Compression Level
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Compression Level")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(SubtleTheme.textSecondary)
-
-                    Menu {
-                        Button("Fast") { viewModel.archiveCompressionLevel = "Fast" }
-                        Button("Normal") { viewModel.archiveCompressionLevel = "Normal" }
-                        Button("Maximum") { viewModel.archiveCompressionLevel = "Maximum" }
-                    } label: {
-                        HStack {
-                            Text(viewModel.archiveCompressionLevel)
-                                .font(.system(size: 12))
-                                .foregroundStyle(SubtleTheme.textPrimary)
-                            Spacer()
-                            Image(systemName: "chevron.up.chevron.down")
-                                .font(.system(size: 10))
-                                .foregroundStyle(SubtleTheme.textSecondary)
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 7)
-                        .background {
-                            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .fill(SubtleTheme.cardBackgroundSubtle)
-                                .overlay {
-                                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                        .stroke(SubtleTheme.cardBorder, lineWidth: 0.6)
-                                }
-                        }
-                    }
-                    .menuStyle(.borderlessButton)
-                }
-            }
-
-            // Split into multiple volumes checkbox (Screen 6 Reference)
-            Toggle("Split into multiple volumes (optional)", isOn: $viewModel.splitArchiveVolumes)
-                .font(.system(size: 11))
-                .foregroundStyle(SubtleTheme.textSecondary)
-                .toggleStyle(.checkbox)
-
-            // Output File Name (Screen 6 Reference)
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Output File Name")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(SubtleTheme.textSecondary)
-
-                HStack {
-                    TextField("Archive", text: $viewModel.archiveOutputFilename)
-                        .textFieldStyle(.plain)
-                        .font(.system(size: 12))
-                        .foregroundStyle(SubtleTheme.textPrimary)
-                    Text(".\(viewModel.archiveFormat.rawValue)")
-                        .font(.system(size: 11))
-                        .foregroundStyle(SubtleTheme.textTertiary)
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .background {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(SubtleTheme.cardBackgroundSubtle)
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .stroke(SubtleTheme.cardBorder, lineWidth: 0.6)
-                        }
-                }
+                .frame(height: 120)
+                .background(RoundedRectangle(cornerRadius: 6).fill(.quaternary))
             }
         }
     }
 
-    // MARK: - Output Location Section (Screen 6 Reference)
-
-    private var outputLocationSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Output Location")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(SubtleTheme.textSecondary)
-
-            HStack(spacing: 8) {
-                HStack(spacing: 6) {
-                    Image(systemName: "folder.fill")
-                        .font(.system(size: 12))
-                        .foregroundStyle(SubtleTheme.blue)
-                    Text(viewModel.outputLocationName)
-                        .font(.system(size: 12))
-                        .foregroundStyle(SubtleTheme.textPrimary)
-                    Spacer()
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(.system(size: 10))
-                        .foregroundStyle(SubtleTheme.textSecondary)
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .background {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(SubtleTheme.cardBackgroundSubtle)
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .stroke(SubtleTheme.cardBorder, lineWidth: 0.6)
-                        }
-                }
-
-                Button {
-                    viewModel.chooseOutputFolder()
-                } label: {
-                    Image(systemName: "folder.badge.gearshape")
-                        .font(.system(size: 13))
-                        .foregroundStyle(SubtleTheme.textSecondary)
-                        .frame(width: 32, height: 32)
-                        .background {
-                            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .fill(SubtleTheme.cardBackgroundSubtle)
-                                .overlay {
-                                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                        .stroke(SubtleTheme.cardBorder, lineWidth: 0.6)
-                                }
-                        }
-                }
-                .buttonStyle(.plain)
+    private func loadArchiveEntries(url: URL) {
+        viewModel.isLoadingArchiveEntries = true
+        Task.detached(priority: .userInitiated) {
+            let (_, _, entries) = (try? ArchiveEngine.shared.inspect(url: url)) ?? (0, 0, [])
+            await MainActor.run {
+                self.viewModel.archiveEntries = entries
+                self.viewModel.isLoadingArchiveEntries = false
             }
         }
-    }
-
-    // MARK: - Extraction / Inspect Subview
-
-    private var extractionInspectView: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            if let first = viewModel.droppedFiles.first {
-                HStack(spacing: 10) {
-                    Image(systemName: "archivebox.fill")
-                        .font(.system(size: 24))
-                        .foregroundStyle(SubtleTheme.cyan)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(first.filename)
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(SubtleTheme.textPrimary)
-                        Text(first.formattedFileSize)
-                            .font(.system(size: 11))
-                            .foregroundStyle(SubtleTheme.textSecondary)
-                    }
-                    Spacer()
-                }
-                .padding(12)
-                .background {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(SubtleTheme.cardBackgroundSubtle)
-                }
-            } else {
-                Text("Select an archive to inspect or extract")
-                    .font(.system(size: 12))
-                    .foregroundStyle(SubtleTheme.textSecondary)
-            }
-        }
-    }
-
-    // MARK: - Bottom Action Bar (Screen 6 Reference)
-
-    private var bottomActionBar: some View {
-        HStack {
-            Button {
-                viewModel.resetCurrentTool()
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "arrow.counterclockwise")
-                        .font(.system(size: 11))
-                    Text("Reset")
-                        .font(.system(size: 12))
-                }
-                .foregroundStyle(SubtleTheme.textSecondary)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(SubtleTheme.cardBackgroundSubtle)
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .stroke(SubtleTheme.cardBorder, lineWidth: 0.6)
-                        }
-                }
-            }
-            .buttonStyle(.plain)
-
-            Spacer()
-
-            if viewModel.isProcessing {
-                ProgressView()
-                    .scaleEffect(0.8)
-                Text("Processing...")
-                    .font(.system(size: 12))
-                    .foregroundStyle(SubtleTheme.textSecondary)
-            }
-
-            Button {
-                Task {
-                    await viewModel.runActiveCommand()
-                }
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "archivebox")
-                        .font(.system(size: 12))
-                    Text(isExtractionOrInspect ? "Extract" : "Create Archive")
-                        .font(.system(size: 12, weight: .semibold))
-                    Image(systemName: "arrow.left.arrow.right")
-                        .font(.system(size: 10))
-                }
-                .foregroundStyle(Color.white)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 7)
-                .background {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(SubtleTheme.accentGradient)
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .stroke(Color.white.opacity(0.20), lineWidth: 0.8)
-                        }
-                }
-            }
-            .buttonStyle(.plain)
-            .disabled(viewModel.isProcessing || viewModel.droppedFiles.isEmpty)
-        }
-        .padding(.top, 4)
     }
 }

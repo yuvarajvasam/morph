@@ -31,16 +31,17 @@ public struct GlassCard<Content: View>: View {
                         }
                 } else {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(isSelected ? AnyShapeStyle(SubtleTheme.accentTint) : AnyShapeStyle(hover.isHovered ? SubtleTheme.surfaceHover : SubtleTheme.cardBackgroundSubtle))
+                        .fill(isSelected ? AnyShapeStyle(Color.accentColor.opacity(0.18)) : AnyShapeStyle(.thickMaterial))
                         .overlay {
+                            // Glass edge inner stroke
                             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                                .stroke(isSelected ? AnyShapeStyle(SubtleTheme.accentBorder) : AnyShapeStyle(hover.isHovered ? SubtleTheme.cardBorderHover : SubtleTheme.cardBorder), lineWidth: isSelected ? 1.0 : 0.6)
+                                .stroke(isSelected ? AnyShapeStyle(Color.accentColor.opacity(0.80)) : AnyShapeStyle(.quaternary), lineWidth: isSelected ? 1.5 : 0.5)
                         }
                         .shadow(
-                            color: Color.black.opacity(hover.isHovered ? 0.14 : 0.06),
-                            radius: hover.isHovered ? 6 : 2,
+                            color: Color.black.opacity(hover.isHovered ? 0.10 : 0.05),
+                            radius: hover.isHovered ? 8 : 4,
                             x: 0,
-                            y: hover.isHovered ? 2 : 1
+                            y: hover.isHovered ? 3 : 1.5
                         )
                 }
             }

@@ -2,33 +2,8 @@ import SwiftUI
 import AppKit
 import UserNotifications
 
-public enum LauncherViewMode: String, CaseIterable, Identifiable {
-    case launcher = "Launcher"
-    case grid = "Grid"
-    case list = "List"
-
-    public var id: String { rawValue }
-
-    public var icon: String {
-        switch self {
-        case .launcher: return "square.grid.2x2"
-        case .grid: return "square.grid.3x3"
-        case .list: return "list.bullet"
-        }
-    }
-}
-
-public enum LauncherTab: String, CaseIterable, Identifiable {
-    case dropFiles = "Drop Files"
-    case browseTools = "Browse Tools"
-
-    public var id: String { rawValue }
-}
-
 @MainActor
 public final class LauncherViewModel: ObservableObject {
-    @Published public var viewMode: LauncherViewMode = .launcher
-    @Published public var activeLauncherTab: LauncherTab = .dropFiles
     @Published public var searchQuery: String = ""
     @Published public var selectedIndex: Int = 0
     @Published public var droppedFiles: [FileItem] = []
@@ -41,24 +16,6 @@ public final class LauncherViewModel: ObservableObject {
     @Published public var isShowingSettings: Bool = false
     @Published public var isShowingActionPanel: Bool = false
     @Published public var copyStatusMessage: String?
-
-    // Tool Form Controls & Output Location
-    @Published public var outputLocationName: String = "Downloads"
-    @Published public var customOutputFolderURL: URL? = nil
-
-    // Archive options (Screen 6)
-    @Published public var archiveCompressionLevel: String = "Normal"
-    @Published public var splitArchiveVolumes: Bool = false
-    @Published public var archiveOutputFilename: String = "Archive"
-
-    // PDF Merge options (Screen 5)
-    @Published public var pdfMergeOutputFilename: String = "Merged Document"
-
-    // Image options (Screen 4 & Extended)
-    @Published public var imageOutputFormatSelection: String = "Keep Original (JPG)"
-    @Published public var cropAspectRatio: String = "1:1 Square"
-    @Published public var watermarkText: String = "Confidential"
-    @Published public var watermarkOpacity: Double = 0.5
 
     // Settings
     @Published public var imageSettings = ImageSettings()
@@ -112,21 +69,6 @@ public final class LauncherViewModel: ObservableObject {
     public init() {
         self.imageSettings.compressionPreset = preferences.defaultImagePreset
         self.pdfSettings.compressionPreset = preferences.defaultPDFPreset
-        self.customOutputFolderURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
-        self.outputLocationName = "Downloads"
-
-        if preferences.defaultViewMode == "List" {
-            self.viewMode = .list
-        } else if preferences.defaultViewMode == "Grid" {
-            self.viewMode = .grid
-        } else {
-            self.viewMode = .launcher
-        }
-
-        if preferences.defaultCategory != "All",
-           let cat = ConversionCategory.allCases.first(where: { $0.rawValue == preferences.defaultCategory }) {
-            self.selectedCategory = cat
-        }
     }
 
     public var formattedQRPayload: String {
@@ -226,97 +168,11 @@ public final class LauncherViewModel: ObservableObject {
             self.pdfSettings.pdfToImageFormat = preferences.defaultPDFToImageFormat
             self.pdfSettings.imageToPDFPageSize = preferences.defaultImageToPDFPageSize
         }
-    }
 
-    public func toggleViewMode() {
-        withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
-            switch viewMode {
-            case .launcher:
-                viewMode = .grid
-            case .grid:
-                viewMode = .list
-            case .list:
-                viewMode = .launcher
-            }
+        // If command does not require input file (like QR/Barcode generator), skip file picker
+        if command.id != "qr.generate" && command.id != "barcode.generate" && droppedFiles.isEmpty {
+            openFilePicker()
         }
-    }
-
-    public func chooseOutputFolder() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
-        panel.canCreateDirectories = true
-        panel.title = "Choose Destination Folder"
-        panel.prompt = "Select"
-        if panel.runModal() == .OK, let url = panel.url {
-            self.customOutputFolderURL = url
-            self.outputLocationName = url.lastPathComponent
-        }
-    }
-
-    public func resetCurrentTool() {
-        withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
-            imageSettings = ImageSettings()
-            pdfSettings = PDFSettings()
-            customOutputFilename = ""
-            archiveFormat = .zip
-            archiveCompressionLevel = "Normal"
-            splitArchiveVolumes = false
-            archiveOutputFilename = "Archive"
-            pdfMergeOutputFilename = "Merged Document"
-            imageOutputFormatSelection = "Keep Original (JPG)"
-            cropAspectRatio = "1:1 Square"
-            watermarkText = "Confidential"
-            watermarkOpacity = 0.5
-            qrContentType = .url
-            qrTextContent = "https://morph.app"
-            qrPixelSize = 512
-            qrErrorCorrection = .medium
-            outputLocationName = "Downloads"
-            customOutputFolderURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
-            copyStatusMessage = "Settings Reset"
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
-                self?.copyStatusMessage = nil
-            }
-        }
-    }
-
-    public func removeFile(at index: Int) {
-        guard index >= 0 && index < droppedFiles.count else { return }
-        droppedFiles.remove(at: index)
-        if index < pageReorderList.count {
-            pageReorderList.remove(at: index)
-        }
-    }
-
-    public func moveDroppedFile(from source: Int, to destination: Int) {
-        guard source >= 0 && source < droppedFiles.count,
-              destination >= 0 && destination < droppedFiles.count,
-              source != destination else { return }
-        let item = droppedFiles.remove(at: source)
-        droppedFiles.insert(item, at: destination)
-    }
-
-    public func searchMatchCount(for category: ConversionCategory?) -> Int {
-        let trimmed = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty {
-            if let category {
-                return registry.commands(for: category).count
-            }
-            return registry.allCommands.count
-        }
-        let matches = registry.search(query: trimmed)
-        if let category {
-            return matches.filter { $0.category == category }.count
-        }
-        return matches.count
-    }
-
-    public var relatedCommandsForSearch: [ConversionCommand] {
-        guard !searchQuery.isEmpty else { return [] }
-        let directMatches = Set(filteredCommands.map { $0.id })
-        return registry.allCommands.filter { !directMatches.contains($0.id) }.prefix(3).map { $0 }
     }
 
     public func goBack() {
@@ -503,14 +359,36 @@ public final class LauncherViewModel: ObservableObject {
 
         do {
             let targetDirectory: URL?
-            if let custom = customOutputFolderURL {
-                targetDirectory = custom
-            } else if preferences.outputLocationMode == .sameAsSource {
+            if preferences.outputLocationMode == .sameAsSource {
                 targetDirectory = droppedFiles.first?.url.deletingLastPathComponent()
             } else if preferences.outputLocationMode == .customFolder {
                 targetDirectory = preferences.customOutputDirectoryURL ?? droppedFiles.first?.url.deletingLastPathComponent()
+            } else if preferences.outputLocationMode == .askWhereToSave {
+                guard let first = droppedFiles.first else { throw ProcessingError.emptyInput }
+                let savePanel = NSSavePanel()
+                savePanel.canCreateDirectories = true
+                let defaultExt: String
+                if command.id == "image.convert" {
+                    defaultExt = imageSettings.format.fileExtension
+                } else if command.id.hasPrefix("pdf") || command.id == "image.toPDF" {
+                    defaultExt = "pdf"
+                } else {
+                    defaultExt = first.url.pathExtension
+                }
+                let baseName = (first.filename as NSString).deletingPathExtension
+                let opSuffix = command.id.components(separatedBy: ".").last ?? "processed"
+                savePanel.nameFieldStringValue = "\(baseName)-\(opSuffix).\(defaultExt)"
+                savePanel.directoryURL = first.url.deletingLastPathComponent()
+                savePanel.title = "Save \(command.title) Output As..."
+                if savePanel.runModal() == .OK, let chosenURL = savePanel.url {
+                    targetDirectory = chosenURL.deletingLastPathComponent()
+                    customOutputFilename = chosenURL.lastPathComponent
+                } else {
+                    isProcessing = false
+                    return
+                }
             } else {
-                targetDirectory = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
+                targetDirectory = droppedFiles.first?.url.deletingLastPathComponent()
             }
 
             switch command.id {
@@ -525,7 +403,7 @@ public final class LauncherViewModel: ObservableObject {
                 )
                 self.currentResult = res
 
-            case "image.convert", "image.formatConverter":
+            case "image.convert":
                 guard let first = droppedFiles.first else { throw ProcessingError.emptyInput }
                 progress = 0.4
                 let res = try await processor.imageEngine.convert(
@@ -534,55 +412,6 @@ public final class LauncherViewModel: ObservableObject {
                     quality: imageSettings.compressionPreset.imageQualityFactor,
                     destinationDirectory: targetDirectory,
                     stripMetadata: preferences.stripImageMetadata
-                )
-                self.currentResult = res
-
-            case "image.crop":
-                guard let first = droppedFiles.first else { throw ProcessingError.emptyInput }
-                progress = 0.4
-                let res = try await processor.imageEngine.crop(
-                    inputURL: first.url,
-                    aspectRatio: cropAspectRatio,
-                    destinationDirectory: targetDirectory
-                )
-                self.currentResult = res
-
-            case "image.rotate":
-                guard let first = droppedFiles.first else { throw ProcessingError.emptyInput }
-                progress = 0.4
-                let res = try await processor.imageEngine.rotate(
-                    inputURL: first.url,
-                    degrees: rotationSelection,
-                    destinationDirectory: targetDirectory
-                )
-                self.currentResult = res
-
-            case "image.watermark":
-                guard let first = droppedFiles.first else { throw ProcessingError.emptyInput }
-                progress = 0.4
-                let res = try await processor.imageEngine.watermark(
-                    inputURL: first.url,
-                    text: watermarkText,
-                    opacity: CGFloat(watermarkOpacity),
-                    destinationDirectory: targetDirectory
-                )
-                self.currentResult = res
-
-            case "image.removeBg":
-                guard let first = droppedFiles.first else { throw ProcessingError.emptyInput }
-                progress = 0.4
-                let res = try await processor.imageEngine.removeBackground(
-                    inputURL: first.url,
-                    destinationDirectory: targetDirectory
-                )
-                self.currentResult = res
-
-            case "image.heicToJpg":
-                guard let first = droppedFiles.first else { throw ProcessingError.emptyInput }
-                progress = 0.4
-                let res = try await processor.imageEngine.heicToJpg(
-                    inputURL: first.url,
-                    destinationDirectory: targetDirectory
                 )
                 self.currentResult = res
 
@@ -664,10 +493,9 @@ public final class LauncherViewModel: ObservableObject {
             case "pdf.merge":
                 let urls = droppedFiles.map { $0.url }
                 progress = 0.4
-                let mergeName = pdfMergeOutputFilename.isEmpty ? "Merged Document.pdf" : (pdfMergeOutputFilename.hasSuffix(".pdf") ? pdfMergeOutputFilename : "\(pdfMergeOutputFilename).pdf")
                 let res = try await processor.pdfEngine.merge(
                     pdfURLs: urls,
-                    outputFilename: mergeName,
+                    outputFilename: customOutputFilename.isEmpty ? "merged-document.pdf" : customOutputFilename,
                     destinationDirectory: targetDirectory,
                     stripMetadata: preferences.stripPDFMetadata
                 )
@@ -739,11 +567,10 @@ public final class LauncherViewModel: ObservableObject {
             case "archive.compress":
                 let urls = droppedFiles.map { $0.url }
                 progress = 0.4
-                let finalArchiveName = archiveOutputFilename.isEmpty ? "Archive" : archiveOutputFilename
                 let res = try await ArchiveEngine.shared.createArchive(
                     sources: urls,
                     format: archiveFormat,
-                    customName: finalArchiveName,
+                    customName: customOutputFilename.isEmpty ? nil : customOutputFilename,
                     destinationDirectory: targetDirectory
                 )
                 self.currentResult = res

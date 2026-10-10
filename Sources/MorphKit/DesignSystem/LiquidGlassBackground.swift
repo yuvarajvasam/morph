@@ -71,21 +71,21 @@ public struct LiquidGlassBackgroundModifier: ViewModifier {
                             cornerRadius: cornerRadius
                         )
 
-                        // Subtle dark graphite wash layer matching reference design
+                        // Floating HUD material layer
                         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .fill(SubtleTheme.windowBackground.opacity(0.88))
+                            .fill(.ultraThickMaterial)
                     }
                     .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
                     .overlay {
-                        // Subtle rim border
+                        // Inner stroke (glass edge) to simulate the physical edge of glass
                         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .stroke(SubtleTheme.cardBorder, lineWidth: 1.0)
+                            .stroke(.quaternary, lineWidth: 0.5)
                     }
                     .shadow(
-                        color: Color.black.opacity(0.35),
-                        radius: 24,
+                        color: Color.black.opacity(0.15),
+                        radius: 12,
                         x: 0,
-                        y: 12
+                        y: 4
                     )
                 }
             }
