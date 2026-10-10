@@ -75,31 +75,24 @@ public struct LauncherView: View {
             }
         }
         .overlay {
-            // Dismissal backdrop when Action Panel is open
+            // Raycast Contextual Action Panel (⌘K)
             if viewModel.isShowingActionPanel {
-                Color.black.opacity(0.18)
-                    .ignoresSafeArea()
-                    .onTapGesture {
+                ZStack {
+                    Color.black.opacity(0.35)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+                                viewModel.isShowingActionPanel = false
+                            }
+                        }
+
+                    ActionPanelView(viewModel: viewModel) {
                         withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
                             viewModel.isShowingActionPanel = false
                         }
                     }
-            }
-        }
-        .overlay(alignment: .bottomTrailing) {
-            // Raycast Contextual Action Panel (⌘K) anchored at bottom-right
-            if viewModel.isShowingActionPanel {
-                ActionPanelView(viewModel: viewModel) {
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
-                        viewModel.isShowingActionPanel = false
-                    }
                 }
-                .padding(.trailing, 14)
-                .padding(.bottom, 46)
-                .transition(.asymmetric(
-                    insertion: .opacity.combined(with: .scale(scale: 0.95, anchor: .bottomTrailing)),
-                    removal: .opacity.combined(with: .scale(scale: 0.95, anchor: .bottomTrailing))
-                ))
+                .transition(.opacity.combined(with: .scale(scale: 0.96)))
             }
         }
         .overlay(alignment: .top) {
@@ -164,46 +157,17 @@ public struct LauncherView: View {
                 .foregroundStyle(Color.accentColor)
             }
 
-            // Category Filter Dropdown Pill (Screenshot 2026-10-10 at 9.02.08 PM, image-4.png, image-9.png)
-            Menu {
-                Button("All Categories") {
-                    withAnimation {
-                        viewModel.selectedCategory = nil
-                        viewModel.selectedIndex = 0
-                    }
+            GlassButton("Actions", icon: "command", shortcutBadge: "⌘K", variant: .ghost, size: .small, tooltip: "Contextual actions (⌘K)") {
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+                    viewModel.isShowingActionPanel.toggle()
                 }
-                ForEach(ConversionCategory.allCases) { cat in
-                    Button {
-                        withAnimation {
-                            viewModel.selectedCategory = cat
-                            viewModel.selectedIndex = 0
-                        }
-                    } label: {
-                        Label(cat.displayName, systemImage: cat.icon)
-                    }
-                }
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: viewModel.selectedCategory?.icon ?? "square.grid.2x2")
-                        .font(.system(size: 10, weight: .semibold))
-                    Text(viewModel.selectedCategory?.displayName ?? "All Categories")
-                        .font(.system(size: 11, weight: .medium))
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 8, weight: .bold))
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Capsule().fill(Color.primary.opacity(0.06)))
-                .foregroundStyle(.primary)
             }
-            .menuStyle(.borderlessButton)
 
-            GlassButton("Open", icon: "folder", shortcutBadge: "⌘O", variant: .ghost, size: .small, tooltip: "Choose files (⌘O)") {
+            GlassButton("Open", icon: "folder", shortcutBadge: "⌘O", variant: .secondary, size: .small) {
                 viewModel.openFilePicker()
             }
 
-            GlassButton("", icon: "ellipsis", shortcutBadge: "⌘,", variant: .ghost, size: .small, tooltip: "Settings (⌘,)") {
+            GlassButton("", icon: "gearshape", shortcutBadge: "⌘,", variant: .ghost, size: .small, tooltip: "Settings (⌘,)") {
                 SettingsWindowController.shared.show()
             }
         }
@@ -438,9 +402,11 @@ public struct LauncherView: View {
                     commandListView
                 }
 
-                // Raycast Bottom Action Bar
-                Divider().overlay(.quaternary)
-                raycastActionBar
+                // Persistent Footer (only when in launcher search/browse mode)
+                if !isToolOrResultOpen {
+                    Divider().overlay(.quaternary)
+                    footerShortcutBar
+                }
             }
         }
     }
@@ -717,166 +683,45 @@ public struct LauncherView: View {
         }
     }
 
-    // MARK: - Raycast Action Bar
+    // MARK: - Footer Shortcut Bar
 
-    private var raycastActionBar: some View {
-        HStack(spacing: 8) {
-            // Left Pill: Contextual Identity & Status
-            HStack(spacing: 6) {
-                Image(systemName: contextIcon)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(Color.accentColor)
-
-                Text(contextTitle)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.primary)
-
-                if let subtitle = contextSubtitle {
-                    Text(subtitle)
-                        .font(.system(size: 11, weight: .regular))
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background {
-                Capsule(style: .continuous)
-                    .fill(.quaternary.opacity(0.6))
-                    .overlay {
-                        Capsule(style: .continuous)
-                            .stroke(Color.primary.opacity(0.06), lineWidth: 0.5)
-                    }
-            }
+    private var footerShortcutBar: some View {
+        HStack(spacing: 12) {
+            shortcutBadge("↑↓", label: "Navigate")
+            shortcutBadge("↩", label: "Select")
+            shortcutBadge("Space", label: "Preview")
+            shortcutBadge("⌘K", label: "Actions")
+            shortcutBadge("⌘D", label: "Favorite")
+            shortcutBadge("⌘O", label: "Browse")
 
             Spacer()
 
-            // Right Pill: Primary Action ↵ | Actions ⌘K
-            HStack(spacing: 8) {
-                Button {
-                    executePrimaryAction()
-                } label: {
-                    HStack(spacing: 5) {
-                        Text(primaryActionTitle)
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(.primary)
-
-                        Text("↵")
-                            .font(.system(size: 10, weight: .bold))
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 1.5)
-                            .background(RoundedRectangle(cornerRadius: 3.5, style: .continuous).fill(Color.primary.opacity(0.12)))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .buttonStyle(.plain)
-                .disabled(viewModel.isProcessing)
-
-                // Divider line
-                Rectangle()
-                    .fill(Color.primary.opacity(0.15))
-                    .frame(width: 1, height: 12)
-
-                Button {
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
-                        viewModel.isShowingActionPanel.toggle()
-                    }
-                } label: {
-                    HStack(spacing: 5) {
-                        Text("Actions")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.secondary)
-
-                        Text("⌘K")
-                            .font(.system(size: 10, weight: .bold))
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 1.5)
-                            .background(RoundedRectangle(cornerRadius: 3.5, style: .continuous).fill(Color.primary.opacity(0.12)))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background {
-                Capsule(style: .continuous)
-                    .fill(.quaternary.opacity(0.6))
-                    .overlay {
-                        Capsule(style: .continuous)
-                            .stroke(Color.primary.opacity(0.06), lineWidth: 0.5)
-                    }
+            HStack(spacing: 5) {
+                Image(systemName: "lock.shield.fill")
+                    .symbolRenderingMode(.hierarchical)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.green)
+                Text("100% Offline & Private")
+                    .font(.figmaCaption1(emphasized: true))
+                    .foregroundStyle(.secondary)
             }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
     }
 
-    private var contextIcon: String {
-        if let cmd = viewModel.activeCommand {
-            return cmd.systemIcon
-        } else if viewModel.currentResult != nil {
-            return "checkmark.circle.fill"
-        } else if viewModel.isShowingSettings {
-            return "gearshape.fill"
-        } else if !viewModel.droppedFiles.isEmpty {
-            return "paperclip"
-        } else {
-            return "circle.grid.2x2.fill"
-        }
-    }
-
-    private var contextTitle: String {
-        if let cmd = viewModel.activeCommand {
-            return cmd.title
-        } else if viewModel.currentResult != nil {
-            return "Result Preview"
-        } else if viewModel.isShowingSettings {
-            return "Preferences"
-        } else if !viewModel.droppedFiles.isEmpty {
-            let count = viewModel.droppedFiles.count
-            return "\(count) File\(count > 1 ? "s" : "")"
-        } else {
-            return "Morph"
-        }
-    }
-
-    private var contextSubtitle: String? {
-        if viewModel.activeCommand != nil || viewModel.currentResult != nil || viewModel.isShowingSettings {
-            return nil
-        }
-        if !viewModel.droppedFiles.isEmpty {
-            return viewModel.droppedFiles.first?.filename
-        }
-        let count = viewModel.filteredCommands.count
-        return "\(count) tools"
-    }
-
-    private var primaryActionTitle: String {
-        if viewModel.currentResult != nil {
-            return "Open File"
-        } else if viewModel.isShowingSettings {
-            return "Done"
-        } else if viewModel.activeCommand != nil {
-            return viewModel.isProcessing ? "Processing..." : "Process"
-        } else {
-            return "Open"
-        }
-    }
-
-    private func executePrimaryAction() {
-        if let primary = viewModel.currentResult?.primaryOutputURL {
-            viewModel.openFile(url: primary)
-        } else if viewModel.isShowingSettings {
-            withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
-                viewModel.isShowingSettings = false
-            }
-        } else if viewModel.activeCommand != nil {
-            guard !viewModel.isProcessing else { return }
-            Task {
-                await viewModel.runActiveCommand()
-            }
-        } else {
-            viewModel.selectCurrent()
+    private func shortcutBadge(_ key: String, label: String) -> some View {
+        HStack(spacing: 4) {
+            Text(key)
+                .font(.figmaCaption2(emphasized: true))
+                .monospacedDigit()
+                .padding(.horizontal, 4)
+                .padding(.vertical, 2)
+                .background(RoundedRectangle(cornerRadius: 4, style: .continuous).fill(.quaternary))
+                .foregroundStyle(.secondary)
+            Text(label)
+                .font(.figmaCaption1())
+                .foregroundStyle(.secondary)
         }
     }
 

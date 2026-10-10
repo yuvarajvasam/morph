@@ -27,7 +27,6 @@ public struct ActionItem: Identifiable {
     }
 }
 
-/// Raycast-style Action Panel anchored at bottom-right (image.webp, image-4.png, image-6.png)
 public struct ActionPanelView: View {
     @ObservedObject var viewModel: LauncherViewModel
     let onDismiss: () -> Void
@@ -56,7 +55,7 @@ public struct ActionPanelView: View {
             ))
         } else if let selectedCmd = viewModel.selectedCommandForActions {
             items.append(ActionItem(
-                title: "Open \(selectedCmd.title)",
+                title: "Select \(selectedCmd.title)",
                 systemIcon: "arrow.forward.circle.fill",
                 shortcut: "↩",
                 section: "Primary Action",
@@ -79,7 +78,7 @@ public struct ActionPanelView: View {
             ))
         }
 
-        // File Actions (when files are present)
+        // File Actions
         if let first = viewModel.droppedFiles.first {
             items.append(ActionItem(
                 title: "Quick Look Preview",
@@ -142,7 +141,7 @@ public struct ActionPanelView: View {
 
         // General
         items.append(ActionItem(
-            title: "Open Settings",
+            title: "Open Preferences",
             systemIcon: "gearshape",
             shortcut: "⌘,",
             section: "Application",
@@ -153,7 +152,7 @@ public struct ActionPanelView: View {
         ))
 
         items.append(ActionItem(
-            title: "Clear All / Back to Root",
+            title: "Clear All / Reset",
             systemIcon: "arrow.counterclockwise",
             shortcut: "⎋",
             section: "Application",
@@ -179,70 +178,63 @@ public struct ActionPanelView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            // Actions List with Grouped Sections
+            // Header Search Field
+            HStack(spacing: 8) {
+                Image(systemName: "command")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
+
+                TextField("Search Actions...", text: $viewModel.actionSearchQuery)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 13, weight: .medium))
+                    .focused($isActionSearchFocused)
+
+                GlassButton("Done", shortcutBadge: "⎋", variant: .ghost, size: .small) {
+                    onDismiss()
+                }
+            }
+            .padding(10)
+            .background(.ultraThinMaterial)
+
+            Divider().overlay(.quaternary)
+
+            // Actions List
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 3) {
+                LazyVStack(spacing: 3) {
                     let actions = filteredActions
-                    let grouped = Dictionary(grouping: actions, by: { $0.section })
-                    let sections = ["Primary Action", "Tool Actions", "File Actions", "Application"].filter { grouped[$0] != nil }
-
-                    ForEach(sections, id: \.self) { sectionName in
-                        if let sectionItems = grouped[sectionName] {
-                            Text(sectionName.uppercased())
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, 10)
-                                .padding(.top, 8)
-                                .padding(.bottom, 2)
-
-                            ForEach(sectionItems) { item in
-                                let index = actions.firstIndex(where: { $0.id == item.id }) ?? 0
-                                actionRow(index: index, item: item)
-                            }
-                        }
+                    ForEach(Array(actions.enumerated()), id: \.element.id) { index, item in
+                        actionRow(index: index, item: item)
                     }
                 }
-                .padding(6)
+                .padding(8)
             }
             .frame(maxHeight: 280)
 
             Divider().overlay(.quaternary)
 
-            // Bottom Search Field (as seen in image.webp, image-4.png, image-6.png)
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
+            // Bottom bar
+            HStack {
+                Text("Raycast-style Actions Menu")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
-
-                TextField("Search for actions...", text: $viewModel.actionSearchQuery)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 12))
-                    .focused($isActionSearchFocused)
-
-                if !viewModel.actionSearchQuery.isEmpty {
-                    Button {
-                        viewModel.actionSearchQuery = ""
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                }
+                Spacer()
+                Text("Press ↩ to execute")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
             }
             .padding(.horizontal, 10)
-            .padding(.vertical, 8)
+            .padding(.vertical, 6)
             .background(.ultraThinMaterial)
         }
-        .frame(width: 320)
+        .frame(width: 380)
         .background {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(.thickMaterial)
                 .overlay {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(.white.opacity(0.14), lineWidth: 0.8)
+                        .stroke(.quaternary, lineWidth: 1)
                 }
-                .shadow(color: .black.opacity(0.38), radius: 20, x: 0, y: 10)
+                .shadow(color: .black.opacity(0.35), radius: 24, x: 0, y: 12)
         }
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -254,11 +246,11 @@ public struct ActionPanelView: View {
     private func actionRow(index: Int, item: ActionItem) -> some View {
         let isSelected = (index == viewModel.selectedActionIndex)
 
-        return HStack(spacing: 8) {
+        return HStack(spacing: 10) {
             Image(systemName: item.systemIcon)
-                .font(.system(size: 12, weight: .medium))
+                .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(item.isDestructive ? Color.red : (isSelected ? Color.white : Color.accentColor))
-                .frame(width: 16)
+                .frame(width: 18)
 
             Text(item.title)
                 .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
@@ -269,7 +261,7 @@ public struct ActionPanelView: View {
             if let shortcut = item.shortcut {
                 Text(shortcut)
                     .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                    .foregroundStyle(isSelected ? Color.white.opacity(0.9) : Color.secondary)
+                    .foregroundStyle(isSelected ? Color.white.opacity(0.8) : Color.secondary)
                     .padding(.horizontal, 5)
                     .padding(.vertical, 2)
                     .background(RoundedRectangle(cornerRadius: 4).fill(isSelected ? Color.white.opacity(0.2) : Color.primary.opacity(0.06)))
@@ -280,7 +272,7 @@ public struct ActionPanelView: View {
         .background {
             if isSelected {
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(item.isDestructive ? Color.red.opacity(0.85) : Color.accentColor)
+                    .fill(item.isDestructive ? Color.red.opacity(0.8) : Color.accentColor)
             }
         }
         .contentShape(Rectangle())

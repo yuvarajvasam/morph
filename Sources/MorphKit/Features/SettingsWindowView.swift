@@ -6,8 +6,6 @@ public enum SettingsTab: String, CaseIterable, Identifiable {
     case appearance = "Appearance"
     case imageTools = "Image Tools"
     case pdfTools = "PDF Tools"
-    case archiveTools = "Archive Tools"
-    case qrTools = "QR & Barcodes"
     case output = "Output"
     case shortcuts = "Shortcuts"
     case about = "About"
@@ -16,42 +14,24 @@ public enum SettingsTab: String, CaseIterable, Identifiable {
 
     public var systemIcon: String {
         switch self {
-        case .general: return "gearshape.fill"
-        case .appearance: return "paintbrush.fill"
-        case .imageTools: return "photo.stack.fill"
-        case .pdfTools: return "doc.text.fill"
-        case .archiveTools: return "archivebox.fill"
-        case .qrTools: return "qrcode"
-        case .output: return "folder.fill"
-        case .shortcuts: return "command"
-        case .about: return "info.circle.fill"
-        }
-    }
-
-    public var iconColor: Color {
-        switch self {
-        case .general: return .secondary
-        case .appearance: return .purple
-        case .imageTools: return .orange
-        case .pdfTools: return .red
-        case .archiveTools: return .blue
-        case .qrTools: return .indigo
-        case .output: return .cyan
-        case .shortcuts: return .secondary
-        case .about: return .secondary
+        case .general: return "gearshape"
+        case .appearance: return "paintbrush"
+        case .imageTools: return "photo.stack"
+        case .pdfTools: return "doc.richtext"
+        case .output: return "folder"
+        case .shortcuts: return "keyboard"
+        case .about: return "info.circle"
         }
     }
 
     public var subtitle: String {
         switch self {
-        case .general: return "System startup, menu bar integration, and notifications."
-        case .appearance: return "Visual theme, interface density, and materials."
-        case .imageTools: return "Default compression presets, formats, and metadata stripping."
-        case .pdfTools: return "Document optimization, raster DPI, and safeguards."
-        case .archiveTools: return "Compression formats, preservation, and extraction behavior."
-        case .qrTools: return "Error correction levels, barcode encoding, and exports."
+        case .general: return "System startup, menu bar integration, and feedback."
+        case .appearance: return "Visual theme, launcher dimensions, and motion."
+        case .imageTools: return "Default optimization presets, formats, and privacy."
+        case .pdfTools: return "Document compression, raster DPI, and page safeguards."
         case .output: return "Save destinations, custom folders, and collision handling."
-        case .shortcuts: return "Global launcher hotkey and navigation reference."
+        case .shortcuts: return "Global hotkeys and keyboard navigation reference."
         case .about: return "Architecture, offline guarantee, and version information."
         }
     }
@@ -60,12 +40,10 @@ public enum SettingsTab: String, CaseIterable, Identifiable {
 @MainActor
 public final class SettingsTabState: ObservableObject {
     @Published public var selectedTab: SettingsTab = .general
-    @Published public var searchQuery: String = ""
     @Published public var showResetConfirm: Bool = false
     public init() {}
 }
 
-/// Raycast-style Settings Window (Screenshot 2026-10-10 at 9.20.14 PM, 9.20.33 PM, 9.20.54 PM, 9.21.03 PM, 9.21.19 PM)
 public struct SettingsWindowView: View {
     @ObservedObject public var preferences = PreferencesManager.shared
     @ObservedObject public var tabState: SettingsTabState
@@ -74,200 +52,60 @@ public struct SettingsWindowView: View {
         self.tabState = tabState
     }
 
-    private var filteredTabs: [SettingsTab] {
-        if tabState.searchQuery.trimmingCharacters(in: .whitespaces).isEmpty {
-            return SettingsTab.allCases
-        }
-        let q = tabState.searchQuery.lowercased()
-        return SettingsTab.allCases.filter {
-            $0.rawValue.lowercased().contains(q) || $0.subtitle.lowercased().contains(q)
-        }
-    }
-
     public var body: some View {
-        HStack(spacing: 0) {
-            // LEFT SIDEBAR (Screenshot 2026-10-10 at 9.20.14 PM)
-            VStack(alignment: .leading, spacing: 10) {
-                // Search settings... capsule
-                HStack(spacing: 6) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                    TextField("Search settings...", text: $tabState.searchQuery)
-                        .textFieldStyle(.plain)
-                        .font(.system(size: 12))
-                    if !tabState.searchQuery.isEmpty {
-                        Button {
-                            tabState.searchQuery = ""
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 11))
-                                .foregroundStyle(.secondary)
-                        }
-                        .buttonStyle(.plain)
+        NavigationSplitView {
+            List(SettingsTab.allCases, selection: Binding(
+                get: { tabState.selectedTab },
+                set: { tabState.selectedTab = $0 }
+            )) { tab in
+                NavigationLink(value: tab) {
+                    Label {
+                        Text(tab.rawValue)
+                            .font(.figmaBody(emphasized: tabState.selectedTab == tab))
+                    } icon: {
+                        Image(systemName: tab.systemIcon)
+                            .foregroundStyle(tabState.selectedTab == tab ? Color.accentColor : Color.secondary)
                     }
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
-                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.primary.opacity(0.06)))
-                .padding(.horizontal, 10)
-                .padding(.top, 14)
-
-                // Identity Header
-                HStack(spacing: 10) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(LinearGradient(colors: [Color.accentColor, Color.purple], startPoint: .topLeading, endPoint: .bottomTrailing))
-                            .frame(width: 30, height: 30)
-                        Image(systemName: "circle.grid.2x2.fill")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(.white)
-                    }
-
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("Morph")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(.primary)
-                        Text("v1.0.0 • Local Utilities")
-                            .font(.system(size: 10))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 4)
-
-                Divider().overlay(.quaternary)
-                    .padding(.horizontal, 10)
-
-                // Sidebar Navigation List
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 2) {
-                        let tabs = filteredTabs
-
-                        // Core Section
-                        let coreTabs: [SettingsTab] = [.general, .appearance, .shortcuts, .output, .about].filter { tabs.contains($0) }
-                        if !coreTabs.isEmpty {
-                            sidebarSectionHeader("CORE")
-                            ForEach(coreTabs) { tab in
-                                sidebarRow(tab)
-                            }
-                        }
-
-                        // Extensions Section
-                        let extTabs: [SettingsTab] = [.imageTools, .pdfTools, .archiveTools, .qrTools].filter { tabs.contains($0) }
-                        if !extTabs.isEmpty {
-                            sidebarSectionHeader("EXTENSIONS")
-                                .padding(.top, 8)
-                            ForEach(extTabs) { tab in
-                                sidebarRow(tab)
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 8)
-                }
-
-                Spacer()
-
-                // Bottom Offline Security Badge
+                .tag(tab)
+            }
+            .listStyle(.sidebar)
+            .navigationSplitViewColumnWidth(min: 200, ideal: 220, max: 260)
+            .safeAreaInset(edge: .bottom) {
                 HStack(spacing: 6) {
                     Image(systemName: "lock.shield.fill")
                         .foregroundStyle(.green)
                         .font(.system(size: 11))
                     Text("100% Offline & Private")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.figmaCaption1(emphasized: true))
                         .foregroundStyle(.secondary)
                 }
-                .padding(.horizontal, 14)
-                .padding(.bottom, 12)
+                .padding(.vertical, 12)
             }
-            .frame(width: 220)
-            .background(.ultraThinMaterial)
-
-            // Vertical Border Divider
-            Rectangle()
-                .fill(.quaternary)
-                .frame(width: 1)
-
-            // RIGHT CONTENT PANE
-            VStack(spacing: 0) {
-                // Top Nav Header with < > History Pill (Screenshot 2026-10-10 at 9.20.14 PM)
-                HStack(spacing: 12) {
-                    HStack(spacing: 4) {
-                        Button {
-                            navigatePrevious()
-                        } label: {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 11, weight: .semibold))
-                                .frame(width: 20, height: 20)
-                        }
-                        .buttonStyle(.plain)
-
-                        Button {
-                            navigateNext()
-                        } label: {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 11, weight: .semibold))
-                                .frame(width: 20, height: 20)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .padding(3)
-                    .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Color.primary.opacity(0.06)))
-
-                    Text(tabState.selectedTab.rawValue)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.primary)
-
-                    Spacer()
-
-                    Button("Reset to Defaults") {
-                        tabState.showResetConfirm = true
-                    }
-                    .buttonStyle(.plain)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, 18)
-                .padding(.vertical, 10)
-                .background(.ultraThinMaterial)
-
-                Divider().overlay(.quaternary)
-
-                // Main Tab Body
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 20) {
-                        switch tabState.selectedTab {
-                        case .general:
-                            generalView
-                        case .appearance:
-                            appearanceView
-                        case .imageTools:
-                            extensionHeader(tab: .imageTools)
-                            imageToolsView
-                        case .pdfTools:
-                            extensionHeader(tab: .pdfTools)
-                            pdfToolsView
-                        case .archiveTools:
-                            extensionHeader(tab: .archiveTools)
-                            archiveToolsView
-                        case .qrTools:
-                            extensionHeader(tab: .qrTools)
-                            qrToolsView
-                        case .output:
-                            outputView
-                        case .shortcuts:
-                            shortcutsView
-                        case .about:
-                            aboutView
-                        }
-                    }
-                    .padding(20)
+        } detail: {
+            Form {
+                switch tabState.selectedTab {
+                case .general:
+                    generalSection
+                case .appearance:
+                    appearanceSection
+                case .imageTools:
+                    imageToolsSection
+                case .pdfTools:
+                    pdfToolsSection
+                case .output:
+                    outputSection
+                case .shortcuts:
+                    shortcutsSection
+                case .about:
+                    aboutSection
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(.regularMaterial)
+            .formStyle(.grouped)
+            .navigationTitle(tabState.selectedTab.rawValue)
+            .navigationSubtitle(tabState.selectedTab.subtitle)
         }
-        .frame(width: 780, height: 560)
+        .frame(minWidth: 740, minHeight: 520)
         .alert("Reset All Settings?", isPresented: $tabState.showResetConfirm) {
             Button("Cancel", role: .cancel) {}
             Button("Reset to Defaults", role: .destructive) {
@@ -278,557 +116,479 @@ public struct SettingsWindowView: View {
         }
     }
 
-    // MARK: - Sidebar Components
+    // MARK: - Section 1: General
 
-    private func sidebarSectionHeader(_ text: String) -> some View {
-        Text(text)
-            .font(.system(size: 10, weight: .bold))
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-    }
-
-    private func sidebarRow(_ tab: SettingsTab) -> some View {
-        let isSelected = (tabState.selectedTab == tab)
-        return Button {
-            tabState.selectedTab = tab
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: tab.systemIcon)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(isSelected ? Color.white : tab.iconColor)
-                    .frame(width: 16)
-
-                Text(tab.rawValue)
-                    .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
-                    .foregroundStyle(isSelected ? Color.white : Color.primary)
-
-                Spacer()
+    @ViewBuilder
+    private var generalSection: some View {
+        Section("System Integration") {
+            Toggle(isOn: $preferences.launchAtLogin) {
+                Text("Launch at Login")
+                Text("Start Morph automatically in the background when you log in to macOS.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 6)
-            .background {
-                if isSelected {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(Color.accentColor)
+
+            Toggle(isOn: Binding(
+                get: { preferences.showInMenuBar },
+                set: { newValue in
+                    preferences.showInMenuBar = newValue
+                    StatusBarController.shared.updateVisibility(newValue)
                 }
+            )) {
+                Text("Show in Menu Bar")
+                Text("Display the Morph status item for one-click access and quick actions.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
-        .buttonStyle(.plain)
-    }
 
-    private func navigatePrevious() {
-        let all = SettingsTab.allCases
-        guard let idx = all.firstIndex(of: tabState.selectedTab), idx > 0 else { return }
-        tabState.selectedTab = all[idx - 1]
-    }
-
-    private func navigateNext() {
-        let all = SettingsTab.allCases
-        guard let idx = all.firstIndex(of: tabState.selectedTab), idx < all.count - 1 else { return }
-        tabState.selectedTab = all[idx + 1]
-    }
-
-    // MARK: - Extension Header (Screenshot 2026-10-10 at 9.20.54 PM, 9.21.03 PM)
-
-    private func extensionHeader(tab: SettingsTab) -> some View {
-        VStack(spacing: 8) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(LinearGradient(colors: [tab.iconColor.opacity(0.85), tab.iconColor], startPoint: .topLeading, endPoint: .bottomTrailing))
-                    .frame(width: 54, height: 54)
-                    .shadow(color: tab.iconColor.opacity(0.35), radius: 8, x: 0, y: 4)
-                Image(systemName: tab.systemIcon)
-                    .font(.system(size: 26, weight: .bold))
-                    .foregroundStyle(.white)
-            }
-
-            Text(tab.rawValue)
-                .font(.system(size: 18, weight: .bold))
-
-            Text(tab.subtitle)
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 6)
-    }
-
-    // MARK: - Reusable Settings Rows
-
-    private func settingRow<Control: View>(title: String, subtitle: String? = nil, @ViewBuilder control: () -> Control) -> some View {
-        VStack(spacing: 0) {
-            HStack(alignment: .center, spacing: 14) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.primary)
-                    if let subtitle {
-                        Text(subtitle)
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                Spacer()
-                control()
-            }
-            .padding(.vertical, 8)
-
-            Divider().overlay(.quaternary)
-        }
-    }
-
-    private func sectionTitle(_ title: String) -> some View {
-        Text(title)
-            .font(.system(size: 13, weight: .bold))
-            .foregroundStyle(.primary)
-            .padding(.top, 6)
-    }
-
-    // MARK: - Tab 1: General (Screenshot 2026-10-10 at 9.20.14 PM)
-
-    private var generalView: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            sectionTitle("Startup & Dock")
-
-            settingRow(title: "Open at Login", subtitle: "Start Morph automatically in the background when logging in.") {
-                Toggle("", isOn: $preferences.launchAtLogin)
-                    .labelsHidden()
-            }
-
-            settingRow(title: "Show in Menu Bar", subtitle: "Display the Morph menu bar item for one-click status and actions.") {
-                Toggle("", isOn: Binding(
-                    get: { preferences.showInMenuBar },
-                    set: { preferences.showInMenuBar = $0; StatusBarController.shared.updateVisibility($0) }
-                ))
-                .labelsHidden()
-            }
-
-            sectionTitle("Morph Hotkey")
-
-            settingRow(title: "Global Launcher Shortcut", subtitle: "Shortcut to summon the floating Morph command bar.") {
+        Section("Launcher Behavior") {
+            LabeledContent {
                 HStack(spacing: 6) {
-                    Text(preferences.globalShortcut)
+                    Text("⌥ Space")
                         .font(.system(size: 12, weight: .bold, design: .rounded))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
                         .background(RoundedRectangle(cornerRadius: 6).fill(Color.primary.opacity(0.08)))
-                    Button {
+                    Button("Reset") {
                         preferences.globalShortcut = "⌥ Space"
-                    } label: {
-                        Image(systemName: "arrow.counterclockwise")
-                            .font(.system(size: 11))
                     }
-                    .buttonStyle(.plain)
-                    .help("Reset to ⌥ Space")
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
                 }
+            } label: {
+                Text("Global Launcher Shortcut")
+                Text("Hotkey that summons the floating command launcher from any application.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
-            settingRow(title: "Auto-Dismiss on Loss of Focus", subtitle: "Close the launcher window when you click on other applications.") {
-                Toggle("", isOn: $preferences.autoDismissOnBlur)
-                    .labelsHidden()
+            Toggle(isOn: $preferences.autoDismissOnBlur) {
+                Text("Auto-Dismiss on Loss of Focus")
+                Text("Automatically close the floating launcher window when you click away.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+
+        Section("Feedback & Notifications") {
+            Toggle(isOn: $preferences.playSounds) {
+                Text("Play Completion Sound")
+                Text("Plays an Apple Glass chime whenever an image or PDF conversion finishes.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
-            sectionTitle("Feedback & Audio")
-
-            settingRow(title: "Play Completion Sound", subtitle: "Play a subtle Glass chime when operations complete.") {
-                Toggle("", isOn: $preferences.playSounds)
-                    .labelsHidden()
-            }
-
-            settingRow(title: "Notification Alerts", subtitle: "Post a macOS notification banner on operation completion.") {
-                Toggle("", isOn: $preferences.showNotifications)
-                    .labelsHidden()
+            Toggle(isOn: $preferences.showNotifications) {
+                Text("System Notification Banners")
+                Text("Post a native notification alert when batch operations or multi-file exports complete.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
     }
 
-    // MARK: - Tab 2: Appearance (Screenshot 2026-10-10 at 9.20.14 PM)
+    // MARK: - Section 2: Appearance
 
-    private var appearanceView: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            sectionTitle("Theme")
-
-            settingRow(title: "Follow System Appearance", subtitle: "Match macOS Dark and Light mode automatically.") {
-                Toggle("", isOn: Binding(
-                    get: { preferences.appearanceMode == .system },
-                    set: { preferences.appearanceMode = $0 ? .system : .dark }
-                ))
-                .labelsHidden()
-            }
-
-            settingRow(title: "Theme Mode", subtitle: "Choose an explicit appearance.") {
+    @ViewBuilder
+    private var appearanceSection: some View {
+        Section("Theme & Visual Style") {
+            LabeledContent {
                 Picker("", selection: $preferences.appearanceMode) {
                     ForEach(AppearanceMode.allCases) { mode in
                         Text(mode.rawValue).tag(mode)
                     }
                 }
-                .labelsHidden()
-                .frame(width: 140)
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 300)
+            } label: {
+                Text("Appearance Mode")
+                Text("Controls whether Morph adapts to macOS system appearance or enforces a specific theme.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
+        }
 
-            sectionTitle("Interface Density")
-
-            // Segmented Aa buttons matching Screenshot 2026-10-10 at 9.20.14 PM
-            settingRow(title: "Interface Size", subtitle: "Adjust density and scale of text and rows.") {
-                HStack(spacing: 0) {
-                    ForEach(TextSizeMode.allCases) { mode in
-                        aaButton(for: mode)
+        Section("Launcher Geometry") {
+            LabeledContent {
+                Picker("", selection: Binding(
+                    get: { preferences.launcherSize },
+                    set: { newSize in
+                        preferences.launcherSize = newSize
+                        FloatingPanelController.shared.applySize(newSize)
+                    }
+                )) {
+                    ForEach(LauncherSizePreset.allCases) { preset in
+                        Text("\(preset.rawValue) (\(Int(preset.dimensions.width))×\(Int(preset.dimensions.height)))").tag(preset)
                     }
                 }
-                .background(RoundedRectangle(cornerRadius: 6).stroke(.quaternary, lineWidth: 1))
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 340)
+            } label: {
+                Text("Floating Launcher Dimensions")
+                Text("Adjust the size profile of the Spotlight-inspired command center.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
+        }
 
-            settingRow(title: "Launcher Size Preset", subtitle: "Window dimensions for search and results.") {
-                Picker("", selection: $preferences.launcherSize) {
-                    ForEach(LauncherSizePreset.allCases) { size in
-                        Text(size.rawValue).tag(size)
+        Section("Accessibility & Contrast") {
+            LabeledContent {
+                Picker("", selection: $preferences.animationPreference) {
+                    ForEach(AnimationPreference.allCases) { p in
+                        Text(p.rawValue).tag(p)
                     }
                 }
-                .labelsHidden()
-                .frame(width: 140)
+                .pickerStyle(.menu)
+                .frame(width: 180)
+            } label: {
+                Text("Motion & Transitions")
+                Text("Substitute instant transitions for spring animations.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            LabeledContent {
+                Picker("", selection: $preferences.transparencyPreference) {
+                    ForEach(TransparencyPreference.allCases) { p in
+                        Text(p.rawValue).tag(p)
+                    }
+                }
+                .pickerStyle(.menu)
+                .frame(width: 180)
+            } label: {
+                Text("Translucency & Liquid Glass")
+                Text("Use opaque solid surfaces instead of translucent materials to maximize legibility.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
     }
 
-    // MARK: - Tab 3: Image Tools
+    // MARK: - Section 3: Image Tools
 
-    private var imageToolsView: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            sectionTitle("Optimization Defaults")
-
-            settingRow(title: "Default Compression Preset", subtitle: "Balanced strikes ideal image quality vs size reduction.") {
+    @ViewBuilder
+    private var imageToolsSection: some View {
+        Section("Default Optimization Preset") {
+            LabeledContent {
                 Picker("", selection: $preferences.defaultImagePreset) {
                     ForEach(CompressionPreset.allCases) { preset in
                         Text(preset.rawValue).tag(preset)
                     }
                 }
-                .labelsHidden()
-                .frame(width: 140)
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 320)
+            } label: {
+                Text("Image Compression Preset")
+                Text(preferences.defaultImagePreset.description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
+        }
 
-            settingRow(title: "Default Output Format", subtitle: "Format used when converting or exporting images.") {
+        Section("Default Format & Quality") {
+            LabeledContent {
                 Picker("", selection: $preferences.defaultImageFormat) {
                     ForEach(ImageOutputFormatOption.allCases) { fmt in
                         Text(fmt.rawValue).tag(fmt)
                     }
                 }
-                .labelsHidden()
-                .frame(width: 160)
+                .pickerStyle(.menu)
+                .frame(width: 180)
+            } label: {
+                Text("Default Target Format")
+                Text("Default container when converting non-standard graphics.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
-            sectionTitle("Privacy & Safety")
+            LabeledContent {
+                HStack {
+                    Slider(value: $preferences.defaultImageQuality, in: 0.10...1.0, step: 0.05)
+                        .frame(width: 160)
+                    Text("\(Int(preferences.defaultImageQuality * 100))%")
+                        .font(.system(size: 12, weight: .semibold))
+                        .monospacedDigit()
+                        .frame(width: 36, alignment: .trailing)
+                }
+            } label: {
+                Text("Default Lossy Quality Factor")
+                Text("Applies to JPEG, WebP, and HEIC encoders. PNG conversions always preserve lossless pixel fidelity.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
 
-            settingRow(title: "Strip Image Metadata by Default", subtitle: "Removes camera EXIF, GPS location, and personal tags.") {
-                Toggle("", isOn: $preferences.stripImageMetadata)
-                    .labelsHidden()
+        Section("Dimensions & Transparency") {
+            Toggle(isOn: $preferences.preserveImageDimensions) {
+                Text("Preserve Original Dimensions by Default")
+                Text("Do not downscale pixels unless explicitly specified in the Resize tool.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
-            settingRow(title: "Warn on Lossy Transparency", subtitle: "Alerts when converting alpha PNG to formats like JPEG.") {
-                Toggle("", isOn: $preferences.warnLossyTransparency)
-                    .labelsHidden()
+            Toggle(isOn: $preferences.warnLossyTransparency) {
+                Text("Warn Before Stripping Alpha Transparency")
+                Text("Alert when converting transparent PNG or WebP images to JPEG, which fills transparency with white.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+
+        Section("Privacy & Metadata") {
+            Toggle(isOn: $preferences.stripImageMetadata) {
+                Text("Strip EXIF & Camera Metadata for Privacy")
+                Text("Removes camera make/model, exposure details, and GPS location coordinates from all saved outputs.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            LabeledContent {
+                Picker("", selection: $preferences.batchFailBehavior) {
+                    ForEach(BatchFailBehavior.allCases) { b in
+                        Text(b.rawValue).tag(b)
+                    }
+                }
+                .pickerStyle(.menu)
+                .frame(width: 220)
+            } label: {
+                Text("Batch Failure Handling")
+                Text("Behavior when a damaged or unsupported file is encountered during batch processing.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
     }
 
-    // MARK: - Tab 4: PDF Tools
+    // MARK: - Section 4: PDF Tools
 
-    private var pdfToolsView: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            sectionTitle("PDF Compression & Rasterization")
-
-            settingRow(title: "Default PDF Compression Preset", subtitle: "Preset used for document downsampling.") {
+    @ViewBuilder
+    private var pdfToolsSection: some View {
+        Section("Default PDF Optimization") {
+            LabeledContent {
                 Picker("", selection: $preferences.defaultPDFPreset) {
                     ForEach(CompressionPreset.allCases) { preset in
                         Text(preset.rawValue).tag(preset)
                     }
                 }
-                .labelsHidden()
-                .frame(width: 140)
-            }
-
-            settingRow(title: "PDF to Image DPI", subtitle: "Resolution when converting pages to PNG images.") {
-                Picker("", selection: Binding(
-                    get: { Int(preferences.defaultPDFRasterDPI) },
-                    set: { preferences.defaultPDFRasterDPI = CGFloat($0) }
-                )) {
-                    Text("72 DPI (Draft)").tag(72)
-                    Text("150 DPI (Standard)").tag(150)
-                    Text("300 DPI (High-Res)").tag(300)
-                }
-                .labelsHidden()
-                .frame(width: 160)
-            }
-
-            sectionTitle("Safeguards")
-
-            settingRow(title: "Confirm Destructive Page Removal", subtitle: "Prompt before deleting pages in Page Organizer.") {
-                Toggle("", isOn: $preferences.confirmDestructivePageRemoval)
-                    .labelsHidden()
-            }
-
-            settingRow(title: "Strip Document Metadata", subtitle: "Clear author, creator, and title from exported PDFs.") {
-                Toggle("", isOn: $preferences.stripPDFMetadata)
-                    .labelsHidden()
-            }
-        }
-    }
-
-    // MARK: - Tab 5: Archive Tools
-
-    private var archiveToolsView: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            sectionTitle("Archive Engine Defaults")
-
-            settingRow(title: "Preserve Resource Forks", subtitle: "Uses /usr/bin/ditto to preserve macOS metadata and extended attributes.") {
-                Text("Enabled (ditto -k)")
-                    .font(.system(size: 12, weight: .semibold))
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 320)
+            } label: {
+                Text("PDF Compression Preset")
+                Text(preferences.defaultPDFPreset == .light
+                     ? "Optimizes document streams while preserving original image resolutions."
+                     : "Downsamples embedded photos to \(Int(preferences.defaultPDFPreset.pdfTargetDPI)) DPI.")
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
-
-            settingRow(title: "Path Traversal Protection", subtitle: "Blocks unsafe archive relative paths containing ../ exploits.") {
-                Text("Enforced")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.green)
-            }
         }
-    }
 
-    // MARK: - Tab 6: QR & Barcodes
-
-    private var qrToolsView: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            sectionTitle("Generation Engine")
-
-            settingRow(title: "Default Error Correction", subtitle: "Higher error correction preserves readability if damaged.") {
-                Text("Medium (15%)")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.secondary)
-            }
-
-            settingRow(title: "Vision Scanner Engine", subtitle: "Apple Vision VNDetectBarcodesRequest + CIDetector fallback.") {
-                Text("Native Vision")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.green)
-            }
-        }
-    }
-
-    // MARK: - Tab 7: Output Settings
-
-    private var outputView: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            sectionTitle("Destination Folder")
-
-            settingRow(title: "Output Location Mode", subtitle: "Where processed files are saved by default.") {
-                Picker("", selection: $preferences.outputLocationMode) {
-                    ForEach(OutputLocationMode.allCases) { mode in
-                        Text(mode.rawValue).tag(mode)
+        Section("PDF to Image & Raster Defaults") {
+            LabeledContent {
+                Picker("", selection: $preferences.defaultPDFToImageFormat) {
+                    ForEach(ImageFormat.allCases) { fmt in
+                        Text(fmt.rawValue).tag(fmt)
                     }
                 }
-                .labelsHidden()
-                .frame(width: 170)
+                .pickerStyle(.menu)
+                .frame(width: 180)
+            } label: {
+                Text("Default Export Format")
+                Text("Default file format when converting PDF pages to raster images.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
+
+            LabeledContent {
+                Picker("", selection: $preferences.defaultPDFRasterDPI) {
+                    Text("72 DPI (Web)").tag(CGFloat(72.0))
+                    Text("150 DPI (Standard)").tag(CGFloat(150.0))
+                    Text("300 DPI (Print)").tag(CGFloat(300.0))
+                }
+                .pickerStyle(.menu)
+                .frame(width: 180)
+            } label: {
+                Text("Target Rasterization Resolution")
+                Text("Render density for page-to-image extraction.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+
+        Section("Image to PDF Defaults") {
+            LabeledContent {
+                Picker("", selection: $preferences.defaultImageToPDFPageSize) {
+                    ForEach(PDFPageSize.allCases) { size in
+                        Text(size.rawValue).tag(size)
+                    }
+                }
+                .pickerStyle(.menu)
+                .frame(width: 180)
+            } label: {
+                Text("Default Page Geometry")
+                Text("Determines document dimensions when compiling pictures into a PDF.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+
+        Section("Safety & Privacy") {
+            Toggle(isOn: $preferences.confirmDestructivePageRemoval) {
+                Text("Confirm Destructive Page Removal")
+                Text("Require confirmation before committing deletion of pages from a document.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Toggle(isOn: $preferences.stripPDFMetadata) {
+                Text("Strip PDF Document Metadata")
+                Text("Clears author, title, producer, and application tags from created PDF files.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    // MARK: - Section 5: Output
+
+    @ViewBuilder
+    private var outputSection: some View {
+        Section("Save Destination") {
+            Picker("Save Location", selection: $preferences.outputLocationMode) {
+                ForEach(OutputLocationMode.allCases) { mode in
+                    Text(mode.rawValue).tag(mode)
+                }
+            }
+            .pickerStyle(.inline)
 
             if preferences.outputLocationMode == .customFolder {
-                settingRow(title: "Custom Folder Path", subtitle: preferences.customFolderPath.isEmpty ? "No folder selected" : preferences.customFolderPath) {
-                    Button("Browse...") {
-                        chooseCustomFolder()
-                    }
-                    .buttonStyle(.bordered)
-                }
-            }
-
-            sectionTitle("Filename Suffix")
-
-            settingRow(title: "Collision Suffix", subtitle: "Appended to processed files (e.g. photo-processed.jpg)") {
-                TextField("-processed", text: $preferences.namingSuffix)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 120)
-            }
-        }
-    }
-
-    // MARK: - Tab 8: Shortcuts (Screenshot 2026-10-10 at 9.21.19 PM)
-
-    private var shortcutsView: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            sectionTitle("Global Shortcuts")
-
-            settingRow(title: "Open Morph Launcher", subtitle: "Summons Morph from any application.") {
-                Text("⌥ Space")
-                    .font(.system(size: 11, weight: .bold, design: .monospaced))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 3)
-                    .background(RoundedRectangle(cornerRadius: 4).fill(.quaternary))
-            }
-
-            sectionTitle("In-Launcher Navigation")
-
-            shortcutRefRow("↑ / ↓", description: "Navigate list items or grid selection")
-            shortcutRefRow("Return (↵)", description: "Open selected tool or execute primary action")
-            shortcutRefRow("Escape (⎋)", description: "Back to launcher / Dismiss action panel")
-            shortcutRefRow("⌘K", description: "Toggle Raycast Contextual Action Panel")
-            shortcutRefRow("⌘D", description: "Pin or unpin selected tool from Favorites")
-            shortcutRefRow("⌘O", description: "Open file picker / Open output file")
-            shortcutRefRow("⌘R", description: "Reveal processed file in Finder")
-            shortcutRefRow("⌥⌘C", description: "Copy file path to clipboard")
-            shortcutRefRow("Space", description: "Quick Look preview dropped file")
-        }
-    }
-
-    private func shortcutRefRow(_ key: String, description: String) -> some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text(description)
-                    .font(.system(size: 12))
-                    .foregroundStyle(.primary)
-                Spacer()
-                Text(key)
-                    .font(.system(size: 11, weight: .bold, design: .monospaced))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(RoundedRectangle(cornerRadius: 4).fill(.quaternary))
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.vertical, 6)
-            Divider().overlay(.quaternary)
-        }
-    }
-
-    // MARK: - Tab 9: About (Screenshot 2026-10-10 at 9.20.33 PM)
-
-    private var aboutView: some View {
-        VStack(spacing: 16) {
-            // App Squircle Logo + Version
-            VStack(spacing: 6) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(LinearGradient(colors: [Color.accentColor, Color.purple], startPoint: .topLeading, endPoint: .bottomTrailing))
-                        .frame(width: 68, height: 68)
-                        .shadow(color: Color.accentColor.opacity(0.35), radius: 10, x: 0, y: 5)
-                    Image(systemName: "circle.grid.2x2.fill")
-                        .font(.system(size: 30, weight: .bold))
-                        .foregroundStyle(.white)
-                }
-
-                Text("Morph")
-                    .font(.system(size: 22, weight: .bold))
-
-                Text("Version 1.0.0")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-
-                Text("© 2026 Morph. Fast, local-first macOS utility.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.top, 10)
-
-            // Diagnostics (Screenshot 2026-10-10 at 9.20.33 PM)
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Diagnostics")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(.secondary)
-
-                HStack(spacing: 8) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                        .font(.system(size: 14))
-                    Text("All checks passed")
-                        .font(.system(size: 13, weight: .semibold))
-                    Spacer()
-                    Text("ImageIO • PDFKit • Vision • Ditto")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
-                }
-                .padding(12)
-                .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.04)))
-            }
-
-            // Updates (Screenshot 2026-10-10 at 9.20.33 PM)
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Updates")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(.secondary)
-
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Morph Updates")
-                            .font(.system(size: 13, weight: .semibold))
-                        Text("v1.0.0 (Latest)")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Button("Check now") {}
+                LabeledContent("Target Folder") {
+                    HStack {
+                        Text(preferences.customFolderPath.isEmpty ? "None Selected" : preferences.customFolderPath)
+                            .font(.caption)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .foregroundStyle(preferences.customFolderPath.isEmpty ? .secondary : .primary)
+                        Button("Choose...") {
+                            chooseCustomOutputFolder()
+                        }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
+                    }
                 }
-                .padding(12)
-                .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.04)))
             }
+        }
 
-            // Links (Screenshot 2026-10-10 at 9.20.33 PM)
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Links")
-                    .font(.system(size: 11, weight: .bold))
+        Section("Naming & Collision Safeguards") {
+            TextField("Filename Suffix", text: $preferences.namingSuffix)
+            TextField("Filename Prefix (Optional)", text: $preferences.namingPrefix)
+
+            LabeledContent {
+                Image(systemName: "shield.lefthalf.filled")
+                    .foregroundStyle(Color.accentColor)
+            } label: {
+                Text("Non-Destructive Writing")
+                Text("Original source files are never overwritten. Duplicate filenames are automatically appended with (1), (2), etc.")
+                    .font(.caption)
                     .foregroundStyle(.secondary)
-
-                aboutLinkRow("Website", url: "https://morph.native.macos")
-                aboutLinkRow("Offline Privacy Guarantee", url: "https://morph.native.macos/privacy")
-                aboutLinkRow("Keyboard Shortcuts Guide", url: "https://morph.native.macos/shortcuts")
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func aboutLinkRow(_ title: String, url: String) -> some View {
-        HStack {
-            Text(title)
-                .font(.system(size: 12, weight: .medium))
-            Spacer()
-            Image(systemName: "arrow.up.right")
-                .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(.secondary)
-        }
-        .padding(.vertical, 6)
-        .padding(.horizontal, 10)
-        .background(RoundedRectangle(cornerRadius: 6).fill(Color.primary.opacity(0.03)))
-    }
-
-    private func chooseCustomFolder() {
+    private func chooseCustomOutputFolder() {
         let panel = NSOpenPanel()
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
         panel.canCreateDirectories = true
-        panel.prompt = "Choose Folder"
-        if panel.runModal() == .OK, let url = panel.url {
-            preferences.customFolderPath = url.path
+        panel.title = "Select Output Folder for Morph"
+
+        if panel.runModal() == .OK, let selectedURL = panel.url {
+            preferences.customFolderPath = selectedURL.path
         }
     }
 
-    private func fontSize(for mode: TextSizeMode) -> CGFloat {
-        switch mode {
-        case .compact: return 11
-        case .standard: return 13
-        case .larger: return 15
+    // MARK: - Section 6: Shortcuts
+
+    @ViewBuilder
+    private var shortcutsSection: some View {
+        Section("Global Application Hotkeys") {
+            shortcutRow("⌥ Space", label: "Toggle Morph floating command launcher")
+            shortcutRow("⌘ O", label: "Open file picker / Open generated result in default app")
+            shortcutRow("⌘ S", label: "Save output file to custom location (Save As...)")
+            shortcutRow("⌘ C", label: "Copy generated output file or image to clipboard")
+            shortcutRow("⌘ R", label: "Reveal generated file in Finder")
+            shortcutRow("Space", label: "Quick Look preview selected or output file")
+            shortcutRow("⌘ ,", label: "Open dedicated Settings window")
+            shortcutRow("↩", label: "Execute command or select highlighted option")
+            shortcutRow("⎋", label: "Go back or dismiss launcher / close preview")
+            shortcutRow("⌘ Q", label: "Quit Morph application")
         }
     }
 
-    private func aaButton(for mode: TextSizeMode) -> some View {
-        let isSelected = (preferences.textSize == mode)
-        return Button {
-            preferences.textSize = mode
+    private func shortcutRow(_ key: String, label: String) -> some View {
+        LabeledContent {
+            Text(key)
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .padding(.horizontal, 7)
+                .padding(.vertical, 3)
+                .background(RoundedRectangle(cornerRadius: 5).fill(Color.primary.opacity(0.08)))
         } label: {
-            Text("Aa")
-                .font(.system(size: fontSize(for: mode), weight: isSelected ? .bold : .regular))
-                .frame(width: 32, height: 26)
-                .background(isSelected ? Color.primary.opacity(0.12) : Color.clear)
+            Text(label)
+                .font(.system(size: 13))
         }
-        .buttonStyle(.plain)
+    }
+
+    // MARK: - Section 7: About
+
+    @ViewBuilder
+    private var aboutSection: some View {
+        Section {
+            VStack(spacing: 8) {
+                Image(systemName: "wand.and.stars")
+                    .font(.system(size: 44))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(Color.accentColor)
+                    .symbolEffect(.bounce, value: tabState.selectedTab)
+
+                Text("Morph")
+                    .font(.system(size: 20, weight: .bold))
+
+                Text("Version 1.0.0 (Build 2026.1)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+        }
+
+        Section("Privacy Guarantee") {
+            Label {
+                Text("100% Offline, Local & Private\nAll image and PDF operations execute on your Mac's CPU/GPU via native ImageIO, CoreGraphics, and PDFKit. Zero network connections, zero telemetry, zero cloud dependencies.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } icon: {
+                Image(systemName: "lock.shield.fill")
+                    .foregroundStyle(.green)
+            }
+        }
+
+        Section("Capabilities") {
+            Label("Image Engine: Lossy/Lossless Compression, Format Conversion (JPEG, PNG, HEIC, WebP), Bicubic Resize, Images to PDF, Multi-Image Batch.", systemImage: "photo.stack")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Label("PDF Engine: Stream Optimization, Multi-Document Merge, Range Split, PDF to Image, Page Rotation (90°/180°/270°), Page Extract, Reorder, Remove.", systemImage: "doc.richtext")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+
+        Section {
+            Button("Reset All Settings to Defaults", role: .destructive) {
+                tabState.showResetConfirm = true
+            }
+            .frame(maxWidth: .infinity)
+        }
     }
 }

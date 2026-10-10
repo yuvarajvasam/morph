@@ -35,7 +35,6 @@ public enum LauncherSizePreset: String, CaseIterable, Identifiable {
 }
 
 public enum TextSizeMode: String, CaseIterable, Identifiable {
-    case compact = "Compact"
     case standard = "Default"
     case larger = "Larger"
 

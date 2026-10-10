@@ -312,41 +312,11 @@ public final class LauncherViewModel: ObservableObject {
 
     // MARK: - Execution
 
-    public func syncToolParametersBeforeExecution() {
-        if activeCommand?.id == "image.resize" {
-            switch resizeTab {
-            case 0:
-                let w = Int(exactWidth) ?? 1920
-                let h = Int(exactHeight) ?? 1080
-                imageSettings.resizeMode = .exact(width: w, height: h)
-            case 1:
-                let mw = Int(maxWidth) ?? 1920
-                imageSettings.resizeMode = .maxWidth(mw)
-            case 2:
-                let mh = Int(maxHeight) ?? 1080
-                imageSettings.resizeMode = .maxHeight(mh)
-            case 3:
-                imageSettings.resizeMode = .percentage(Int(resizePercentage))
-            default:
-                break
-            }
-        } else if activeCommand?.category == .pdf {
-            if splitModeTab == 0 {
-                pdfSettings.splitMode = .allPages
-            } else {
-                pdfSettings.splitMode = .pageRange(splitRangeText)
-            }
-            pdfSettings.rotationAngle = rotationSelection
-            pdfSettings.pdfToImageDPI = dpiSelection
-        }
-    }
-
     public func executeCurrentOperation() async {
         await runActiveCommand()
     }
 
     public func runActiveCommand() async {
-        syncToolParametersBeforeExecution()
         guard let command = activeCommand, (!droppedFiles.isEmpty || command.id == "qr.generate" || command.id == "barcode.generate") else {
             errorMessage = "Please select an operation and at least one file."
             SoundEffectManager.shared.playError()
@@ -647,7 +617,7 @@ public final class LauncherViewModel: ObservableObject {
             preferences.recordRecent(id: command.id)
             SoundEffectManager.shared.playSuccess()
 
-            if preferences.showNotifications, let res = self.currentResult {
+            if preferences.showNotifications, Bundle.main.bundleIdentifier != nil, let res = self.currentResult {
                 let content = UNMutableNotificationContent()
                 content.title = "Morph — \(command.title)"
                 let targetName = droppedFiles.first?.filename ?? "Generated File"
