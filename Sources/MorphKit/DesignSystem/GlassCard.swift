@@ -24,18 +24,18 @@ public struct GlassCard<Content: View>: View {
             .background {
                 if reduceTransparency || LiquidGlass.shouldReduceTransparency {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(isSelected ? Color.accentColor.opacity(0.15) : Color(nsColor: .controlBackgroundColor))
+                        .fill(isSelected ? LiquidGlass.bridgeTint.opacity(0.15) : Color(nsColor: .controlBackgroundColor))
                         .overlay {
                             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                                .stroke(isSelected ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.quaternary), lineWidth: isSelected ? 1.5 : 0.5)
+                                .stroke(isSelected ? AnyShapeStyle(LiquidGlass.bridgeTint) : AnyShapeStyle(.quaternary), lineWidth: isSelected ? 1.5 : 0.5)
                         }
                 } else {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(isSelected ? AnyShapeStyle(Color.accentColor.opacity(0.18)) : AnyShapeStyle(.thickMaterial))
+                        .fill(isSelected ? AnyShapeStyle(LiquidGlass.bridgeTint.opacity(0.18)) : AnyShapeStyle(.regularMaterial))
                         .overlay {
                             // Glass edge inner stroke
                             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                                .stroke(isSelected ? AnyShapeStyle(Color.accentColor.opacity(0.80)) : AnyShapeStyle(.quaternary), lineWidth: isSelected ? 1.5 : 0.5)
+                                .stroke(isSelected ? AnyShapeStyle(LiquidGlass.bridgeTint.opacity(0.80)) : AnyShapeStyle(.quaternary), lineWidth: isSelected ? 1.5 : 0.5)
                         }
                         .shadow(
                             color: Color.black.opacity(hover.isHovered ? 0.10 : 0.05),

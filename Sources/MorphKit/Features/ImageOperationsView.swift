@@ -74,7 +74,7 @@ public struct ImageOperationsView: View {
                 if viewModel.isProcessing {
                     HStack(spacing: 8) {
                         Image(systemName: "sparkles")
-                            .foregroundStyle(Color.accentColor)
+                            .foregroundStyle(LiquidGlass.bridgeTint)
                             .symbolEffect(.pulse)
                         ProgressView(value: viewModel.progress)
                             .progressViewStyle(.linear)
@@ -131,7 +131,7 @@ public struct ImageOperationsView: View {
                                 Spacer()
                                 if viewModel.imageSettings.compressionPreset == preset {
                                     Image(systemName: "checkmark.circle.fill")
-                                        .foregroundStyle(Color.accentColor)
+                                        .foregroundStyle(LiquidGlass.bridgeTint)
                                         .symbolEffect(.bounce, value: viewModel.imageSettings.compressionPreset)
                                         .font(.system(size: 12))
                                 }

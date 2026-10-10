@@ -149,7 +149,7 @@ public struct ResultPreviewView: View {
                                     }
                                     .buttonStyle(.plain)
                                     .font(.system(size: 11, weight: .medium))
-                                    .foregroundStyle(Color.accentColor)
+                                    .foregroundStyle(LiquidGlass.bridgeTint)
                                 }
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)

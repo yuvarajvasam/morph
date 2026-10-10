@@ -16,7 +16,7 @@ public struct SettingsView: View {
             HStack {
                 HStack(spacing: 8) {
                     Image(systemName: "gearshape.fill")
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(LiquidGlass.bridgeTint)
                         .font(.system(size: 15))
                     Text("Settings")
                         .font(.system(size: 15, weight: .semibold))

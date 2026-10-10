@@ -3,6 +3,28 @@ import AppKit
 
 /// Figma "macOS 27 (Community)" Design System Tokens for Morph
 public enum LiquidGlass {
+    // MARK: - Golden Gate Theme
+    /// International-orange inspired accent used sparingly for focus, primary actions, and brand moments.
+    public static let bridgeOrange = Color(red: 0.86, green: 0.23, blue: 0.14)
+    public static let bridgeOrangeDeep = Color(red: 0.58, green: 0.11, blue: 0.08)
+    public static let fogHighlight = Color(red: 0.94, green: 0.89, blue: 0.82)
+    public static let bayTeal = Color(red: 0.08, green: 0.27, blue: 0.31)
+    public static let nightBay = Color(red: 0.035, green: 0.055, blue: 0.065)
+
+    public static var bridgeAccentGradient: LinearGradient {
+        LinearGradient(
+            colors: [
+                bridgeOrange,
+                Color(red: 0.95, green: 0.45, blue: 0.28)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    public static var bridgeTint: Color {
+        bridgeOrange
+    }
 
     // MARK: - Corner Radii
     public static let windowRadius: CGFloat = 20.0
@@ -128,8 +150,8 @@ public enum LiquidGlass {
     public static var accentGradient: LinearGradient {
         LinearGradient(
             colors: [
-                Color.accentColor,
-                Color.accentColor.opacity(0.85)
+                bridgeOrange,
+                bridgeOrangeDeep.opacity(0.95)
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing

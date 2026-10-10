@@ -134,11 +134,11 @@ public struct GlassButton: View {
         if reduceTransparency || LiquidGlass.shouldReduceTransparency {
             switch variant {
             case .primary:
-                return AnyShapeStyle(Color.accentColor)
+                return AnyShapeStyle(LiquidGlass.bridgeAccentGradient)
             case .secondary:
                 return AnyShapeStyle(hover.isHovered ? Color(nsColor: .controlColor) : Color(nsColor: .controlBackgroundColor))
             case .tinted:
-                return AnyShapeStyle(Color.accentColor.opacity(hover.isHovered ? 0.22 : 0.14))
+                return AnyShapeStyle(LiquidGlass.bridgeTint.opacity(hover.isHovered ? 0.22 : 0.14))
             case .destructive:
                 return AnyShapeStyle(Color.red.opacity(hover.isHovered ? 0.20 : 0.12))
             case .prominentDestructive:
@@ -150,11 +150,11 @@ public struct GlassButton: View {
 
         switch variant {
         case .primary:
-            return AnyShapeStyle(Color.accentColor)
+            return AnyShapeStyle(LiquidGlass.bridgeAccentGradient)
         case .secondary:
             return hover.isHovered ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(.thinMaterial)
         case .tinted:
-            return AnyShapeStyle(Color.accentColor.opacity(hover.isHovered ? 0.22 : 0.14))
+            return AnyShapeStyle(LiquidGlass.bridgeTint.opacity(hover.isHovered ? 0.22 : 0.14))
         case .destructive:
             return AnyShapeStyle(Color.red.opacity(hover.isHovered ? 0.22 : 0.14))
         case .prominentDestructive:
@@ -170,7 +170,7 @@ public struct GlassButton: View {
         case .primary, .prominentDestructive:
             return AnyShapeStyle(.quaternary)
         case .tinted:
-            return AnyShapeStyle(Color.accentColor.opacity(0.35))
+            return AnyShapeStyle(LiquidGlass.bridgeTint.opacity(0.35))
         case .destructive:
             return AnyShapeStyle(Color.red.opacity(0.35))
         case .secondary:
@@ -186,7 +186,7 @@ public struct GlassButton: View {
         case .primary, .prominentDestructive:
             return AnyShapeStyle(Color.white)
         case .tinted:
-            return AnyShapeStyle(Color.accentColor)
+            return AnyShapeStyle(LiquidGlass.bridgeTint)
         case .destructive:
             return AnyShapeStyle(Color.red)
         case .secondary:

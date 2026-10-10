@@ -61,13 +61,13 @@ public struct LauncherView: View {
         .overlay {
             if viewModel.isTargetedForDrop {
                 RoundedRectangle(cornerRadius: LiquidGlass.windowRadius, style: .continuous)
-                    .stroke(Color.accentColor, lineWidth: 2)
-                    .background(Color.accentColor.opacity(0.12))
+                    .stroke(LiquidGlass.bridgeTint, lineWidth: 2)
+                    .background(LiquidGlass.bridgeTint.opacity(0.12))
                     .overlay {
                         VStack(spacing: 8) {
                             Image(systemName: "arrow.down.doc.fill")
                                 .font(.system(size: 40))
-                                .foregroundStyle(Color.accentColor)
+                                .foregroundStyle(LiquidGlass.bridgeTint)
                             Text("Drop files to inspect & process with Morph")
                                 .font(.system(size: 15, weight: .semibold))
                         }
@@ -119,11 +119,11 @@ public struct LauncherView: View {
             // Subtle Morph Identity Icon
             ZStack {
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(Color.accentColor.opacity(0.18))
+                    .fill(LiquidGlass.bridgeTint.opacity(0.18))
                     .frame(width: 24, height: 24)
                 Image(systemName: "circle.grid.2x2.fill")
                     .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(LiquidGlass.bridgeTint)
             }
 
             TextField(searchPlaceholder, text: $viewModel.searchQuery)
@@ -153,8 +153,8 @@ public struct LauncherView: View {
                 }
                 .padding(.horizontal, 7)
                 .padding(.vertical, 3)
-                .background(Capsule().fill(Color.accentColor.opacity(0.18)))
-                .foregroundStyle(Color.accentColor)
+                .background(Capsule().fill(LiquidGlass.bridgeTint.opacity(0.18)))
+                .foregroundStyle(LiquidGlass.bridgeTint)
             }
 
             GlassButton("Actions", icon: "command", shortcutBadge: "⌘K", variant: .ghost, size: .small, tooltip: "Contextual actions (⌘K)") {
@@ -178,9 +178,9 @@ public struct LauncherView: View {
                 .fill(.thickMaterial)
                 .overlay {
                     RoundedRectangle(cornerRadius: LiquidGlass.cardRadius, style: .continuous)
-                        .stroke(.quaternary, lineWidth: 0.5)
+                        .stroke(LiquidGlass.bridgeTint.opacity(0.24), lineWidth: 0.7)
                 }
-                .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 2)
+                .shadow(color: Color.black.opacity(0.18), radius: 14, x: 0, y: 6)
         }
     }
 
@@ -206,17 +206,17 @@ public struct LauncherView: View {
                 .background {
                     if viewModel.selectedCategory == nil {
                         Capsule(style: .continuous)
-                            .fill(Color.accentColor.opacity(0.20))
+                            .fill(LiquidGlass.bridgeTint.opacity(0.20))
                             .overlay {
                                 Capsule(style: .continuous)
-                                    .stroke(Color.accentColor.opacity(0.50), lineWidth: 1)
+                                    .stroke(LiquidGlass.bridgeTint.opacity(0.50), lineWidth: 1)
                             }
                     } else {
                         Capsule(style: .continuous)
                             .fill(.quaternary)
                     }
                 }
-                .foregroundStyle(viewModel.selectedCategory == nil ? Color.accentColor : Color.secondary)
+                .foregroundStyle(viewModel.selectedCategory == nil ? LiquidGlass.bridgeTint : Color.secondary)
             }
             .buttonStyle(.plain)
 
@@ -239,17 +239,17 @@ public struct LauncherView: View {
                     .background {
                         if viewModel.selectedCategory == cat {
                             Capsule(style: .continuous)
-                                .fill(Color.accentColor.opacity(0.20))
+                                .fill(LiquidGlass.bridgeTint.opacity(0.20))
                                 .overlay {
                                     Capsule(style: .continuous)
-                                        .stroke(Color.accentColor.opacity(0.50), lineWidth: 1)
+                                        .stroke(LiquidGlass.bridgeTint.opacity(0.50), lineWidth: 1)
                                 }
                         } else {
                             Capsule(style: .continuous)
                                 .fill(.quaternary)
                         }
                     }
-                    .foregroundStyle(viewModel.selectedCategory == cat ? Color.accentColor : Color.secondary)
+                    .foregroundStyle(viewModel.selectedCategory == cat ? LiquidGlass.bridgeTint : Color.secondary)
                 }
                 .buttonStyle(.plain)
             }
@@ -273,11 +273,11 @@ public struct LauncherView: View {
                 HStack(spacing: 8) {
                     ZStack {
                         RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(Color.accentColor.opacity(0.18))
+                            .fill(LiquidGlass.bridgeTint.opacity(0.18))
                             .frame(width: 24, height: 24)
                         Image(systemName: activeCmd.systemIcon)
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(Color.accentColor)
+                            .foregroundStyle(LiquidGlass.bridgeTint)
                     }
 
                     Text(activeCmd.title)
@@ -299,7 +299,7 @@ public struct LauncherView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "gearshape.fill")
                         .font(.system(size: 14))
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(LiquidGlass.bridgeTint)
                     Text("Preferences")
                         .font(.figmaHeadline)
                         .foregroundStyle(.primary)
@@ -349,9 +349,9 @@ public struct LauncherView: View {
                 .fill(.thickMaterial)
                 .overlay {
                     RoundedRectangle(cornerRadius: LiquidGlass.cardRadius, style: .continuous)
-                        .stroke(.quaternary, lineWidth: 0.5)
+                        .stroke(LiquidGlass.bridgeTint.opacity(0.24), lineWidth: 0.7)
                 }
-                .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 2)
+                .shadow(color: Color.black.opacity(0.18), radius: 14, x: 0, y: 6)
         }
     }
 
@@ -424,7 +424,7 @@ public struct LauncherView: View {
                 Image(systemName: command.systemIcon)
                     .symbolRenderingMode(.hierarchical)
                     .font(.system(size: 32, weight: .semibold))
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(LiquidGlass.bridgeTint)
             }
 
             VStack(spacing: 6) {
@@ -623,13 +623,13 @@ public struct LauncherView: View {
         return HStack(spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(isSelected ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.quaternary))
+                    .fill(isSelected ? AnyShapeStyle(LiquidGlass.bridgeAccentGradient) : AnyShapeStyle(.quaternary))
                     .frame(width: 32, height: 32)
 
                 Image(systemName: command.systemIcon)
                     .symbolRenderingMode(isSelected ? .monochrome : .hierarchical)
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(isSelected ? AnyShapeStyle(Color.white) : AnyShapeStyle(Color.accentColor))
+                    .foregroundStyle(isSelected ? AnyShapeStyle(Color.white) : AnyShapeStyle(LiquidGlass.bridgeTint))
             }
 
             VStack(alignment: .leading, spacing: 2) {
@@ -668,10 +668,10 @@ public struct LauncherView: View {
         .background {
             if isSelected {
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color.accentColor.opacity(0.16))
+                    .fill(LiquidGlass.bridgeTint.opacity(0.16))
                     .overlay {
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .stroke(Color.accentColor.opacity(0.40), lineWidth: 1.0)
+                            .stroke(LiquidGlass.bridgeTint.opacity(0.40), lineWidth: 1.0)
                     }
             }
         }

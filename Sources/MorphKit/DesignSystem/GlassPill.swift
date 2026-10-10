@@ -51,7 +51,7 @@ public struct GlassPill: View {
             case .standard:
                 return AnyShapeStyle(Color(nsColor: .controlBackgroundColor))
             case .accent:
-                return AnyShapeStyle(Color.accentColor.opacity(0.18))
+                return AnyShapeStyle(LiquidGlass.bridgeTint.opacity(0.18))
             case .success:
                 return AnyShapeStyle(Color.green.opacity(0.18))
             case .warning:
@@ -65,7 +65,7 @@ public struct GlassPill: View {
         case .standard:
             return AnyShapeStyle(.thinMaterial)
         case .accent:
-            return AnyShapeStyle(Color.accentColor.opacity(0.18))
+            return AnyShapeStyle(LiquidGlass.bridgeTint.opacity(0.18))
         case .success:
             return AnyShapeStyle(Color.green.opacity(0.18))
         case .warning:
@@ -80,7 +80,7 @@ public struct GlassPill: View {
         case .standard:
             return AnyShapeStyle(.quaternary)
         case .accent:
-            return AnyShapeStyle(Color.accentColor.opacity(0.35))
+            return AnyShapeStyle(LiquidGlass.bridgeTint.opacity(0.35))
         case .success:
             return AnyShapeStyle(Color.green.opacity(0.35))
         case .warning:
@@ -95,7 +95,7 @@ public struct GlassPill: View {
         case .standard:
             return AnyShapeStyle(.primary)
         case .accent:
-            return AnyShapeStyle(Color.accentColor)
+            return AnyShapeStyle(LiquidGlass.bridgeTint)
         case .success:
             return AnyShapeStyle(Color.green)
         case .warning:

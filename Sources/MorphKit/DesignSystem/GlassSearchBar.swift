@@ -17,7 +17,7 @@ public struct GlassSearchBar: View {
             Image(systemName: "magnifyingglass")
                 .symbolRenderingMode(.hierarchical)
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(isFocused ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.secondary))
+                .foregroundStyle(isFocused ? AnyShapeStyle(LiquidGlass.bridgeTint) : AnyShapeStyle(.secondary))
                 .animation(LiquidGlass.quickSpring, value: isFocused)
 
             TextField(placeholder, text: $text)
@@ -48,7 +48,7 @@ public struct GlassSearchBar: View {
                     .overlay {
                         RoundedRectangle(cornerRadius: LiquidGlass.cardRadius, style: .continuous)
                             .stroke(
-                                isFocused ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.quaternary),
+                                isFocused ? AnyShapeStyle(LiquidGlass.bridgeTint) : AnyShapeStyle(.quaternary),
                                 lineWidth: isFocused ? 1.5 : 0.5
                             )
                     }
@@ -58,12 +58,12 @@ public struct GlassSearchBar: View {
                     .overlay {
                         RoundedRectangle(cornerRadius: LiquidGlass.cardRadius, style: .continuous)
                             .stroke(
-                                isFocused ? AnyShapeStyle(Color.accentColor.opacity(0.80)) : AnyShapeStyle(.quaternary),
+                                isFocused ? AnyShapeStyle(LiquidGlass.bridgeTint.opacity(0.80)) : AnyShapeStyle(.quaternary),
                                 lineWidth: isFocused ? 1.5 : 0.5
                             )
                     }
                     .shadow(
-                        color: isFocused ? Color.accentColor.opacity(0.20) : Color.black.opacity(0.08),
+                        color: isFocused ? LiquidGlass.bridgeTint.opacity(0.20) : Color.black.opacity(0.08),
                         radius: isFocused ? 8 : 4,
                         x: 0,
                         y: 2

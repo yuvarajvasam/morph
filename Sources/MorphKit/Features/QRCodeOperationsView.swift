@@ -33,7 +33,7 @@ public struct QRCodeOperationsView: View {
                 if viewModel.isProcessing {
                     HStack(spacing: 8) {
                         Image(systemName: "sparkles")
-                            .foregroundStyle(Color.accentColor)
+                            .foregroundStyle(LiquidGlass.bridgeTint)
                             .symbolEffect(.pulse)
                         Text("Exporting vector / image...")
                             .font(.system(size: 12))

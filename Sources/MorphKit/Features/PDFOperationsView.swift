@@ -89,7 +89,7 @@ public struct PDFOperationsView: View {
                 if viewModel.isProcessing {
                     HStack(spacing: 8) {
                         Image(systemName: "sparkles")
-                            .foregroundStyle(Color.accentColor)
+                            .foregroundStyle(LiquidGlass.bridgeTint)
                             .symbolEffect(.pulse)
                         ProgressView(value: viewModel.progress)
                             .progressViewStyle(.linear)
@@ -146,7 +146,7 @@ public struct PDFOperationsView: View {
                                 Spacer()
                                 if viewModel.pdfSettings.compressionPreset == preset {
                                     Image(systemName: "checkmark.circle.fill")
-                                        .foregroundStyle(Color.accentColor)
+                                        .foregroundStyle(LiquidGlass.bridgeTint)
                                         .symbolEffect(.bounce, value: viewModel.pdfSettings.compressionPreset)
                                         .font(.system(size: 12))
                                 }
@@ -276,7 +276,7 @@ public struct PDFOperationsView: View {
                 Text("\(viewModel.rotationSelection)°")
                     .font(.system(size: 12, weight: .bold))
                     .monospacedDigit()
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(LiquidGlass.bridgeTint)
             }
 
             Picker("Angle", selection: $viewModel.rotationSelection) {
@@ -318,7 +318,7 @@ public struct PDFOperationsView: View {
                 Text("\(viewModel.selectedPageIndices.count) selected")
                     .font(.system(size: 11, weight: .bold))
                     .monospacedDigit()
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(LiquidGlass.bridgeTint)
             }
 
             if let first = viewModel.droppedFiles.first, let count = first.pageCount {

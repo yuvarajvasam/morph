@@ -101,12 +101,12 @@ public struct PDFPageThumbnailView: View {
                     // Selection checkmark
                     if isSelected && !isMarkedForRemoval {
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .stroke(Color.accentColor, lineWidth: 2.5)
+                            .stroke(LiquidGlass.bridgeTint, lineWidth: 2.5)
                         VStack {
                             HStack {
                                 Spacer()
                                 Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(Color.accentColor)
+                                    .foregroundStyle(LiquidGlass.bridgeTint)
                                     .symbolEffect(.bounce, value: isSelected)
                                     .background(Circle().fill(Color.white))
                                     .font(.system(size: 14))
@@ -128,7 +128,7 @@ public struct PDFPageThumbnailView: View {
                     Text("\(pageNumber)")
                         .font(.system(size: 11, weight: .semibold, design: .rounded))
                         .monospacedDigit()
-                        .foregroundStyle(isMarkedForRemoval ? Color.red : (isSelected ? Color.accentColor : Color.primary))
+                        .foregroundStyle(isMarkedForRemoval ? Color.red : (isSelected ? LiquidGlass.bridgeTint : Color.primary))
 
                     if let badge = badgeText {
                         Text(badge)

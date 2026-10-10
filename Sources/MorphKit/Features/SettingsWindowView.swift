@@ -64,7 +64,7 @@ public struct SettingsWindowView: View {
                             .font(.figmaBody(emphasized: tabState.selectedTab == tab))
                     } icon: {
                         Image(systemName: tab.systemIcon)
-                            .foregroundStyle(tabState.selectedTab == tab ? Color.accentColor : Color.secondary)
+                            .foregroundStyle(tabState.selectedTab == tab ? LiquidGlass.bridgeTint : Color.secondary)
                     }
                 }
                 .tag(tab)
@@ -485,7 +485,7 @@ public struct SettingsWindowView: View {
 
             LabeledContent {
                 Image(systemName: "shield.lefthalf.filled")
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(LiquidGlass.bridgeTint)
             } label: {
                 Text("Non-Destructive Writing")
                 Text("Original source files are never overwritten. Duplicate filenames are automatically appended with (1), (2), etc.")
@@ -548,7 +548,7 @@ public struct SettingsWindowView: View {
                 Image(systemName: "wand.and.stars")
                     .font(.system(size: 44))
                     .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(LiquidGlass.bridgeTint)
                     .symbolEffect(.bounce, value: tabState.selectedTab)
 
                 Text("Morph")

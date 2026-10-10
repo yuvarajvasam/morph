@@ -182,7 +182,7 @@ public struct ActionPanelView: View {
             HStack(spacing: 8) {
                 Image(systemName: "command")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(LiquidGlass.bridgeTint)
 
                 TextField("Search Actions...", text: $viewModel.actionSearchQuery)
                     .textFieldStyle(.plain)
@@ -214,7 +214,7 @@ public struct ActionPanelView: View {
 
             // Bottom bar
             HStack {
-                Text("Raycast-style Actions Menu")
+                Text("Actions")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -249,7 +249,7 @@ public struct ActionPanelView: View {
         return HStack(spacing: 10) {
             Image(systemName: item.systemIcon)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(item.isDestructive ? Color.red : (isSelected ? Color.white : Color.accentColor))
+                .foregroundStyle(item.isDestructive ? Color.red : (isSelected ? Color.white : LiquidGlass.bridgeTint))
                 .frame(width: 18)
 
             Text(item.title)
@@ -272,7 +272,7 @@ public struct ActionPanelView: View {
         .background {
             if isSelected {
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(item.isDestructive ? Color.red.opacity(0.8) : Color.accentColor)
+                    .fill(item.isDestructive ? Color.red.opacity(0.8) : LiquidGlass.bridgeTint)
             }
         }
         .contentShape(Rectangle())
