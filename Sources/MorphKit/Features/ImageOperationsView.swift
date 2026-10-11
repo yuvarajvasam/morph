@@ -74,44 +74,34 @@ public struct ImageOperationsView: View {
 
             Spacer(minLength: 4)
 
-            // 3. Execution Bar
-            HStack(spacing: LiquidGlass.spaceMD) {
-                if viewModel.isProcessing {
-                    HStack(spacing: 8) {
-                        ProgressView()
-                            .scaleEffect(0.7)
-                            .frame(width: 16, height: 16)
-                        ProgressView(value: viewModel.progress)
-                            .progressViewStyle(.linear)
-                            .frame(maxWidth: 140)
-                        Text("Processing locally...")
-                            .font(.system(size: 11))
-                            .foregroundStyle(Color.secondary)
+            // 3. Execution Bar / Status Indicators
+            if viewModel.isProcessing || viewModel.errorMessage != nil {
+                HStack(spacing: LiquidGlass.spaceMD) {
+                    if viewModel.isProcessing {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                                .scaleEffect(0.7)
+                                .frame(width: 16, height: 16)
+                            ProgressView(value: viewModel.progress)
+                                .progressViewStyle(.linear)
+                                .frame(maxWidth: 140)
+                            Text("Processing locally...")
+                                .font(.system(size: 11))
+                                .foregroundStyle(Color.secondary)
+                        }
+                    } else if let error = viewModel.errorMessage {
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(Color.red)
+                            Text(error)
+                                .font(.system(size: 11))
+                                .foregroundStyle(Color.red)
+                                .lineLimit(2)
+                        }
                     }
-                } else if let error = viewModel.errorMessage {
-                    HStack(spacing: 6) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundStyle(Color.red)
-                        Text(error)
-                            .font(.system(size: 11))
-                            .foregroundStyle(Color.red)
-                            .lineLimit(2)
-                    }
-                }
 
-                Spacer()
-
-                GlassButton("Cancel", shortcutBadge: "⎋", variant: .secondary) {
-                    viewModel.goBack()
+                    Spacer()
                 }
-
-                GlassButton(actionTitle, icon: "sparkles", shortcutBadge: "↩", variant: .primary) {
-                    applyResizeSettingsIfApplicable()
-                    Task {
-                        await viewModel.runActiveCommand()
-                    }
-                }
-                .disabled(viewModel.isProcessing)
             }
         }
         .padding(LiquidGlass.spaceLG)

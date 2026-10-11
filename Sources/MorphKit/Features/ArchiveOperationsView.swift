@@ -55,50 +55,34 @@ public struct ArchiveOperationsView: View {
 
             Spacer(minLength: 4)
 
-            // Execution Bar
-            HStack(spacing: LiquidGlass.spaceMD) {
-                if viewModel.isProcessing {
-                    HStack(spacing: 8) {
-                        ProgressView()
-                            .scaleEffect(0.7)
-                            .frame(width: 16, height: 16)
-                        ProgressView(value: viewModel.progress)
-                            .progressViewStyle(.linear)
-                            .frame(maxWidth: 140)
-                        Text(isExtractionOrInspect ? "Extracting archive..." : "Creating archive...")
-                            .font(.system(size: 11))
-                            .foregroundStyle(Color.secondary)
+            // Status Indicators
+            if viewModel.isProcessing || viewModel.errorMessage != nil {
+                HStack(spacing: LiquidGlass.spaceMD) {
+                    if viewModel.isProcessing {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                                .scaleEffect(0.7)
+                                .frame(width: 16, height: 16)
+                            ProgressView(value: viewModel.progress)
+                                .progressViewStyle(.linear)
+                                .frame(maxWidth: 140)
+                            Text(isExtractionOrInspect ? "Extracting archive..." : "Creating archive...")
+                                .font(.system(size: 11))
+                                .foregroundStyle(Color.secondary)
+                        }
+                    } else if let error = viewModel.errorMessage {
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(Color.red)
+                            Text(error)
+                                .font(.system(size: 11))
+                                .foregroundStyle(Color.red)
+                                .lineLimit(2)
+                        }
                     }
-                } else if let error = viewModel.errorMessage {
-                    HStack(spacing: 6) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundStyle(Color.red)
-                        Text(error)
-                            .font(.system(size: 11))
-                            .foregroundStyle(Color.red)
-                            .lineLimit(2)
-                    }
-                }
 
-                Spacer()
-
-                GlassButton("Cancel", shortcutBadge: "⎋", variant: .secondary) {
-                    withAnimation(LiquidGlass.standardSpring) {
-                        viewModel.goBack()
-                    }
+                    Spacer()
                 }
-
-                GlassButton(
-                    isExtractionOrInspect ? "Extract Archive" : "Create Archive",
-                    icon: isExtractionOrInspect ? "tray.and.arrow.up" : "archivebox",
-                    shortcutBadge: "↩",
-                    variant: .primary
-                ) {
-                    Task {
-                        await viewModel.executeCurrentOperation()
-                    }
-                }
-                .disabled(viewModel.droppedFiles.isEmpty || viewModel.isProcessing)
             }
         }
         .padding(LiquidGlass.spaceLG)

@@ -24,17 +24,23 @@ public final class SettingsWindowController: NSObject, NSWindowDelegate {
         let hostingView = NSHostingView(rootView: settingsView)
 
         let newWindow = MorphSettingsWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 780, height: 560),
+            contentRect: NSRect(x: 0, y: 0, width: 860, height: 600),
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
 
         newWindow.title = "Morph Settings"
-        newWindow.titleVisibility = .visible
+        newWindow.titleVisibility = .hidden
         newWindow.titlebarAppearsTransparent = true
+        newWindow.backgroundColor = .clear
+        newWindow.isOpaque = false
+        newWindow.hasShadow = true
         newWindow.isMovableByWindowBackground = true
-        newWindow.minSize = NSSize(width: 680, height: 480)
+        newWindow.standardWindowButton(.closeButton)?.isHidden = true
+        newWindow.standardWindowButton(.miniaturizeButton)?.isHidden = true
+        newWindow.standardWindowButton(.zoomButton)?.isHidden = true
+        newWindow.minSize = NSSize(width: 780, height: 520)
         newWindow.contentView = hostingView
         newWindow.delegate = self
         newWindow.isReleasedWhenClosed = false

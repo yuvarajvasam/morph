@@ -28,47 +28,29 @@ public struct QRCodeOperationsView: View {
 
             Spacer(minLength: 4)
 
-            // Bottom Action Bar
-            HStack(spacing: LiquidGlass.spaceMD) {
-                if viewModel.isProcessing {
-                    HStack(spacing: 8) {
-                        ProgressView()
-                            .scaleEffect(0.7)
-                        Text("Exporting vector / image...")
-                            .font(.system(size: 11))
-                            .foregroundStyle(Color.secondary)
-                    }
-                } else if let error = viewModel.errorMessage {
-                    HStack(spacing: 6) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundStyle(Color.red)
-                        Text(error)
-                            .font(.system(size: 11))
-                            .foregroundStyle(Color.red)
-                            .lineLimit(2)
-                    }
-                }
-
-                Spacer()
-
-                GlassButton("Cancel", shortcutBadge: "⎋", variant: .secondary) {
-                    withAnimation(LiquidGlass.standardSpring) {
-                        viewModel.goBack()
-                    }
-                }
-
-                if !isScan {
-                    GlassButton(
-                        "Export \(viewModel.qrExportAsPDF ? "Vector (PDF)" : "Image (PNG)")",
-                        icon: "arrow.down.doc.fill",
-                        shortcutBadge: "↩",
-                        variant: .primary
-                    ) {
-                        Task {
-                            await viewModel.executeCurrentOperation()
+            // Status Indicators
+            if viewModel.isProcessing || viewModel.errorMessage != nil {
+                HStack(spacing: LiquidGlass.spaceMD) {
+                    if viewModel.isProcessing {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                                .scaleEffect(0.7)
+                            Text("Exporting vector / image...")
+                                .font(.system(size: 11))
+                                .foregroundStyle(Color.secondary)
+                        }
+                    } else if let error = viewModel.errorMessage {
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(Color.red)
+                            Text(error)
+                                .font(.system(size: 11))
+                                .foregroundStyle(Color.red)
+                                .lineLimit(2)
                         }
                     }
-                    .disabled(viewModel.isProcessing)
+
+                    Spacer()
                 }
             }
         }

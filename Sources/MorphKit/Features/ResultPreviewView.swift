@@ -213,29 +213,18 @@ public struct ResultPreviewView: View {
 
             Spacer(minLength: 4)
 
-            // Actions Bar with native ShareLink, Finder, and Launcher actions
-            HStack(spacing: 8) {
-                GlassButton("Done", icon: "checkmark", shortcutBadge: "⎋", variant: .secondary) {
-                    viewModel.clearAll()
-                }
-
-                GlassButton("Another", icon: "plus", variant: .secondary) {
-                    viewModel.convertAnother()
-                }
-
-                Spacer()
-
-                if let primaryURL = result.primaryOutputURL {
+            // Quick Actions Bar (Share, Save As, Finder)
+            if let primaryURL = result.primaryOutputURL {
+                HStack(spacing: 8) {
                     ShareLink(item: primaryURL) {
                         HStack(spacing: 4) {
                             Image(systemName: "square.and.arrow.up")
                                 .font(.system(size: 11))
                             Text("Share")
-                                .font(.system(size: 12, weight: .medium))
-                                .lineLimit(1)
+                                .font(.system(size: 11, weight: .medium))
                         }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
                         .background(
                             RoundedRectangle(cornerRadius: 6, style: .continuous)
                                 .fill(Color.primary.opacity(0.06))
@@ -244,17 +233,15 @@ public struct ResultPreviewView: View {
                     .buttonStyle(.plain)
                     .help("Share processed file via AirDrop, Mail, or Messages")
 
-                    GlassButton("Save As…", icon: "arrow.down.doc", variant: .secondary) {
+                    GlassButton("Save As…", icon: "arrow.down.doc", variant: .secondary, size: .small) {
                         viewModel.saveOutputAs(url: primaryURL)
                     }
 
-                    GlassButton("Finder", icon: "folder", shortcutBadge: "⌘R", variant: .secondary) {
+                    GlassButton("Finder", icon: "folder", shortcutBadge: "⌘R", variant: .secondary, size: .small) {
                         viewModel.revealInFinder(url: primaryURL)
                     }
 
-                    GlassButton("Open", icon: "arrow.up.right", shortcutBadge: "⌘O", variant: .primary) {
-                        viewModel.openFile(url: primaryURL)
-                    }
+                    Spacer()
                 }
             }
         }

@@ -123,10 +123,14 @@ public func runVisualVerification() async throws {
     vmResult.currentResult = mockResult
     render(LauncherView(viewModel: vmResult), filename: "09_result_preview.png")
 
-    // 10. Settings View
-    let vmSettings = LauncherViewModel()
-    vmSettings.isShowingSettings = true
-    render(LauncherView(viewModel: vmSettings), filename: "10_settings_view.png")
+    // 10. Settings View (Standalone Preferences Window matching design reference)
+    let settingsCanvas = ZStack {
+        SettingsWindowView()
+            .frame(width: 860, height: 600)
+    }
+    .frame(width: 920, height: 660)
+
+    render(settingsCanvas, size: CGSize(width: 920, height: 660), filename: "10_settings_view.png")
 
     print("✅ VISUAL VERIFICATION CAPTURE COMPLETE (10 screens exported)!\n")
 }
