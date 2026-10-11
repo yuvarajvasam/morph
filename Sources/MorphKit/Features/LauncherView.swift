@@ -14,30 +14,31 @@ public struct LauncherView: View {
     }
 
     public var body: some View {
-        VStack(spacing: LiquidGlass.spaceMD) {
-            // LAYER A: FLOATING TOP CAPSULE (Detached Island)
+        VStack(spacing: 0) {
+            // LAYER A: INTEGRATED TOP HEADER (Search Bar or Tool Navigation)
             if isToolOrResultOpen {
-                toolNavigationCapsuleView
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .top).combined(with: .opacity),
-                        removal: .move(edge: .top).combined(with: .opacity)
-                    ))
+                integratedToolNavigationHeader
             } else {
-                searchCapsuleView
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .top).combined(with: .opacity),
-                        removal: .move(edge: .top).combined(with: .opacity)
-                    ))
+                integratedSearchBarHeader
             }
 
-            // LAYER B: MAIN CONTENT SURFACE (28pt Squircle Island)
-            mainCardSurfaceView
+            Divider()
+                .overlay(Color.white.opacity(0.07))
+
+            // LAYER B: MAIN CONTENT AREA
+            contentAreaView
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            // LAYER C: PERSISTENT FOOTER BAR (only in discovery mode)
+            if !isToolOrResultOpen {
+                Divider()
+                    .overlay(Color.white.opacity(0.07))
+                footerShortcutBar
+            }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
         .frame(width: viewModel.preferences.launcherSize.dimensions.width,
                height: viewModel.preferences.launcherSize.dimensions.height)
-        .background(Color.clear)
+        .liquidGlassSurface(radius: 28)
         .animation(LiquidGlass.standardSpring, value: isToolOrResultOpen)
         .animation(LiquidGlass.quickSpring, value: viewModel.selectedCategory)
         .animation(LiquidGlass.quickSpring, value: viewModel.preferences.viewMode)
@@ -72,9 +73,7 @@ public struct LauncherView: View {
                                 .foregroundStyle(Color.white)
                         }
                     }
-                    .padding(.top, 58)
-                    .padding(.horizontal, 10)
-                    .padding(.bottom, 8)
+                    .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
             }
         }
         .overlay {
@@ -115,24 +114,25 @@ public struct LauncherView: View {
         }
     }
 
-    // MARK: - Layer A: Floating Search Capsule (Top Island)
+    // MARK: - Integrated Search Bar Header (Matching Reference Image)
 
-    private var searchCapsuleView: some View {
-        HStack(spacing: 10) {
-            // Left Glyph: Curated Stylized Morph Icon
+    private var integratedSearchBarHeader: some View {
+        HStack(spacing: 12) {
+            // Left Glyph matching Reference (Striped diamond/grid emblem)
             ZStack {
-                Circle()
-                    .fill(LiquidGlass.brandAccentGradient)
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(Color.white.opacity(0.08))
                     .frame(width: 24, height: 24)
+
                 Image(systemName: "circle.grid.2x2.fill")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(Color.white)
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Color.white.opacity(0.75))
             }
 
-            // Search Text Field
+            // Search Text Field with Reference Placeholder
             TextField(searchPlaceholder, text: $viewModel.searchQuery)
                 .textFieldStyle(.plain)
-                .font(.system(size: 13, weight: .regular))
+                .font(.system(size: 15, weight: .regular))
                 .foregroundStyle(Color.white)
                 .focused($isSearchFocused)
 
@@ -219,7 +219,7 @@ public struct LauncherView: View {
             } label: {
                 Image(systemName: "ellipsis")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(Color.white.opacity(0.85))
+                    .foregroundStyle(Color.white.opacity(0.70))
                     .frame(width: 26, height: 26)
                     .contentShape(Rectangle())
             }
@@ -227,16 +227,14 @@ public struct LauncherView: View {
             .menuIndicator(.hidden)
             .help("View options (Grid/List) & settings")
         }
-        .padding(.horizontal, 16)
-        .frame(maxWidth: 460)
-        .frame(height: 46)
-        .liquidGlassCapsule()
+        .padding(.horizontal, 18)
+        .frame(height: 52)
     }
 
-    // MARK: - Layer A: Floating Navigation Capsule (When in Tool/Result)
+    // MARK: - Integrated Tool Navigation Header (When in Tool/Result)
 
-    private var toolNavigationCapsuleView: some View {
-        HStack(spacing: 10) {
+    private var integratedToolNavigationHeader: some View {
+        HStack(spacing: 12) {
             Button {
                 withAnimation(LiquidGlass.standardSpring) {
                     viewModel.goBack()
@@ -257,10 +255,10 @@ public struct LauncherView: View {
 
             if let activeCmd = viewModel.activeCommand {
                 HStack(spacing: 8) {
-                    ToolSquircleIcon(command: activeCmd, size: 22, cornerRadius: 5)
+                    ToolSquircleIcon(command: activeCmd, size: 24, cornerRadius: 6)
 
                     Text(activeCmd.title)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Color.white)
 
                     GlassPill(activeCmd.category.displayName, style: .accent)
@@ -268,19 +266,19 @@ public struct LauncherView: View {
             } else if viewModel.currentResult != nil {
                 HStack(spacing: 6) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 13))
+                        .font(.system(size: 14))
                         .foregroundStyle(Color.green)
                     Text("Result Preview")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Color.white)
                 }
             } else if viewModel.isShowingSettings {
                 HStack(spacing: 6) {
                     Image(systemName: "gearshape.fill")
-                        .font(.system(size: 12))
+                        .font(.system(size: 13))
                         .foregroundStyle(LiquidGlass.brandAccent)
                     Text("Preferences")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Color.white)
                 }
             }
@@ -338,10 +336,8 @@ public struct LauncherView: View {
             .menuStyle(.borderlessButton)
             .menuIndicator(.hidden)
         }
-        .padding(.horizontal, 14)
-        .frame(maxWidth: 600)
-        .frame(height: 46)
-        .liquidGlassCapsule()
+        .padding(.horizontal, 18)
+        .frame(height: 52)
     }
 
     private var searchPlaceholder: String {
@@ -351,32 +347,7 @@ public struct LauncherView: View {
         if let cat = viewModel.selectedCategory {
             return "Search in \(cat.displayName)..."
         }
-        return "Search Morph or drop a file..."
-    }
-
-    // MARK: - Layer B: Main Card Surface (28pt Squircle Island)
-
-    private var mainCardSurfaceView: some View {
-        VStack(spacing: 0) {
-            // Category Filter Chips (when in search / discovery mode)
-            if !isToolOrResultOpen {
-                categoryChipsView
-                    .padding(.top, 14)
-                    .padding(.bottom, 10)
-            }
-
-            // Main Content Area
-            contentAreaView
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            // Persistent Footer Bar (only in discovery mode)
-            if !isToolOrResultOpen {
-                Divider()
-                    .overlay(Color.white.opacity(0.08))
-                footerShortcutBar
-            }
-        }
-        .liquidGlassSurface(radius: 28)
+        return "Search for apps or commands..."
     }
 
     // MARK: - Category Filter Chips Row
@@ -423,7 +394,7 @@ public struct LauncherView: View {
                     .font(.system(size: 11, weight: isSelected ? .semibold : .medium))
             }
             .padding(.horizontal, 11)
-            .padding(.vertical, 6)
+            .padding(.vertical, 5)
             .background {
                 if isSelected {
                     Capsule()
@@ -487,38 +458,39 @@ public struct LauncherView: View {
         }
     }
 
-    // MARK: - List Mode Discovery View (Design Reference 1)
+    // MARK: - List Mode Discovery View (Directly Matching Reference Image)
 
     private var listModeDiscoveryView: some View {
-        VStack(spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
+            // Category Filter Chips
+            categoryChipsView
+                .padding(.top, 10)
+                .padding(.bottom, 8)
+
             let commands = viewModel.filteredCommands
 
             if commands.isEmpty {
                 emptyUnavailableView
             } else {
+                // "Suggestions" Section Header matching reference
+                HStack {
+                    Text(viewModel.selectedCategory == nil ? "Suggestions" : viewModel.selectedCategory!.displayName.uppercased())
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(Color.white.opacity(0.50))
+                    Spacer()
+                }
+                .padding(.horizontal, 18)
+                .padding(.bottom, 4)
+
                 ScrollViewReader { proxy in
                     ScrollView {
-                        VStack(spacing: 8) {
-                            // Top Shelf (Favorite / Top 5 squircle apps) when in default browse mode
-                            if viewModel.searchQuery.isEmpty && viewModel.selectedCategory == nil && viewModel.droppedFiles.isEmpty {
-                                topShelfView
-                                    .padding(.top, 2)
-                                    .padding(.bottom, 6)
-
-                                Divider()
-                                    .overlay(Color.white.opacity(0.10))
-                                    .padding(.horizontal, 14)
+                        LazyVStack(spacing: 2) {
+                            ForEach(Array(commands.enumerated()), id: \.element.id) { index, command in
+                                listCommandRow(index: index, command: command)
                             }
-
-                            // Vertical list of tools
-                            LazyVStack(spacing: 3) {
-                                ForEach(Array(commands.enumerated()), id: \.element.id) { index, command in
-                                    listCommandRow(index: index, command: command)
-                                }
-                            }
-                            .padding(.horizontal, 14)
-                            .padding(.bottom, 8)
                         }
+                        .padding(.horizontal, 12)
+                        .padding(.bottom, 8)
                     }
                     .scrollIndicators(.hidden)
                     .onChange(of: viewModel.selectedIndex) { _, newIndex in
@@ -529,84 +501,49 @@ public struct LauncherView: View {
         }
     }
 
-    // MARK: - Top Shelf Row (5 large squircle icons)
-
-    private var topShelfView: some View {
-        HStack(spacing: 0) {
-            ForEach(viewModel.topShelfCommands) { cmd in
-                Button {
-                    viewModel.selectCommand(cmd)
-                } label: {
-                    VStack(spacing: 6) {
-                        ToolSquircleIcon(command: cmd, size: 48, cornerRadius: 12)
-
-                        Text(cmd.title)
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(Color.white.opacity(0.90))
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                            .frame(maxWidth: 96)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.horizontal, 14)
-    }
-
-    // MARK: - List Row Item
+    // MARK: - List Row Item (Matching Reference: Icon, Title, Secondary Label, Category right-aligned)
 
     private func listCommandRow(index: Int, command: ConversionCommand) -> some View {
         let isSelected = (index == viewModel.selectedIndex)
-        let isFavorite = viewModel.preferences.isFavorite(id: command.id)
 
         return HStack(spacing: 12) {
-            // Squircle icon matching app style
-            ToolSquircleIcon(command: command, size: 34, cornerRadius: 8.5)
+            // Compact Squircle icon matching app style
+            ToolSquircleIcon(command: command, size: 28, cornerRadius: 7)
 
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(command.title)
-                        .font(.system(size: 13, weight: isSelected ? .semibold : .medium))
-                        .foregroundStyle(Color.white)
+            // Title & Subtitle
+            HStack(spacing: 6) {
+                Text(command.title)
+                    .font(.system(size: 13, weight: isSelected ? .medium : .regular))
+                    .foregroundStyle(Color.white)
 
-                    if isFavorite {
-                        Image(systemName: "star.fill")
-                            .font(.system(size: 9))
-                            .foregroundStyle(Color.yellow)
-                    }
-
-                    Spacer()
-                    GlassPill(command.category.displayName, style: isSelected ? .accent : .standard)
+                if isSelected {
+                    Text(command.subtitle)
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.white.opacity(0.45))
+                        .lineLimit(1)
                 }
-
-                Text(command.subtitle)
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color.white.opacity(0.55))
-                    .lineLimit(1)
             }
+
+            Spacer()
+
+            // Right-aligned category label matching "Application" / "Command" in reference
+            Text(command.category.singularName)
+                .font(.system(size: 12))
+                .foregroundStyle(Color.white.opacity(0.50))
 
             if isSelected {
                 Text("↩")
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .foregroundStyle(Color.white.opacity(0.70))
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 2)
-                    .background(RoundedRectangle(cornerRadius: 4, style: .continuous).fill(Color.white.opacity(0.14)))
+                    .padding(.leading, 4)
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 7)
         .background {
             if isSelected {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .fill(Color.white.opacity(0.12))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .strokeBorder(Color.white.opacity(0.18), lineWidth: 0.75)
-                    }
             }
         }
         .contentShape(Rectangle())
@@ -617,10 +554,15 @@ public struct LauncherView: View {
         }
     }
 
-    // MARK: - Grid Mode Discovery View (Design Reference 2 & 3)
+    // MARK: - Grid Mode Discovery View
 
     private var gridModeDiscoveryView: some View {
         VStack(spacing: 0) {
+            // Category Filter Chips
+            categoryChipsView
+                .padding(.top, 10)
+                .padding(.bottom, 8)
+
             let commands = viewModel.filteredCommands
 
             if commands.isEmpty {
@@ -814,12 +756,12 @@ public struct LauncherView: View {
                 }
             } else {
                 ScrollView {
-                    LazyVStack(spacing: 3) {
+                    LazyVStack(spacing: 2) {
                         ForEach(Array(viewModel.filteredCommands.enumerated()), id: \.element.id) { index, command in
                             listCommandRow(index: index, command: command)
                         }
                     }
-                    .padding(.horizontal, 14)
+                    .padding(.horizontal, 12)
                 }
             }
         }

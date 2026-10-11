@@ -8,47 +8,40 @@ Combining the immediacy of Spotlight, the command palette ergonomics of Raycast,
 
 ---
 
-## 🏝 1. Dual Floating Island Architecture
+## 🖥 1. Unified Integrated Window Architecture
 
-Morph's visual interface departs from standard monolithic application windows. It consists of two detached, self-contained floating translucent glass islands hovering directly over the desktop wallpaper:
+Morph features a unified continuous floating squircle card where the search bar and tool navigation are integrated directly into the top of the interface:
 
 ```
-┌────────────────────────────────────────────────────────┐
-│   [●]  Search Morph or drop a file...          •••     │  ← Layer A: Detached Floating Capsule
-└────────────────────────────────────────────────────────┘
-                          ↕ 12pt Gap
-┌────────────────────────────────────────────────────────┐
-│  [All Tools]  [Images]  [PDFs]  [Archives]  [QR & Bar] │  ← Category Filter Chips Row
-│                                                        │
-│  [✦]       [✦]       [✦]       [✦]       [✦]       [✦] │
-│  Compress  Convert   Merge     Archive   QR Code   ... │  ← Dynamic Presentation:
-│                                                        │    • Top Shelf + List Mode
-│                                                        │    • 7-Column Squircle Grid Mode
-│                                                        │
-│  ────────────────────────────────────────────────────  │
-│  ↑↓/←→ Navigate   ↩ Select   ⌘K Actions   100% Offline │  ← Persistent Shortcut Footer
-└────────────────────────────────────────────────────────┘  ← Layer B: 28pt Continuous Squircle Card
+┌────────────────────────────────────────────────────────────────────────┐
+│  [✦]  Search for apps or commands...                              •••  │  ← Integrated Search Header
+├────────────────────────────────────────────────────────────────────────┤
+│  [All Tools]  [Images]  [PDFs]  [Archives]  [QR & Barcodes]            │  ← Category Filter Chips
+│                                                                        │
+│  Suggestions                                                           │  ← Section Header
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │ [✦] Compress Image                                        Images │  │  ← Selected Row Highlight
+│  └──────────────────────────────────────────────────────────────────┘  │
+│    [✦] Convert Image                                         Images    │
+│    [✦] Merge PDF                                               PDFs    │
+│    [✦] Create Archive                                      Archives    │
+│    [✦] Generate QR Code                             QR & Barcodes      │
+│                                                                        │
+├────────────────────────────────────────────────────────────────────────┤
+│  ↑↓/←→ Navigate   ↩ Select   Space Preview   ⌘K Actions   100% Offline │  ← Persistent Shortcut Footer
+└────────────────────────────────────────────────────────────────────────┘  ← 28pt Continuous Squircle Card
 ```
 
-### Layer A: The Floating Search Capsule
-- **Geometry**: Continuous `Capsule()`, centered horizontally (`maxWidth: 460pt`), height `46pt`.
-- **Material**: Deep Obsidian HUD glass (`.hudWindow` material + deep slate gradient `#121C24` to `#0A1218` at 88–92% opacity).
-- **Specular Rim**: 0.75pt top-down hairline stroke gradient (`Color.white.opacity(0.32)` tapering to transparent).
-- **Elevation**: Ambient floating shadow (`radius: 14pt, y: 7pt, opacity: 0.38`).
-- **Interactive Elements**:
-  - Left Glyph: Stylized Morph brand circular badge with crisp SF Symbol.
-  - Search Field: Native plain text field with white label text and search prompt.
-  - Quick Badges: Dropped file counts (`GlassPill`).
-  - View Switcher Ellipsis (`•••`): Native menu allowing one-click switching between **Grid** and **List** presentation modes, plus quick access to Preferences (`⌘,`) and Actions (`⌘K`).
+### Top Integrated Search Header
+- **Geometry**: Integrated directly within the top of the window card (`height: 52pt`, `padding(.horizontal, 18)`).
+- **Emblem / Glyph**: Stylized translucent badge (`Color.white.opacity(0.08)`, 24×24pt) with crisp grid icon.
+- **Search Field**: Native plain text field with high-contrast white text (`15pt`, regular weight) with prompt `Search for apps or commands...`.
+- **Ellipsis Menu (`•••`)**: Located at the top right, providing instant switching between **List** and **Grid** content modes, plus quick access to Preferences (`⌘,`) and Actions (`⌘K`).
 
-### 12pt Island Separation Gap
-- Completely transparent spacing separating Layer A from Layer B.
-- Enabled by `MorphFloatingPanel` with `isOpaque = false` and `backgroundColor = .clear`, allowing the macOS desktop wallpaper and wallpaper tinting to flow freely between both islands.
-
-### Layer B: The 28pt Squircle Content Surface
+### The 28pt Squircle Content Surface
 - **Geometry**: `RoundedRectangle(cornerRadius: 28, style: .continuous)`.
-- **Material**: Deep atmospheric Liquid Glass (`.hudWindow` with `#0E1A22` to `#081016` gradient).
-- **Specular Top Highlight**: 0.75pt continuous edge stroke reflecting light from above.
+- **Material**: Deep atmospheric Liquid Glass (`.hudWindow` with `#0E1A22` to `#081016` obsidian gradient at 88–92% opacity).
+- **Specular Top Highlight**: 0.75pt continuous edge stroke gradient (`Color.white.opacity(0.26)` tapering to transparent) reflecting light from above.
 - **Elevation**: Grounding deep ambient shadow (`radius: 26pt, y: 14pt, opacity: 0.42`).
 
 ---
@@ -85,31 +78,28 @@ Each tool features a distinct, vibrant macOS app-style gradient with specular to
 
 ## 🔲 3. Presentation Modes (Dual UX)
 
-Conforming directly to the visual design references, Morph provides two complementary presentation models switched via the `•••` capsule menu or Preferences (`⌘,`):
+Conforming directly to the visual design references, Morph provides two complementary presentation models switched via the `•••` menu or Preferences (`⌘,`):
 
-### Mode 1: Top Shelf + List Mode (Design Reference 1)
-- **Top Shelf**: A curated horizontal row of 5 large app squircles (`48×48pt`, corner radius `12pt`) featuring the top frequently used tools:
-  1. Compress Image
-  2. Convert Image
-  3. Merge PDF
-  4. Create Archive
-  5. Generate QR Code
-- **Hairline Divider**: Subtle 10% white separation line.
-- **Vertical List**: Clean, scannable rows with `34×34pt` squircle icons, titles, descriptions, and category glass pills.
-- **Selection State**: Translucent pill background (`Color.white.opacity(0.12)`) and return glyph (`↩`).
+### Mode 1: Integrated Scannable List Mode (Reference Image)
+- **Section Header**: Clean `Suggestions` header (`11pt`, semibold, 50% white text).
+- **List Rows**:
+  - `28×28pt` compact squircle icons (`cornerRadius: 7pt`).
+  - Title (`13pt`, medium weight, white).
+  - Subtitle / tag in secondary tint (`Color.white.opacity(0.45)`).
+  - Right-aligned category label (`Images`, `PDFs`, `Archives`, `QR & Barcode`).
+- **Selection State**: Translucent pill background (`Color.white.opacity(0.12)`) with return symbol (`↩`).
 
-### Mode 2: 7-Column Squircle Grid Mode (Design References 2 & 3)
+### Mode 2: 7-Column Squircle Grid Mode
 - **Layout**: Symmetric 7-column adaptive grid of `50×50pt` squircle icons.
-- **Typography**: 2-line centered labels with clean white/semi-opaque typography.
-- **Focus Indicator**: Specular focus border (`2pt`) and soft brand glow around the active squircle tile.
-- **4-Way Keyboard Navigation**: Full directional arrow navigation (`↑`, `↓`, `←`, `→`) across rows and columns.
+- **Typography**: 2-line centered labels with clean white typography.
+- **Focus Indicator**: Specular focus border (`2pt`) and brand glow around the active squircle tile.
+- **4-Way Keyboard Navigation**: Full directional arrow navigation (`↑`, `↓`, `←`, `→`).
 
 ---
 
 ## 🎛 4. Category Filter Chips
 
-- Located at the top of the 28pt squircle card.
-- **Pills**:
+- Located directly below the search header:
   - `[All Tools]` (Grid symbol)
   - `[Images]` (Photo symbol)
   - `[PDFs]` (Document symbol)
@@ -117,25 +107,17 @@ Conforming directly to the visual design references, Morph provides two compleme
   - `[QR & Barcodes]` (QR symbol)
 - **States**:
   - *Inactive*: `Color.white.opacity(0.06)` with `0.5pt` border, 70% white text.
-  - *Active*: `Color.white.opacity(0.18)` with `0.75pt` crisp border, 100% white bold text.
+  - *Active*: `Color.white.opacity(0.18)` with `0.75pt` crisp border, 100% white text.
 
 ---
 
 ## ♿️ 5. macOS HIG & Accessibility Guidelines
 
 1. **Reduce Transparency**:
-   - When macOS "Reduce Transparency" is enabled (or selected in Morph Preferences), materials fall back to solid high-contrast dark window surfaces (`Color(nsColor: .windowBackgroundColor)`).
+   - Automatically honors macOS "Reduce Transparency" with solid high-contrast dark window surfaces (`Color(nsColor: .windowBackgroundColor)`).
 2. **Reduce Motion**:
-   - Animations switch from spring dynamics to instantaneous or linear transitions.
+   - Disables spring bounces in favor of linear or instant transitions.
 3. **High Contrast Typography**:
-   - All text utilizes Apple's San Francisco font system (`.system(size:weight:)`) with `.monospacedDigit()` for all numbers, file sizes, and percentages.
-4. **Keyboard-First Design**:
-   - Every single function is accessible via hotkeys:
-     - `⌥Space`: Summon Morph anywhere
-     - `↑`/`↓`/`←`/`→`: 4-way arrow navigation
-     - `↩`: Select / execute
-     - `Space`: Quick Look preview
-     - `⌘K`: Raycast Action Panel
-     - `⌘O`: Open file dialog
-     - `⌘,`: Settings window
-     - `⎋`: Back / Dismiss
+   - San Francisco typography (`.system(size:weight:)`) with `.monospacedDigit()` for all numeric values.
+4. **Keyboard-First Controls**:
+   - Full 4-way arrow navigation (`↑`, `↓`, `←`, `→`), `↩` select/execute, `Space` Quick Look, `⌘K` Actions palette, `⌘O` browse/open, `⌘,` Settings.
