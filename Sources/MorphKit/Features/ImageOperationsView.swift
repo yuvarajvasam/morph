@@ -1,5 +1,11 @@
 import SwiftUI
 
+/// Unified Image Operations Screen (Layer B Content Surface) conforming to macOS HIG:
+/// Hierarchy:
+/// 1. File Preview & Metadata
+/// 2. Essential Options (Presets, Dimensions, Format)
+/// 3. Advanced Options (Metadata stripping, Aspect ratio)
+/// 4. Execution Bar with single dominant Primary Action (#C74634)
 public struct ImageOperationsView: View {
     @ObservedObject var viewModel: LauncherViewModel
 
@@ -8,48 +14,47 @@ public struct ImageOperationsView: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            // File Information Card with Real Image Thumbnail
+        VStack(alignment: .leading, spacing: LiquidGlass.spaceMD) {
+            // 1. File Information Header with Real Image Thumbnail
             if let first = viewModel.droppedFiles.first {
-                GlassCard {
-                    HStack(spacing: 12) {
-                        // Real Asynchronous Image Thumbnail
-                        ImageThumbnailView(url: first.url, maxPixelSize: 140, cornerRadius: 8)
-                            .frame(width: 58, height: 58)
+                HStack(spacing: LiquidGlass.spaceMD) {
+                    ImageThumbnailView(url: first.url, maxPixelSize: 140, cornerRadius: 6)
+                        .frame(width: 52, height: 52)
 
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(first.filename)
-                                .font(.system(size: 13, weight: .semibold))
-                                .lineLimit(1)
-                            Text(first.summaryDescription)
-                                .font(.system(size: 11))
-                                .foregroundStyle(.secondary)
-                                .monospacedDigit()
-                        }
-
-                        Spacer()
-
-                        Button {
-                            QuickLookManager.shared.toggle(url: first.url)
-                        } label: {
-                            Image(systemName: "eye.fill")
-                                .font(.system(size: 12))
-                                .foregroundStyle(.secondary)
-                                .padding(6)
-                                .background(Circle().fill(.quaternary))
-                        }
-                        .buttonStyle(.plain)
-                        .help("Quick Look preview (Space)")
-
-                        if viewModel.droppedFiles.count > 1 {
-                            GlassPill("+\(viewModel.droppedFiles.count - 1) more", style: .accent)
-                        }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(first.filename)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Color.primary)
+                            .lineLimit(1)
+                        Text(first.summaryDescription)
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.secondary)
+                            .monospacedDigit()
                     }
-                    .padding(10)
+
+                    Spacer()
+
+                    Button {
+                        QuickLookManager.shared.toggle(url: first.url)
+                    } label: {
+                        Image(systemName: "eye.fill")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.secondary)
+                            .padding(6)
+                            .background(Circle().fill(Color.primary.opacity(0.06)))
+                    }
+                    .buttonStyle(.plain)
+                    .help("Quick Look preview (Space)")
+
+                    if viewModel.droppedFiles.count > 1 {
+                        GlassPill("+\(viewModel.droppedFiles.count - 1) more", style: .accent)
+                    }
                 }
+                .padding(10)
+                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.primary.opacity(0.04)))
             }
 
-            // Specific Configuration per command
+            // 2. Specific Configuration per Command
             if let cmd = viewModel.activeCommand {
                 switch cmd.id {
                 case "image.compress":
@@ -69,28 +74,27 @@ public struct ImageOperationsView: View {
 
             Spacer(minLength: 4)
 
-            // Execution Bar
-            HStack {
+            // 3. Execution Bar
+            HStack(spacing: LiquidGlass.spaceMD) {
                 if viewModel.isProcessing {
                     HStack(spacing: 8) {
-                        Image(systemName: "sparkles")
-                            .foregroundStyle(LiquidGlass.bridgeTint)
-                            .symbolEffect(.pulse)
+                        ProgressView()
+                            .scaleEffect(0.7)
+                            .frame(width: 16, height: 16)
                         ProgressView(value: viewModel.progress)
                             .progressViewStyle(.linear)
-                            .frame(maxWidth: 160)
+                            .frame(maxWidth: 140)
                         Text("Processing locally...")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.secondary)
                     }
                 } else if let error = viewModel.errorMessage {
                     HStack(spacing: 6) {
                         Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundStyle(.red)
-                            .symbolEffect(.pulse)
+                            .foregroundStyle(Color.red)
                         Text(error)
-                            .font(.system(size: 12))
-                            .foregroundStyle(.red)
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.red)
                             .lineLimit(2)
                     }
                 }
@@ -101,7 +105,7 @@ public struct ImageOperationsView: View {
                     viewModel.goBack()
                 }
 
-                GlassButton("Process Now", icon: "sparkles", shortcutBadge: "↩", variant: .primary) {
+                GlassButton(actionTitle, icon: "sparkles", shortcutBadge: "↩", variant: .primary) {
                     applyResizeSettingsIfApplicable()
                     Task {
                         await viewModel.runActiveCommand()
@@ -110,40 +114,61 @@ public struct ImageOperationsView: View {
                 .disabled(viewModel.isProcessing)
             }
         }
-        .padding(18)
+        .padding(LiquidGlass.spaceLG)
+    }
+
+    private var actionTitle: String {
+        switch viewModel.activeCommand?.id {
+        case "image.compress": return "Compress Image"
+        case "image.convert": return "Convert Image"
+        case "image.resize": return "Resize Image"
+        case "image.toPDF": return "Create PDF"
+        case "image.batch": return "Batch Process"
+        default: return "Process Now"
+        }
     }
 
     // MARK: - Option Subviews
 
     private var compressOptionsView: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: LiquidGlass.spaceSM) {
             Text("Compression Preset")
-                .font(.figmaCallout(emphasized: true))
-                .foregroundStyle(.secondary)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Color.secondary)
 
-            HStack(spacing: 10) {
+            HStack(spacing: LiquidGlass.spaceSM) {
                 ForEach(CompressionPreset.allCases) { preset in
-                    GlassCard(isSelected: viewModel.imageSettings.compressionPreset == preset) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            HStack {
-                                Text(preset.rawValue)
-                                    .font(.figmaHeadline)
-                                Spacer()
-                                if viewModel.imageSettings.compressionPreset == preset {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundStyle(LiquidGlass.bridgeTint)
-                                        .symbolEffect(.bounce, value: viewModel.imageSettings.compressionPreset)
-                                        .font(.system(size: 12))
-                                }
-                            }
+                    let isSelected = viewModel.imageSettings.compressionPreset == preset
 
-                            Text(preset.description)
-                                .font(.figmaSubheadline())
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(preset.rawValue)
+                                .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
+                                .foregroundStyle(isSelected ? LiquidGlass.brandAccent : Color.primary)
+                            Spacer()
+                            if isSelected {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(LiquidGlass.brandAccent)
+                                    .font(.system(size: 11))
+                            }
                         }
-                        .padding(12)
+
+                        Text(preset.description)
+                            .font(.system(size: 10))
+                            .foregroundStyle(Color.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
+                    .padding(8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background {
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(isSelected ? LiquidGlass.brandAccent.opacity(0.12) : Color.primary.opacity(0.04))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                    .strokeBorder(isSelected ? LiquidGlass.brandAccent.opacity(0.40) : Color.primary.opacity(0.06), lineWidth: isSelected ? 1.0 : 0.5)
+                            }
+                    }
+                    .contentShape(Rectangle())
                     .onTapGesture {
                         viewModel.imageSettings.compressionPreset = preset
                     }
@@ -153,16 +178,17 @@ public struct ImageOperationsView: View {
     }
 
     private var convertOptionsView: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: LiquidGlass.spaceSM) {
             Text("Target Format")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.secondary)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Color.secondary)
 
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 ForEach(ImageFormat.allCases) { format in
                     GlassButton(
                         format.rawValue,
-                        variant: viewModel.imageSettings.format == format ? .primary : .secondary
+                        variant: viewModel.imageSettings.format == format ? .primary : .secondary,
+                        size: .small
                     ) {
                         viewModel.imageSettings.format = format
                     }
@@ -170,22 +196,22 @@ public struct ImageOperationsView: View {
             }
 
             if let first = viewModel.droppedFiles.first, first.hasAlpha == true && !viewModel.imageSettings.format.supportsAlpha {
-                HStack(spacing: 8) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
-                        .font(.system(size: 14))
-                    Text("Warning: \(viewModel.imageSettings.format.rawValue) does not support transparency. Alpha pixels will be flattened to white.")
+                HStack(spacing: 6) {
+                    Image(systemName: "info.circle.fill")
+                        .foregroundStyle(Color.orange)
+                        .font(.system(size: 12))
+                    Text("Source has transparency. JPEG will flatten alpha pixels to white.")
                         .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondary)
                 }
-                .padding(10)
-                .background(RoundedRectangle(cornerRadius: 8).fill(Color.orange.opacity(0.12)))
+                .padding(8)
+                .background(RoundedRectangle(cornerRadius: 6).fill(Color.orange.opacity(0.10)))
             }
         }
     }
 
     private var resizeOptionsView: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: LiquidGlass.spaceSM) {
             Picker("Mode", selection: $viewModel.resizeTab) {
                 Text("Exact Dimensions").tag(0)
                 Text("Max Width").tag(1)
@@ -202,7 +228,7 @@ public struct ImageOperationsView: View {
                     } label: {
                         Text("Width (px)")
                             .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.secondary)
                     }
 
                     LabeledContent {
@@ -211,7 +237,7 @@ public struct ImageOperationsView: View {
                     } label: {
                         Text("Height (px)")
                             .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.secondary)
                     }
                 }
                 Toggle("Maintain Aspect Ratio", isOn: $viewModel.imageSettings.maintainAspectRatio)
@@ -224,7 +250,7 @@ public struct ImageOperationsView: View {
                 } label: {
                     Text("Maximum Width (px)")
                         .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondary)
                 }
             } else if viewModel.resizeTab == 2 {
                 LabeledContent {
@@ -233,18 +259,18 @@ public struct ImageOperationsView: View {
                 } label: {
                     Text("Maximum Height (px)")
                         .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondary)
                 }
             } else if viewModel.resizeTab == 3 {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 4) {
                     LabeledContent {
                         Text("\(Int(viewModel.resizePercentage))%")
                             .font(.system(size: 12, weight: .semibold))
                             .monospacedDigit()
                     } label: {
                         Text("Scale Factor")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.secondary)
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.secondary)
                     }
                     Slider(value: $viewModel.resizePercentage, in: 10...100, step: 5)
                 }
@@ -253,10 +279,10 @@ public struct ImageOperationsView: View {
     }
 
     private var imagesToPDFOptionsView: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: LiquidGlass.spaceSM) {
             Text("Page Sizing")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.secondary)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Color.secondary)
 
             Picker("Page Size", selection: $viewModel.pdfSettings.imageToPDFPageSize) {
                 ForEach(PDFPageSize.allCases) { size in
@@ -271,16 +297,16 @@ public struct ImageOperationsView: View {
             } label: {
                 Text("Output Filename:")
                     .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.secondary)
             }
         }
     }
 
     private var batchOptionsView: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: LiquidGlass.spaceSM) {
             Text("Batch Operation")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.secondary)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Color.secondary)
 
             Picker("Compression Preset", selection: $viewModel.imageSettings.compressionPreset) {
                 ForEach(CompressionPreset.allCases) { p in
@@ -291,7 +317,7 @@ public struct ImageOperationsView: View {
 
             Text("All \(viewModel.droppedFiles.count) images will be processed sequentially to preserve system memory.")
                 .font(.system(size: 11))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.secondary)
                 .monospacedDigit()
         }
     }

@@ -9,18 +9,26 @@ Morph combines the speed and keyboard-first experience of Raycast and Spotlight 
 ## ✨ Key Highlights & Apple HIG Compliance
 
 - **100% Offline & Private**: Zero cloud processing, zero remote conversion APIs, zero accounts, zero analytics. Works completely without an internet connection.
+- **Dual Floating Island Architecture**:
+  - **Layer A (Floating Search Capsule)**: Detached hovering capsule pill with centered search, dropped file badges, and `•••` presentation switcher.
+  - **12pt Wallpaper Gap**: Transparent separation allowing the macOS wallpaper to float between controls.
+  - **Layer B (28pt Squircle Card)**: Deep translucent obsidian liquid glass card with specular highlight rim and category chips.
+- **Dual Presentation UX (List & Grid)**:
+  - **Top Shelf + List Mode**: 5 prominent squircle tool icons on a top shelf, followed by a hairline divider and scannable list rows.
+  - **7-Column Squircle Grid Mode**: Symmetric grid of handcrafted app squircles with vibrant gradients and specular lighting.
+  - Switched seamlessly via the `•••` menu or Preferences (`⌘,`).
 - **Apple Human Interface Guidelines (HIG)**:
-  - **Dynamic System Materials**: Authentic `.ultraThinMaterial` backdrops with dual-layer shadows (ambient depth + contact shadow) and specular rim highlights.
+  - **Dynamic System Materials**: Authentic `.hudWindow` backdrops with dual-layer shadows (ambient depth + contact shadow) and specular rim highlights.
   - **Accessibility Compliance**: Automatically honors macOS **Reduce Transparency** (solid system background fallback) and **Reduce Motion** (disables spring bounces).
   - **San Francisco Typography**: Strict typographic scale with `.monospacedDigit()` for all numbers, file sizes, percentages, dimensions, and DPI values.
   - **Native Quick Look (Spacebar)**: Preview any input or generated file instantly via system `QLPreviewPanel`.
   - **Direct Manipulation**: Drag output files directly from the results card to Finder, Desktop, Mail, or Slack (`.onDrag`).
-  - **Keyboard-First Controls**: Full keyboard navigation (`↑`/`↓` to navigate, `↩` to select/execute, `Space` to Quick Look, `⌘O` to browse/open, `⌘C` to copy, `⌘R` to reveal in Finder, `⌘,` for Settings, `⎋` to go back/dismiss).
-  - **Native macOS Preferences (`⌘,`)**: Output destination preferences (Same as source, Desktop, Downloads), audio chimes, and default optimization presets.
+  - **Keyboard-First Controls**: Full 4-way keyboard navigation (`↑`/`↓`/`←`/`→` to navigate, `↩` to select/execute, `Space` to Quick Look, `⌘O` to browse/open, `⌘C` to copy, `⌘R` to reveal in Finder, `⌘,` for Settings, `⎋` to go back/dismiss).
+  - **Native macOS Preferences (`⌘,`)**: Output destination preferences (Same as source, Desktop, Downloads), view mode, audio chimes, and default optimization presets.
   - **Subtle Auditory Feedback**: Native macOS system sound effects on completion (`Glass`) and error (`beep`).
-- **Spotlight-Style Command Launcher**: Fast floating `NSPanel` summonable globally via `⌥Space` or the Menu Bar icon (`wand.and.stars`).
 - **Interactive Before/After Comparison**: Real-time split comparison slider for image compression with double-click reset and accurate byte savings reporting.
 - **Safe by Design**: Never overwrites original files, generates collision-safe output names (`image-compressed (1).jpg`), cleans up intermediate temporary files, and validates output file integrity.
+- **Brand & Design Guidelines**: Detailed specifications available in [DESIGN_AND_BRAND_GUIDELINES.md](file:///Users/yuvi/Developer/morph/DESIGN_AND_BRAND_GUIDELINES.md).
 
 ---
 

@@ -9,12 +9,20 @@ public enum GlassPillStyle {
     case destructive
 }
 
+/// Compact badge/pill component for categories, count badges, and statuses:
+/// - Restrained visual weight
+/// - Semantic colors with high contrast
+/// - Clean typography
 public struct GlassPill: View {
     private let text: String
     private let icon: String?
     private let style: GlassPillStyle
 
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.accessibilityReduceTransparency) private var systemReduceTransparency
+
+    private var shouldReduceTransparency: Bool {
+        systemReduceTransparency || LiquidGlass.shouldReduceTransparency
+    }
 
     public init(_ text: String, icon: String? = nil, style: GlassPillStyle = .standard) {
         self.text = text
@@ -26,76 +34,76 @@ public struct GlassPill: View {
         HStack(spacing: 4) {
             if let icon {
                 Image(systemName: icon)
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.system(size: 9, weight: .bold))
             }
             Text(text)
-                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .font(.system(size: 10, weight: .semibold, design: .default))
                 .monospacedDigit()
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 3)
+        .padding(.horizontal, 7)
+        .padding(.vertical, 2.5)
         .background {
-            Capsule(style: .continuous)
+            RoundedRectangle(cornerRadius: 5, style: .continuous)
                 .fill(backgroundFill)
                 .overlay {
-                    Capsule(style: .continuous)
-                        .stroke(borderStroke, lineWidth: 0.5)
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .strokeBorder(borderStroke, lineWidth: 0.5)
                 }
         }
         .foregroundStyle(textColor)
     }
 
     private var backgroundFill: AnyShapeStyle {
-        if reduceTransparency || LiquidGlass.shouldReduceTransparency {
+        if shouldReduceTransparency {
             switch style {
             case .standard:
                 return AnyShapeStyle(Color(nsColor: .controlBackgroundColor))
             case .accent:
-                return AnyShapeStyle(LiquidGlass.bridgeTint.opacity(0.18))
+                return AnyShapeStyle(LiquidGlass.brandAccent.opacity(0.14))
             case .success:
-                return AnyShapeStyle(Color.green.opacity(0.18))
+                return AnyShapeStyle(Color.green.opacity(0.14))
             case .warning:
-                return AnyShapeStyle(Color.orange.opacity(0.18))
+                return AnyShapeStyle(Color.orange.opacity(0.14))
             case .destructive:
-                return AnyShapeStyle(Color.red.opacity(0.18))
+                return AnyShapeStyle(Color.red.opacity(0.14))
             }
         }
 
         switch style {
         case .standard:
-            return AnyShapeStyle(.thinMaterial)
+            return AnyShapeStyle(Color.primary.opacity(0.06))
         case .accent:
-            return AnyShapeStyle(LiquidGlass.bridgeTint.opacity(0.18))
+            return AnyShapeStyle(LiquidGlass.brandAccent.opacity(0.14))
         case .success:
-            return AnyShapeStyle(Color.green.opacity(0.18))
+            return AnyShapeStyle(Color.green.opacity(0.14))
         case .warning:
-            return AnyShapeStyle(Color.orange.opacity(0.18))
+            return AnyShapeStyle(Color.orange.opacity(0.14))
         case .destructive:
-            return AnyShapeStyle(Color.red.opacity(0.18))
+            return AnyShapeStyle(Color.red.opacity(0.14))
         }
     }
 
     private var borderStroke: AnyShapeStyle {
         switch style {
         case .standard:
-            return AnyShapeStyle(.quaternary)
+            return AnyShapeStyle(Color.primary.opacity(0.06))
         case .accent:
-            return AnyShapeStyle(LiquidGlass.bridgeTint.opacity(0.35))
+            return AnyShapeStyle(LiquidGlass.brandAccent.opacity(0.30))
         case .success:
-            return AnyShapeStyle(Color.green.opacity(0.35))
+            return AnyShapeStyle(Color.green.opacity(0.30))
         case .warning:
-            return AnyShapeStyle(Color.orange.opacity(0.35))
+            return AnyShapeStyle(Color.orange.opacity(0.30))
         case .destructive:
-            return AnyShapeStyle(Color.red.opacity(0.35))
+            return AnyShapeStyle(Color.red.opacity(0.30))
         }
     }
 
     private var textColor: AnyShapeStyle {
         switch style {
         case .standard:
-            return AnyShapeStyle(.primary)
+            return AnyShapeStyle(Color.secondary)
         case .accent:
-            return AnyShapeStyle(LiquidGlass.bridgeTint)
+            return AnyShapeStyle(LiquidGlass.brandAccent)
         case .success:
             return AnyShapeStyle(Color.green)
         case .warning:

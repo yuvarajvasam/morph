@@ -28,6 +28,8 @@ public struct PDFPageThumbnailView: View {
     let rotationAngle: Int
     let isMarkedForRemoval: Bool
     let badgeText: String?
+    let size: CGSize
+    let showPageLabel: Bool
     let onTap: () -> Void
 
     @StateObject private var loader = PageThumbnailLoader()
@@ -40,6 +42,8 @@ public struct PDFPageThumbnailView: View {
         rotationAngle: Int = 0,
         isMarkedForRemoval: Bool = false,
         badgeText: String? = nil,
+        size: CGSize = CGSize(width: 80, height: 104),
+        showPageLabel: Bool = true,
         onTap: @escaping () -> Void
     ) {
         self.url = url
@@ -49,91 +53,88 @@ public struct PDFPageThumbnailView: View {
         self.rotationAngle = rotationAngle
         self.isMarkedForRemoval = isMarkedForRemoval
         self.badgeText = badgeText
+        self.size = size
+        self.showPageLabel = showPageLabel
         self.onTap = onTap
     }
 
     public var body: some View {
         Button(action: onTap) {
-            VStack(spacing: 6) {
+            VStack(spacing: 3) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
                         .fill(Color(nsColor: .controlBackgroundColor))
                         .overlay {
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .stroke(.quaternary, lineWidth: 0.5)
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
                         }
-                        .frame(width: 86, height: 110)
-                        .shadow(color: Color.black.opacity(0.10), radius: 4, x: 0, y: 2)
+                        .frame(width: size.width, height: size.height)
 
                     if let img = loader.image {
                         Image(nsImage: img)
                             .resizable()
                             .scaledToFit()
-                            .frame(maxWidth: 80, maxHeight: 104)
-                            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                            .frame(maxWidth: max(10, size.width - 6), maxHeight: max(10, size.height - 6))
+                            .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
                             .rotationEffect(.degrees(Double(rotationAngle)))
                             .animation(LiquidGlass.quickSpring, value: rotationAngle)
                     } else {
                         VStack(spacing: 4) {
                             ProgressView()
-                                .scaleEffect(0.6)
-                            Text("Page \(pageNumber)")
-                                .font(.system(size: 9))
-                                .foregroundStyle(.secondary)
+                                .scaleEffect(size.width < 50 ? 0.45 : 0.6)
+                            if size.width >= 50 {
+                                Text("Page \(pageNumber)")
+                                    .font(.system(size: 9))
+                                    .foregroundStyle(Color.secondary)
+                            }
                         }
                     }
 
                     // Removal Overlay
                     if isMarkedForRemoval {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
                             .fill(Color.red.opacity(0.35))
                         VStack {
                             Image(systemName: "trash.fill")
-                                .font(.system(size: 18, weight: .bold))
-                                .foregroundStyle(.white)
-                                .shadow(color: .black.opacity(0.4), radius: 3)
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(Color.white)
                             Text("REMOVE")
-                                .font(.system(size: 9, weight: .bold))
-                                .foregroundStyle(.white)
+                                .font(.system(size: 8, weight: .bold))
+                                .foregroundStyle(Color.white)
                         }
                     }
 
-                    // Selection checkmark
+                    // Selection border & checkmark
                     if isSelected && !isMarkedForRemoval {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .stroke(LiquidGlass.bridgeTint, lineWidth: 2.5)
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .strokeBorder(LiquidGlass.brandAccent, lineWidth: 2.0)
                         VStack {
                             HStack {
                                 Spacer()
                                 Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(LiquidGlass.bridgeTint)
-                                    .symbolEffect(.bounce, value: isSelected)
+                                    .foregroundStyle(LiquidGlass.brandAccent)
                                     .background(Circle().fill(Color.white))
-                                    .font(.system(size: 14))
+                                    .font(.system(size: 13))
                                     .padding(4)
                             }
                             Spacer()
                         }
                     }
                 }
-                .overlay {
-                    if !isSelected && !isMarkedForRemoval {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .stroke(Color(nsColor: .separatorColor).opacity(0.4), lineWidth: 1)
-                    }
-                }
 
                 // Page Number Tag
-                HStack(spacing: 4) {
-                    Text("\(pageNumber)")
-                        .font(.system(size: 11, weight: .semibold, design: .rounded))
-                        .monospacedDigit()
-                        .foregroundStyle(isMarkedForRemoval ? Color.red : (isSelected ? LiquidGlass.bridgeTint : Color.primary))
+                if showPageLabel {
+                    HStack(spacing: 4) {
+                        Text("\(pageNumber)")
+                            .font(.system(size: 10, weight: .medium, design: .default))
+                            .monospacedDigit()
+                            .foregroundStyle(isMarkedForRemoval ? Color.red : (isSelected ? LiquidGlass.brandAccent : Color.secondary))
 
-                    if let badge = badgeText {
-                        Text(badge)
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(.secondary)
+                        if let badge = badgeText {
+                            Text(badge)
+                                .font(.system(size: 9, weight: .semibold))
+                                .foregroundStyle(Color.secondary)
+                        }
                     }
                 }
             }

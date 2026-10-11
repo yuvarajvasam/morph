@@ -11,7 +11,7 @@ public struct VisualEffectView: NSViewRepresentable {
     public init(
         material: NSVisualEffectView.Material = .hudWindow,
         blendingMode: NSVisualEffectView.BlendingMode = .behindWindow,
-        state: NSVisualEffectView.State = .followsWindowActiveState,
+        state: NSVisualEffectView.State = .active,
         cornerRadius: CGFloat = LiquidGlass.windowRadius
     ) {
         self.material = material
@@ -39,172 +39,141 @@ public struct VisualEffectView: NSViewRepresentable {
     }
 }
 
-public struct GoldenGateBridgeBackdrop: View {
-    public init() {}
-
-    public var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                LinearGradient(
-                    colors: [
-                        LiquidGlass.nightBay,
-                        LiquidGlass.bayTeal.opacity(0.90),
-                        LiquidGlass.bridgeOrangeDeep.opacity(0.48),
-                        LiquidGlass.nightBay
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-
-                RadialGradient(
-                    colors: [
-                        LiquidGlass.bridgeOrange.opacity(0.34),
-                        LiquidGlass.bridgeOrange.opacity(0.08),
-                        .clear
-                    ],
-                    center: .bottomLeading,
-                    startRadius: 20,
-                    endRadius: proxy.size.width * 0.72
-                )
-                .blendMode(.plusLighter)
-
-                RadialGradient(
-                    colors: [
-                        LiquidGlass.fogHighlight.opacity(0.20),
-                        .clear
-                    ],
-                    center: UnitPoint(x: 0.74, y: 0.10),
-                    startRadius: 10,
-                    endRadius: proxy.size.width * 0.54
-                )
-                .blendMode(.screen)
-
-                GoldenGateBridgeSilhouette()
-                    .stroke(
-                        LiquidGlass.bridgeOrange.opacity(0.34),
-                        style: StrokeStyle(lineWidth: 1.2, lineCap: .round, lineJoin: .round)
-                    )
-                    .frame(height: proxy.size.height * 0.32)
-                    .offset(y: proxy.size.height * 0.32)
-                    .blur(radius: 0.3)
-
-                GoldenGateBridgeSilhouette()
-                    .stroke(
-                        LiquidGlass.fogHighlight.opacity(0.10),
-                        style: StrokeStyle(lineWidth: 0.7, lineCap: .round, lineJoin: .round)
-                    )
-                    .frame(height: proxy.size.height * 0.32)
-                    .offset(y: proxy.size.height * 0.315)
-
-                Rectangle()
-                    .fill(.black.opacity(0.18))
-                    .blendMode(.multiply)
-            }
-        }
-        .allowsHitTesting(false)
-    }
-}
-
-private struct GoldenGateBridgeSilhouette: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        let baseline = rect.maxY * 0.82
-        let leftTowerX = rect.minX + rect.width * 0.24
-        let rightTowerX = rect.minX + rect.width * 0.76
-        let towerTop = rect.minY + rect.height * 0.15
-        let deckY = rect.minY + rect.height * 0.63
-
-        path.move(to: CGPoint(x: rect.minX - rect.width * 0.05, y: deckY))
-        path.addLine(to: CGPoint(x: rect.maxX + rect.width * 0.05, y: deckY))
-
-        for towerX in [leftTowerX, rightTowerX] {
-            let towerWidth = rect.width * 0.030
-            path.move(to: CGPoint(x: towerX - towerWidth, y: baseline))
-            path.addLine(to: CGPoint(x: towerX - towerWidth, y: towerTop))
-            path.move(to: CGPoint(x: towerX + towerWidth, y: baseline))
-            path.addLine(to: CGPoint(x: towerX + towerWidth, y: towerTop))
-            path.move(to: CGPoint(x: towerX - towerWidth * 1.55, y: towerTop))
-            path.addLine(to: CGPoint(x: towerX + towerWidth * 1.55, y: towerTop))
-            path.move(to: CGPoint(x: towerX - towerWidth * 1.30, y: towerTop + rect.height * 0.12))
-            path.addLine(to: CGPoint(x: towerX + towerWidth * 1.30, y: towerTop + rect.height * 0.12))
-        }
-
-        path.move(to: CGPoint(x: rect.minX - rect.width * 0.05, y: deckY + rect.height * 0.08))
-        path.addCurve(
-            to: CGPoint(x: rect.maxX + rect.width * 0.05, y: deckY + rect.height * 0.08),
-            control1: CGPoint(x: rect.width * 0.30, y: rect.minY - rect.height * 0.20),
-            control2: CGPoint(x: rect.width * 0.70, y: rect.minY - rect.height * 0.20)
-        )
-
-        for i in 0...18 {
-            let x = rect.minX + rect.width * CGFloat(i) / 18.0
-            let normalized = abs((CGFloat(i) / 18.0) - 0.5) * 2.0
-            let cableY = deckY - rect.height * (0.38 * (1.0 - normalized * normalized))
-            path.move(to: CGPoint(x: x, y: deckY))
-            path.addLine(to: CGPoint(x: x, y: cableY))
-        }
-
-        return path
-    }
-}
-
-/// Enforces the Apple Human Interface Guidelines "Liquid Glass" spatial aesthetic:
-/// Uses semantic materials, desktop wallpaper bleed-through, vibrancy, inner glass stroke, and elevation shadows.
-public struct LiquidGlassBackgroundModifier: ViewModifier {
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    var cornerRadius: CGFloat = LiquidGlass.windowRadius
+/// Floating Search Capsule Modifier (Layer A) matching the design reference:
+/// - Distinct capsule pill hovering above the main surface
+/// - Rich dark liquid glass with specular top-edge highlight
+/// - Soft ambient drop shadow
+public struct LiquidGlassCapsuleModifier: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var systemReduceTransparency
 
     public func body(content: Content) -> some View {
         content
             .background {
-                if reduceTransparency || LiquidGlass.shouldReduceTransparency {
+                if systemReduceTransparency || LiquidGlass.shouldReduceTransparency {
+                    Capsule()
+                        .fill(Color(nsColor: .windowBackgroundColor))
+                        .overlay {
+                            Capsule().stroke(Color(nsColor: .separatorColor).opacity(0.4), lineWidth: 0.5)
+                        }
+                        .shadow(color: Color.black.opacity(0.20), radius: 8, x: 0, y: 4)
+                } else {
+                    ZStack {
+                        // Desktop wallpaper blur
+                        VisualEffectView(
+                            material: .hudWindow,
+                            blendingMode: .behindWindow,
+                            state: .active,
+                            cornerRadius: 24
+                        )
+
+                        // Deep atmospheric dark obsidian tint
+                        LinearGradient(
+                            colors: [
+                                Color(red: 18 / 255, green: 28 / 255, blue: 36 / 255).opacity(0.85),
+                                Color(red: 10 / 255, green: 18 / 255, blue: 24 / 255).opacity(0.92)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    }
+                    .clipShape(Capsule())
+                    .overlay {
+                        // Specular rim stroke
+                        Capsule()
+                            .strokeBorder(
+                                LinearGradient(
+                                    colors: [
+                                        Color.white.opacity(0.32),
+                                        Color.white.opacity(0.08),
+                                        Color.clear
+                                    ],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                ),
+                                lineWidth: 0.75
+                            )
+                    }
+                    .shadow(color: Color.black.opacity(0.38), radius: 14, x: 0, y: 7)
+                }
+            }
+    }
+}
+
+/// Main Glass Content Surface Modifier (Layer B) matching the design reference:
+/// - 28pt continuous corner radius squircle
+/// - Deep translucent obsidian liquid glass with subtle teal/slate undertone
+/// - Specular highlight rim and deep elevation shadow
+public struct LiquidGlassSurfaceModifier: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var systemReduceTransparency
+    var cornerRadius: CGFloat = 28.0
+
+    public func body(content: Content) -> some View {
+        content
+            .background {
+                if systemReduceTransparency || LiquidGlass.shouldReduceTransparency {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                         .fill(Color(nsColor: .windowBackgroundColor))
                         .overlay {
                             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                                .stroke(.quaternary, lineWidth: 0.5)
+                                .stroke(Color(nsColor: .separatorColor).opacity(0.4), lineWidth: 0.5)
                         }
-                        .shadow(
-                            color: Color.black.opacity(0.15),
-                            radius: 12,
-                            x: 0,
-                            y: 4
-                        )
+                        .shadow(color: Color.black.opacity(0.22), radius: 14, x: 0, y: 6)
                 } else {
                     ZStack {
-                        // Desktop wallpaper blur bleeding through behind window
+                        // Desktop wallpaper blur
                         VisualEffectView(
                             material: .hudWindow,
                             blendingMode: .behindWindow,
-                            state: .followsWindowActiveState,
+                            state: .active,
                             cornerRadius: cornerRadius
                         )
 
-                        GoldenGateBridgeBackdrop()
-
-                        // Floating HUD material layer. The bridge treatment stays behind the functional glass surface.
-                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .fill(.ultraThickMaterial.opacity(0.82))
+                        // Deep atmospheric dark glass tint matching reference screenshot
+                        LinearGradient(
+                            colors: [
+                                Color(red: 14 / 255, green: 26 / 255, blue: 34 / 255).opacity(0.84),
+                                Color(red: 8 / 255, green: 16 / 255, blue: 22 / 255).opacity(0.92)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
                     }
                     .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
                     .overlay {
-                        // Inner stroke (glass edge) to simulate the physical edge of glass
+                        // Specular top-edge hairline highlight
                         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .stroke(LiquidGlass.bridgeOrange.opacity(0.22), lineWidth: 0.7)
+                            .strokeBorder(
+                                LinearGradient(
+                                    colors: [
+                                        Color.white.opacity(0.26),
+                                        Color.white.opacity(0.06),
+                                        Color.clear
+                                    ],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                ),
+                                lineWidth: 0.75
+                            )
                     }
-                    .shadow(
-                        color: Color.black.opacity(0.26),
-                        radius: 30,
-                        x: 0,
-                        y: 16
-                    )
+                    .shadow(color: Color.black.opacity(0.42), radius: 26, x: 0, y: 14)
                 }
             }
     }
 }
 
 public extension View {
-    func liquidGlassWindow(radius: CGFloat = LiquidGlass.windowRadius) -> some View {
-        self.modifier(LiquidGlassBackgroundModifier(cornerRadius: radius))
+    /// Applies native Liquid Glass floating search capsule styling
+    func liquidGlassCapsule() -> some View {
+        self.modifier(LiquidGlassCapsuleModifier())
+    }
+
+    /// Applies native Liquid Glass content surface styling (28pt continuous corner squircle)
+    func liquidGlassSurface(radius: CGFloat = 28.0) -> some View {
+        self.modifier(LiquidGlassSurfaceModifier(cornerRadius: radius))
+    }
+
+    /// Backwards-compatible alias for whole-window modifier
+    func liquidGlassWindow(radius: CGFloat = 28.0) -> some View {
+        self.modifier(LiquidGlassSurfaceModifier(cornerRadius: radius))
     }
 }

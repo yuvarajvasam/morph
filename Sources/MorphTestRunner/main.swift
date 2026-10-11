@@ -464,3 +464,6 @@ print("\n🎉 ALL TESTS PASSED SUCCESSFULLY! (100% Core Engine, Archive, QR, Set
 // Real-World Live Conversions
 try await runRealWorldVerification()
 
+// Visual Verification and Screenshot Capture
+try await runVisualVerification()
+

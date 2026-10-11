@@ -1,5 +1,10 @@
 import SwiftUI
 
+/// Unified Result Preview Screen (Layer B Content Surface) conforming to macOS HIG:
+/// - Real metrics & savings reporting
+/// - Interactive before/after split slider for image comparisons
+/// - Drag-and-drop out to Desktop / Finder
+/// - Clear outcome actions (Reveal in Finder ⌘R, Open ⌘O, Share, Save As)
 public struct ResultPreviewView: View {
     @ObservedObject var viewModel: LauncherViewModel
     let result: ConversionResult
@@ -10,23 +15,23 @@ public struct ResultPreviewView: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: LiquidGlass.spaceMD) {
             // Header
             HStack {
                 HStack(spacing: 6) {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                        .font(.system(size: 16))
-                        .symbolEffect(.bounce, value: result.outputURLs.count)
+                        .foregroundStyle(Color.green)
+                        .font(.system(size: 15))
                     Text("Operation Complete")
-                        .font(.figmaTitle3(emphasized: true))
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color.primary)
                 }
 
                 Spacer()
 
                 if let copyMsg = viewModel.copyStatusMessage {
                     GlassPill(copyMsg, icon: "checkmark", style: .success)
-                        .transition(.opacity.combined(with: .scale))
+                        .transition(.opacity)
                 } else if result.isOutputLargerThanOriginal {
                     GlassPill(result.formattedSavingsText, icon: "info.circle", style: .warning)
                 } else if result.bytesSaved > 0 {
@@ -34,66 +39,66 @@ public struct ResultPreviewView: View {
                 }
             }
 
-            // Stats Card with Modern Typography & Layout
-            GlassCard {
-                HStack(spacing: 22) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Original")
-                            .font(.figmaCaption1(emphasized: true))
-                            .foregroundStyle(.secondary)
-                        Text(result.formattedOriginalSize)
-                            .font(.figmaHeadline)
+            // Stats Summary Card
+            HStack(spacing: LiquidGlass.spaceLG) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Original")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(Color.secondary)
+                    Text(result.formattedOriginalSize)
+                        .font(.system(size: 13, weight: .semibold))
+                        .monospacedDigit()
+                }
+
+                Image(systemName: "arrow.right")
+                    .foregroundStyle(Color.secondary.opacity(0.4))
+                    .font(.system(size: 11))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Output")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(Color.secondary)
+                    Text(result.formattedOutputSize)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(result.isOutputLargerThanOriginal ? Color.orange : Color.green)
+                        .monospacedDigit()
+                }
+
+                Spacer()
+
+                if let outDims = result.outputDimensions {
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("Dimensions")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(Color.secondary)
+                        Text("\(Int(outDims.width)) × \(Int(outDims.height))")
+                            .font(.system(size: 12, weight: .medium))
                             .monospacedDigit()
-                    }
-
-                    Image(systemName: "arrow.right")
-                        .foregroundStyle(.tertiary)
-                        .font(.system(size: 12))
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Output")
-                            .font(.figmaCaption1(emphasized: true))
-                            .foregroundStyle(.secondary)
-                        Text(result.formattedOutputSize)
-                            .font(.figmaHeadline)
-                            .foregroundStyle(result.isOutputLargerThanOriginal ? Color.orange : Color.green)
-                            .monospacedDigit()
-                    }
-
-                    Spacer()
-
-                    if let outDims = result.outputDimensions {
-                        VStack(alignment: .trailing, spacing: 4) {
-                            Text("Dimensions")
-                                .font(.figmaCaption1(emphasized: true))
-                                .foregroundStyle(.secondary)
-                            Text("\(Int(outDims.width)) × \(Int(outDims.height))")
-                                .font(.figmaHeadline)
-                                .monospacedDigit()
-                        }
-                    }
-
-                    VStack(alignment: .trailing, spacing: 4) {
-                        Text("Format")
-                            .font(.figmaCaption1(emphasized: true))
-                            .foregroundStyle(.secondary)
-                        Text(result.outputFormat)
-                            .font(.figmaHeadline)
                     }
                 }
-                .padding(14)
+
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("Format")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(Color.secondary)
+                    Text(result.outputFormat)
+                        .font(.system(size: 12, weight: .medium))
+                }
             }
+            .padding(10)
+            .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.primary.opacity(0.04)))
 
             // Notes if any
             if let note = result.notes {
-                HStack(spacing: 8) {
+                HStack(spacing: 6) {
                     Image(systemName: "info.circle.fill")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondary)
+                        .font(.system(size: 11))
                     Text(note)
                         .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondary)
                 }
-                .padding(.horizontal, 4)
+                .padding(.horizontal, 2)
             }
 
             // Interactive Preview for Images
@@ -111,25 +116,25 @@ public struct ResultPreviewView: View {
                 .help("Drag to compare before/after, or drag out to Finder/Desktop")
             } else if result.outputURLs.count > 1 {
                 // List of created files for batch / split / PDF to Image
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         Text("Generated \(result.outputURLs.count) files:")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(.secondary)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Color.secondary)
                             .monospacedDigit()
                         Spacer()
                         Text("Drag any file out to Desktop")
                             .font(.system(size: 10))
-                            .foregroundStyle(.secondary.opacity(0.8))
+                            .foregroundStyle(Color.secondary.opacity(0.8))
                     }
 
                     ScrollView {
-                        VStack(spacing: 4) {
+                        VStack(spacing: 3) {
                             ForEach(result.outputURLs, id: \.self) { url in
                                 HStack {
                                     Image(systemName: "doc")
                                         .font(.system(size: 11))
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(Color.secondary)
                                     Text(url.lastPathComponent)
                                         .font(.system(size: 11))
                                         .lineLimit(1)
@@ -139,7 +144,7 @@ public struct ResultPreviewView: View {
                                     } label: {
                                         Image(systemName: "eye")
                                             .font(.system(size: 11))
-                                            .foregroundStyle(.secondary)
+                                            .foregroundStyle(Color.secondary)
                                     }
                                     .buttonStyle(.plain)
                                     .help("Quick Look preview (Space)")
@@ -149,11 +154,11 @@ public struct ResultPreviewView: View {
                                     }
                                     .buttonStyle(.plain)
                                     .font(.system(size: 11, weight: .medium))
-                                    .foregroundStyle(LiquidGlass.bridgeTint)
+                                    .foregroundStyle(LiquidGlass.brandAccent)
                                 }
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
-                                .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(.quaternary))
+                                .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Color.primary.opacity(0.04)))
                                 .onDrag {
                                     NSItemProvider(object: url as NSURL)
                                 }
@@ -161,48 +166,46 @@ public struct ResultPreviewView: View {
                         }
                     }
                     .scrollIndicators(.hidden)
-                    .scrollBounceBehavior(.basedOnSize)
                     .frame(maxHeight: 130)
                 }
             } else if let primaryURL = result.primaryOutputURL {
                 // Single PDF or non-image result file card with drag-out
-                GlassCard {
-                    HStack(spacing: 12) {
-                        PDFPageThumbnailView(
-                            url: primaryURL,
-                            pageIndex: 0,
-                            pageNumber: 1,
-                            onTap: {
-                                QuickLookManager.shared.toggle(url: primaryURL)
-                            }
-                        )
-                        .frame(width: 50, height: 65)
-
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(primaryURL.lastPathComponent)
-                                .font(.system(size: 13, weight: .semibold))
-                                .lineLimit(1)
-                            Text("Ready to drag to Desktop, reveal in Finder, or save")
-                                .font(.system(size: 11))
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Spacer()
-
-                        Button {
+                HStack(spacing: 12) {
+                    PDFPageThumbnailView(
+                        url: primaryURL,
+                        pageIndex: 0,
+                        pageNumber: 1,
+                        onTap: {
                             QuickLookManager.shared.toggle(url: primaryURL)
-                        } label: {
-                            Image(systemName: "eye.fill")
-                                .font(.system(size: 12))
-                                .foregroundStyle(.secondary)
-                                .padding(6)
-                                .background(Circle().fill(.quaternary))
                         }
-                        .buttonStyle(.plain)
-                        .help("Quick Look preview (Space)")
+                    )
+                    .frame(width: 44, height: 58)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(primaryURL.lastPathComponent)
+                            .font(.system(size: 13, weight: .semibold))
+                            .lineLimit(1)
+                        Text("Ready to drag to Desktop, reveal in Finder, or save")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.secondary)
                     }
-                    .padding(12)
+
+                    Spacer()
+
+                    Button {
+                        QuickLookManager.shared.toggle(url: primaryURL)
+                    } label: {
+                        Image(systemName: "eye.fill")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.secondary)
+                            .padding(6)
+                            .background(Circle().fill(Color.primary.opacity(0.06)))
+                    }
+                    .buttonStyle(.plain)
+                    .help("Quick Look preview (Space)")
                 }
+                .padding(10)
+                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.primary.opacity(0.04)))
                 .onDrag {
                     NSItemProvider(object: primaryURL as NSURL)
                 }
@@ -212,36 +215,36 @@ public struct ResultPreviewView: View {
 
             // Actions Bar with native ShareLink, Finder, and Launcher actions
             HStack(spacing: 8) {
-                GlassButton("Launcher", icon: "arrow.left", shortcutBadge: "⎋", variant: .secondary) {
+                GlassButton("Done", icon: "checkmark", shortcutBadge: "⎋", variant: .secondary) {
                     viewModel.clearAll()
                 }
 
-                GlassButton("Convert Another", icon: "plus.circle", variant: .secondary) {
+                GlassButton("Another", icon: "plus", variant: .secondary) {
                     viewModel.convertAnother()
                 }
 
                 Spacer()
 
                 if let primaryURL = result.primaryOutputURL {
-                    // Modern SwiftUI ShareLink for native macOS share sheet
                     ShareLink(item: primaryURL) {
                         HStack(spacing: 4) {
                             Image(systemName: "square.and.arrow.up")
                                 .font(.system(size: 11))
                             Text("Share")
                                 .font(.system(size: 12, weight: .medium))
+                                .lineLimit(1)
                         }
                         .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
+                        .padding(.vertical, 5)
                         .background(
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
                                 .fill(Color.primary.opacity(0.06))
                         )
                     }
                     .buttonStyle(.plain)
                     .help("Share processed file via AirDrop, Mail, or Messages")
 
-                    GlassButton("Save As...", icon: "arrow.down.doc", variant: .secondary) {
+                    GlassButton("Save As…", icon: "arrow.down.doc", variant: .secondary) {
                         viewModel.saveOutputAs(url: primaryURL)
                     }
 
@@ -255,7 +258,7 @@ public struct ResultPreviewView: View {
                 }
             }
         }
-        .padding(18)
+        .padding(LiquidGlass.spaceLG)
     }
 
     private func isImage(url: URL) -> Bool {

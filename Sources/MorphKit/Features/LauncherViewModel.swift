@@ -125,6 +125,22 @@ public final class LauncherViewModel: ObservableObject {
         return registry.search(query: searchQuery)
     }
 
+    public var topShelfCommands: [ConversionCommand] {
+        let defaultIDs = ["image.compress", "image.convert", "pdf.merge", "archive.compress", "qr.generate"]
+        let userFavorites = favoriteCommands
+        if userFavorites.count >= 5 {
+            return Array(userFavorites.prefix(5))
+        }
+        var list = userFavorites
+        for id in defaultIDs {
+            if !list.contains(where: { $0.id == id }), let cmd = registry.command(id: id) {
+                list.append(cmd)
+            }
+            if list.count == 5 { break }
+        }
+        return list
+    }
+
     // MARK: - Navigation
 
     public func navigateUp() {
@@ -137,6 +153,38 @@ public final class LauncherViewModel: ObservableObject {
         let count = filteredCommands.count
         guard count > 0 else { return }
         selectedIndex = (selectedIndex + 1) % count
+    }
+
+    public func navigateLeft() {
+        let count = filteredCommands.count
+        guard count > 0 else { return }
+        selectedIndex = (selectedIndex - 1 + count) % count
+    }
+
+    public func navigateRight() {
+        let count = filteredCommands.count
+        guard count > 0 else { return }
+        selectedIndex = (selectedIndex + 1) % count
+    }
+
+    public func navigateGridUp(columns: Int = 7) {
+        let count = filteredCommands.count
+        guard count > 0 else { return }
+        if selectedIndex - columns >= 0 {
+            selectedIndex -= columns
+        } else {
+            selectedIndex = (selectedIndex - 1 + count) % count
+        }
+    }
+
+    public func navigateGridDown(columns: Int = 7) {
+        let count = filteredCommands.count
+        guard count > 0 else { return }
+        if selectedIndex + columns < count {
+            selectedIndex += columns
+        } else {
+            selectedIndex = (selectedIndex + 1) % count
+        }
     }
 
     public func selectCurrent() {

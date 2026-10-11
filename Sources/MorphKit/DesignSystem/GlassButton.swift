@@ -33,13 +33,18 @@ public enum GlassButtonSize {
 
     public var font: Font {
         switch self {
-        case .small: return .figmaCaption1(emphasized: true)
-        case .regular: return .figmaBody(emphasized: true)
-        case .large: return .figmaCallout(emphasized: true)
+        case .small: return .system(size: 11, weight: .medium, design: .default)
+        case .regular: return .system(size: 12, weight: .medium, design: .default)
+        case .large: return .system(size: 13, weight: .semibold, design: .default)
         }
     }
 }
 
+/// Native macOS button conforming to HIG and Liquid Glass:
+/// - Visually dominant primary action using Morph accent #C74634
+/// - Restrained secondary actions with platform standard elevation
+/// - Clear keyboard shortcut badges and tooltips
+/// - Full support for hover, pressed, and disabled states
 public struct GlassButton: View {
     private let title: String
     private let icon: String?
@@ -49,8 +54,13 @@ public struct GlassButton: View {
     private let tooltip: String?
     private let action: () -> Void
 
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.accessibilityReduceTransparency) private var systemReduceTransparency
+    @Environment(\.isEnabled) private var isEnabled
     @StateObject private var hover = HoverState()
+
+    private var shouldReduceTransparency: Bool {
+        systemReduceTransparency || LiquidGlass.shouldReduceTransparency
+    }
 
     public init(
         _ title: String,
@@ -82,15 +92,17 @@ public struct GlassButton: View {
                 if !title.isEmpty {
                     Text(title)
                         .font(size.font)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
                 }
 
                 if let shortcut = shortcutBadge {
                     Text(shortcut)
-                        .font(.figmaCaption2(emphasized: true))
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 2)
+                        .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 1.5)
                         .background {
-                            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                            RoundedRectangle(cornerRadius: 3, style: .continuous)
                                 .fill(shortcutBadgeBackground)
                         }
                         .foregroundStyle(shortcutBadgeForeground)
@@ -104,24 +116,23 @@ public struct GlassButton: View {
                         .fill(buttonBackground)
                         .overlay {
                             RoundedRectangle(cornerRadius: LiquidGlass.buttonRadius, style: .continuous)
-                                .stroke(borderStroke, lineWidth: 0.5)
+                                .strokeBorder(borderStroke, lineWidth: 0.5)
                         }
                         .shadow(
-                            color: hover.isHovered ? Color.black.opacity(0.12) : Color.clear,
-                            radius: 3,
+                            color: hover.isHovered && isEnabled ? Color.black.opacity(0.08) : Color.clear,
+                            radius: 2,
                             x: 0,
                             y: 1
                         )
-                } else if hover.isHovered {
+                } else if hover.isHovered && isEnabled {
                     RoundedRectangle(cornerRadius: LiquidGlass.buttonRadius, style: .continuous)
-                        .fill(.quaternary)
+                        .fill(Color.primary.opacity(0.06))
                 }
             }
             .foregroundStyle(contentForegroundStyle)
+            .opacity(isEnabled ? 1.0 : 0.5)
         }
         .buttonStyle(.plain)
-        .scaleEffect(hover.isHovered && !LiquidGlass.shouldReduceMotion ? 1.01 : 1.0)
-        .animation(LiquidGlass.quickSpring, value: hover.isHovered)
         .onHover { hovering in
             hover.isHovered = hovering
         }
@@ -131,16 +142,16 @@ public struct GlassButton: View {
 
     // MARK: - Background Styling
     private var buttonBackground: AnyShapeStyle {
-        if reduceTransparency || LiquidGlass.shouldReduceTransparency {
+        if shouldReduceTransparency {
             switch variant {
             case .primary:
-                return AnyShapeStyle(LiquidGlass.bridgeAccentGradient)
+                return AnyShapeStyle(LiquidGlass.brandAccent)
             case .secondary:
                 return AnyShapeStyle(hover.isHovered ? Color(nsColor: .controlColor) : Color(nsColor: .controlBackgroundColor))
             case .tinted:
-                return AnyShapeStyle(LiquidGlass.bridgeTint.opacity(hover.isHovered ? 0.22 : 0.14))
+                return AnyShapeStyle(LiquidGlass.brandAccent.opacity(hover.isHovered ? 0.20 : 0.12))
             case .destructive:
-                return AnyShapeStyle(Color.red.opacity(hover.isHovered ? 0.20 : 0.12))
+                return AnyShapeStyle(Color.red.opacity(hover.isHovered ? 0.18 : 0.10))
             case .prominentDestructive:
                 return AnyShapeStyle(Color.red)
             case .ghost:
@@ -150,13 +161,13 @@ public struct GlassButton: View {
 
         switch variant {
         case .primary:
-            return AnyShapeStyle(LiquidGlass.bridgeAccentGradient)
+            return AnyShapeStyle(LiquidGlass.brandAccentGradient)
         case .secondary:
-            return hover.isHovered ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(.thinMaterial)
+            return hover.isHovered ? AnyShapeStyle(Color.primary.opacity(0.10)) : AnyShapeStyle(Color.primary.opacity(0.06))
         case .tinted:
-            return AnyShapeStyle(LiquidGlass.bridgeTint.opacity(hover.isHovered ? 0.22 : 0.14))
+            return AnyShapeStyle(LiquidGlass.brandAccent.opacity(hover.isHovered ? 0.20 : 0.12))
         case .destructive:
-            return AnyShapeStyle(Color.red.opacity(hover.isHovered ? 0.22 : 0.14))
+            return AnyShapeStyle(Color.red.opacity(hover.isHovered ? 0.20 : 0.12))
         case .prominentDestructive:
             return AnyShapeStyle(Color.red)
         case .ghost:
@@ -167,14 +178,16 @@ public struct GlassButton: View {
     // MARK: - Border Stroke
     private var borderStroke: AnyShapeStyle {
         switch variant {
-        case .primary, .prominentDestructive:
-            return AnyShapeStyle(.quaternary)
+        case .primary:
+            return AnyShapeStyle(Color.white.opacity(0.20))
+        case .prominentDestructive:
+            return AnyShapeStyle(Color.white.opacity(0.20))
         case .tinted:
-            return AnyShapeStyle(LiquidGlass.bridgeTint.opacity(0.35))
+            return AnyShapeStyle(LiquidGlass.brandAccent.opacity(0.35))
         case .destructive:
             return AnyShapeStyle(Color.red.opacity(0.35))
         case .secondary:
-            return AnyShapeStyle(.quaternary)
+            return AnyShapeStyle(Color.primary.opacity(0.08))
         case .ghost:
             return AnyShapeStyle(Color.clear)
         }
@@ -186,22 +199,22 @@ public struct GlassButton: View {
         case .primary, .prominentDestructive:
             return AnyShapeStyle(Color.white)
         case .tinted:
-            return AnyShapeStyle(LiquidGlass.bridgeTint)
+            return AnyShapeStyle(LiquidGlass.brandAccent)
         case .destructive:
             return AnyShapeStyle(Color.red)
         case .secondary:
-            return AnyShapeStyle(.primary)
+            return AnyShapeStyle(Color.primary)
         case .ghost:
-            return hover.isHovered ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary)
+            return hover.isHovered ? AnyShapeStyle(Color.primary) : AnyShapeStyle(Color.secondary)
         }
     }
 
     private var shortcutBadgeBackground: AnyShapeStyle {
         switch variant {
         case .primary, .prominentDestructive:
-            return AnyShapeStyle(Color.white.opacity(0.20))
+            return AnyShapeStyle(Color.white.opacity(0.22))
         default:
-            return AnyShapeStyle(.quaternary)
+            return AnyShapeStyle(Color.primary.opacity(0.08))
         }
     }
 
@@ -210,7 +223,7 @@ public struct GlassButton: View {
         case .primary, .prominentDestructive:
             return AnyShapeStyle(Color.white)
         default:
-            return AnyShapeStyle(.secondary)
+            return AnyShapeStyle(Color.secondary)
         }
     }
 }

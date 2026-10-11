@@ -41,71 +41,92 @@ public enum SettingsTab: String, CaseIterable, Identifiable {
 public final class SettingsTabState: ObservableObject {
     @Published public var selectedTab: SettingsTab = .general
     @Published public var showResetConfirm: Bool = false
+    @Published public var columnVisibility: NavigationSplitViewVisibility = .all
     public init() {}
+}
+
+public enum SettingsLayoutMode: Sendable {
+    case sidebar
+    case tabs
 }
 
 public struct SettingsWindowView: View {
     @ObservedObject public var preferences = PreferencesManager.shared
     @ObservedObject public var tabState: SettingsTabState
+    public var layoutMode: SettingsLayoutMode
 
-    public init(tabState: SettingsTabState = SettingsTabState()) {
+    public init(tabState: SettingsTabState = SettingsTabState(), layoutMode: SettingsLayoutMode = .sidebar) {
         self.tabState = tabState
+        self.layoutMode = layoutMode
     }
 
     public var body: some View {
-        NavigationSplitView {
-            List(SettingsTab.allCases, selection: Binding(
-                get: { tabState.selectedTab },
-                set: { tabState.selectedTab = $0 }
-            )) { tab in
-                NavigationLink(value: tab) {
-                    Label {
-                        Text(tab.rawValue)
-                            .font(.figmaBody(emphasized: tabState.selectedTab == tab))
-                    } icon: {
-                        Image(systemName: tab.systemIcon)
-                            .foregroundStyle(tabState.selectedTab == tab ? LiquidGlass.bridgeTint : Color.secondary)
+        Group {
+            if layoutMode == .tabs {
+                VStack(spacing: LiquidGlass.spaceSM) {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 6) {
+                            ForEach(SettingsTab.allCases) { tab in
+                                GlassButton(
+                                    tab.rawValue,
+                                    icon: tab.systemIcon,
+                                    variant: tabState.selectedTab == tab ? .primary : .secondary,
+                                    size: .small
+                                ) {
+                                    tabState.selectedTab = tab
+                                }
+                            }
+                        }
+                        .padding(.horizontal, LiquidGlass.spaceMD)
+                        .padding(.top, 4)
                     }
+
+                    Form {
+                        formContent
+                    }
+                    .formStyle(.grouped)
                 }
-                .tag(tab)
-            }
-            .listStyle(.sidebar)
-            .navigationSplitViewColumnWidth(min: 200, ideal: 220, max: 260)
-            .safeAreaInset(edge: .bottom) {
-                HStack(spacing: 6) {
-                    Image(systemName: "lock.shield.fill")
-                        .foregroundStyle(.green)
-                        .font(.system(size: 11))
-                    Text("100% Offline & Private")
-                        .font(.figmaCaption1(emphasized: true))
-                        .foregroundStyle(.secondary)
+            } else {
+                NavigationSplitView(columnVisibility: $tabState.columnVisibility) {
+                    List(SettingsTab.allCases, selection: Binding(
+                        get: { tabState.selectedTab },
+                        set: { tabState.selectedTab = $0 }
+                    )) { tab in
+                        NavigationLink(value: tab) {
+                            Label {
+                                Text(tab.rawValue)
+                                    .font(.figmaBody(emphasized: tabState.selectedTab == tab))
+                            } icon: {
+                                Image(systemName: tab.systemIcon)
+                                    .foregroundStyle(tabState.selectedTab == tab ? LiquidGlass.brandAccent : Color.secondary)
+                            }
+                        }
+                        .tag(tab)
+                    }
+                    .listStyle(.sidebar)
+                    .navigationSplitViewColumnWidth(min: 200, ideal: 220, max: 260)
+                    .safeAreaInset(edge: .bottom) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "lock.shield.fill")
+                                .foregroundStyle(.green)
+                                .font(.system(size: 11))
+                            Text("100% Offline & Private")
+                                .font(.figmaCaption1(emphasized: true))
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 12)
+                    }
+                } detail: {
+                    Form {
+                        formContent
+                    }
+                    .formStyle(.grouped)
+                    .navigationTitle(tabState.selectedTab.rawValue)
+                    .navigationSubtitle(tabState.selectedTab.subtitle)
                 }
-                .padding(.vertical, 12)
+                .frame(minWidth: 740, minHeight: 520)
             }
-        } detail: {
-            Form {
-                switch tabState.selectedTab {
-                case .general:
-                    generalSection
-                case .appearance:
-                    appearanceSection
-                case .imageTools:
-                    imageToolsSection
-                case .pdfTools:
-                    pdfToolsSection
-                case .output:
-                    outputSection
-                case .shortcuts:
-                    shortcutsSection
-                case .about:
-                    aboutSection
-                }
-            }
-            .formStyle(.grouped)
-            .navigationTitle(tabState.selectedTab.rawValue)
-            .navigationSubtitle(tabState.selectedTab.subtitle)
         }
-        .frame(minWidth: 740, minHeight: 520)
         .alert("Reset All Settings?", isPresented: $tabState.showResetConfirm) {
             Button("Cancel", role: .cancel) {}
             Button("Reset to Defaults", role: .destructive) {
@@ -113,6 +134,26 @@ public struct SettingsWindowView: View {
             }
         } message: {
             Text("This will restore all Morph preferences to their factory defaults. Your files will not be affected.")
+        }
+    }
+
+    @ViewBuilder
+    private var formContent: some View {
+        switch tabState.selectedTab {
+        case .general:
+            generalSection
+        case .appearance:
+            appearanceSection
+        case .imageTools:
+            imageToolsSection
+        case .pdfTools:
+            pdfToolsSection
+        case .output:
+            outputSection
+        case .shortcuts:
+            shortcutsSection
+        case .about:
+            aboutSection
         }
     }
 
@@ -204,6 +245,23 @@ public struct SettingsWindowView: View {
             } label: {
                 Text("Appearance Mode")
                 Text("Controls whether Morph adapts to macOS system appearance or enforces a specific theme.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+
+        Section("Default Launcher Layout") {
+            LabeledContent {
+                Picker("", selection: $preferences.viewMode) {
+                    ForEach(LauncherViewMode.allCases) { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 240)
+            } label: {
+                Text("Content Presentation")
+                Text("Choose between the compact Top Shelf List view or the full Squircle Grid view.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

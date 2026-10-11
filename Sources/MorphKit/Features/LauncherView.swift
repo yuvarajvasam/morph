@@ -14,8 +14,8 @@ public struct LauncherView: View {
     }
 
     public var body: some View {
-        VStack(spacing: 10) {
-            // TOP AREA: Search Capsule OR Tool Navigation Capsule
+        VStack(spacing: LiquidGlass.spaceMD) {
+            // LAYER A: FLOATING TOP CAPSULE (Detached Island)
             if isToolOrResultOpen {
                 toolNavigationCapsuleView
                     .transition(.asymmetric(
@@ -28,20 +28,19 @@ public struct LauncherView: View {
                         insertion: .move(edge: .top).combined(with: .opacity),
                         removal: .move(edge: .top).combined(with: .opacity)
                     ))
-
-                // Category Quick Discovery Pills (when in search / browse mode)
-                categoryDiscoveryPillsView
             }
 
-            // MAIN CONTENT SURFACE
-            resultsSurfaceView
+            // LAYER B: MAIN CONTENT SURFACE (28pt Squircle Island)
+            mainCardSurfaceView
         }
-        .animation(.spring(response: 0.30, dampingFraction: 0.82), value: isToolOrResultOpen)
-        .animation(.spring(response: 0.28, dampingFraction: 0.82), value: viewModel.selectedCategory)
-        .padding(14)
-        .frame(width: viewModel.preferences.launcherSize.dimensions.width)
-        .frame(minHeight: viewModel.preferences.launcherSize.dimensions.height - 40, maxHeight: viewModel.preferences.launcherSize.dimensions.height)
-        .liquidGlassWindow()
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .frame(width: viewModel.preferences.launcherSize.dimensions.width,
+               height: viewModel.preferences.launcherSize.dimensions.height)
+        .background(Color.clear)
+        .animation(LiquidGlass.standardSpring, value: isToolOrResultOpen)
+        .animation(LiquidGlass.quickSpring, value: viewModel.selectedCategory)
+        .animation(LiquidGlass.quickSpring, value: viewModel.preferences.viewMode)
         .onChange(of: isToolOrResultOpen) { _, isOpen in
             if !isOpen {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -60,50 +59,54 @@ public struct LauncherView: View {
         }
         .overlay {
             if viewModel.isTargetedForDrop {
-                RoundedRectangle(cornerRadius: LiquidGlass.windowRadius, style: .continuous)
-                    .stroke(LiquidGlass.bridgeTint, lineWidth: 2)
-                    .background(LiquidGlass.bridgeTint.opacity(0.12))
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .strokeBorder(LiquidGlass.brandAccent, lineWidth: 2.5)
+                    .background(LiquidGlass.brandAccent.opacity(0.12))
                     .overlay {
-                        VStack(spacing: 8) {
+                        VStack(spacing: LiquidGlass.spaceSM) {
                             Image(systemName: "arrow.down.doc.fill")
-                                .font(.system(size: 40))
-                                .foregroundStyle(LiquidGlass.bridgeTint)
+                                .font(.system(size: 42))
+                                .foregroundStyle(LiquidGlass.brandAccent)
                             Text("Drop files to inspect & process with Morph")
                                 .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(Color.white)
                         }
                     }
+                    .padding(.top, 58)
+                    .padding(.horizontal, 10)
+                    .padding(.bottom, 8)
             }
         }
         .overlay {
             // Raycast Contextual Action Panel (⌘K)
             if viewModel.isShowingActionPanel {
                 ZStack {
-                    Color.black.opacity(0.35)
+                    Color.black.opacity(0.40)
                         .ignoresSafeArea()
                         .onTapGesture {
-                            withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+                            withAnimation(LiquidGlass.quickSpring) {
                                 viewModel.isShowingActionPanel = false
                             }
                         }
 
                     ActionPanelView(viewModel: viewModel) {
-                        withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+                        withAnimation(LiquidGlass.quickSpring) {
                             viewModel.isShowingActionPanel = false
                         }
                     }
                 }
-                .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                .transition(.opacity.combined(with: .scale(scale: 0.97)))
             }
         }
         .overlay(alignment: .top) {
             // Transient Toast status (e.g. "Path Copied")
             if let msg = viewModel.copyStatusMessage {
                 GlassPill(msg, style: .accent)
-                    .padding(.top, 60)
+                    .padding(.top, 64)
                     .transition(.move(edge: .top).combined(with: .opacity))
                     .onAppear {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
-                            withAnimation {
+                            withAnimation(LiquidGlass.quickSpring) {
                                 viewModel.copyStatusMessage = nil
                             }
                         }
@@ -112,197 +115,173 @@ public struct LauncherView: View {
         }
     }
 
-    // MARK: - Top Area: Search Capsule
+    // MARK: - Layer A: Floating Search Capsule (Top Island)
 
     private var searchCapsuleView: some View {
         HStack(spacing: 10) {
-            // Subtle Morph Identity Icon
+            // Left Glyph: Curated Stylized Morph Icon
             ZStack {
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(LiquidGlass.bridgeTint.opacity(0.18))
+                Circle()
+                    .fill(LiquidGlass.brandAccentGradient)
                     .frame(width: 24, height: 24)
                 Image(systemName: "circle.grid.2x2.fill")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(LiquidGlass.bridgeTint)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(Color.white)
             }
 
+            // Search Text Field
             TextField(searchPlaceholder, text: $viewModel.searchQuery)
                 .textFieldStyle(.plain)
-                .font(.figmaBody())
+                .font(.system(size: 13, weight: .regular))
+                .foregroundStyle(Color.white)
                 .focused($isSearchFocused)
 
+            // Clear Button
             if !viewModel.searchQuery.isEmpty {
                 Button {
                     viewModel.searchQuery = ""
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 13))
+                        .foregroundStyle(Color.white.opacity(0.60))
                 }
                 .buttonStyle(.plain)
                 .help("Clear search (⎋)")
             }
 
+            // Dropped File Badge
             if !viewModel.droppedFiles.isEmpty {
-                HStack(spacing: 4) {
-                    Image(systemName: "paperclip")
-                        .font(.system(size: 10))
-                    Text("\(viewModel.droppedFiles.count) file\(viewModel.droppedFiles.count > 1 ? "s" : "")")
-                        .font(.figmaCaption1(emphasized: true))
-                        .monospacedDigit()
-                }
-                .padding(.horizontal, 7)
-                .padding(.vertical, 3)
-                .background(Capsule().fill(LiquidGlass.bridgeTint.opacity(0.18)))
-                .foregroundStyle(LiquidGlass.bridgeTint)
+                GlassPill("\(viewModel.droppedFiles.count) file\(viewModel.droppedFiles.count > 1 ? "s" : "")", icon: "paperclip", style: .accent)
             }
 
-            GlassButton("Actions", icon: "command", shortcutBadge: "⌘K", variant: .ghost, size: .small, tooltip: "Contextual actions (⌘K)") {
-                withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
-                    viewModel.isShowingActionPanel.toggle()
-                }
-            }
-
-            GlassButton("Open", icon: "folder", shortcutBadge: "⌘O", variant: .secondary, size: .small) {
-                viewModel.openFilePicker()
-            }
-
-            GlassButton("", icon: "gearshape", shortcutBadge: "⌘,", variant: .ghost, size: .small, tooltip: "Settings (⌘,)") {
-                SettingsWindowController.shared.show()
-            }
-        }
-        .padding(.horizontal, 14)
-        .frame(minHeight: LiquidGlass.searchFieldHeight)
-        .background {
-            RoundedRectangle(cornerRadius: LiquidGlass.cardRadius, style: .continuous)
-                .fill(.thickMaterial)
-                .overlay {
-                    RoundedRectangle(cornerRadius: LiquidGlass.cardRadius, style: .continuous)
-                        .stroke(LiquidGlass.bridgeTint.opacity(0.24), lineWidth: 0.7)
-                }
-                .shadow(color: Color.black.opacity(0.18), radius: 14, x: 0, y: 6)
-        }
-    }
-
-    // MARK: - Category Quick Discovery Pills
-
-    private var categoryDiscoveryPillsView: some View {
-        HStack(spacing: 6) {
-            // "All" Pill
-            Button {
-                withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
-                    viewModel.selectedCategory = nil
-                    viewModel.selectedIndex = 0
-                }
-            } label: {
-                HStack(spacing: 5) {
-                    Image(systemName: "square.grid.2x2")
-                        .font(.system(size: 11, weight: .semibold))
-                    Text("All")
-                        .font(.system(size: 12, weight: viewModel.selectedCategory == nil ? .semibold : .regular))
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background {
-                    if viewModel.selectedCategory == nil {
-                        Capsule(style: .continuous)
-                            .fill(LiquidGlass.bridgeTint.opacity(0.20))
-                            .overlay {
-                                Capsule(style: .continuous)
-                                    .stroke(LiquidGlass.bridgeTint.opacity(0.50), lineWidth: 1)
+            // Ellipsis Menu (...) conforming to Design Reference
+            Menu {
+                Section("View content as") {
+                    Button {
+                        withAnimation(LiquidGlass.quickSpring) {
+                            viewModel.preferences.viewMode = .grid
+                        }
+                    } label: {
+                        HStack {
+                            Text("Grid")
+                            if viewModel.preferences.viewMode == .grid {
+                                Image(systemName: "checkmark")
                             }
-                    } else {
-                        Capsule(style: .continuous)
-                            .fill(.quaternary)
-                    }
-                }
-                .foregroundStyle(viewModel.selectedCategory == nil ? LiquidGlass.bridgeTint : Color.secondary)
-            }
-            .buttonStyle(.plain)
-
-            // Category Pills
-            ForEach(ConversionCategory.allCases) { cat in
-                Button {
-                    withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
-                        viewModel.selectedCategory = cat
-                        viewModel.selectedIndex = 0
-                    }
-                } label: {
-                    HStack(spacing: 5) {
-                        Image(systemName: cat.icon)
-                            .font(.system(size: 11, weight: .semibold))
-                        Text(cat.displayName)
-                            .font(.system(size: 12, weight: viewModel.selectedCategory == cat ? .semibold : .regular))
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background {
-                        if viewModel.selectedCategory == cat {
-                            Capsule(style: .continuous)
-                                .fill(LiquidGlass.bridgeTint.opacity(0.20))
-                                .overlay {
-                                    Capsule(style: .continuous)
-                                        .stroke(LiquidGlass.bridgeTint.opacity(0.50), lineWidth: 1)
-                                }
-                        } else {
-                            Capsule(style: .continuous)
-                                .fill(.quaternary)
                         }
                     }
-                    .foregroundStyle(viewModel.selectedCategory == cat ? LiquidGlass.bridgeTint : Color.secondary)
-                }
-                .buttonStyle(.plain)
-            }
 
-            Spacer()
+                    Button {
+                        withAnimation(LiquidGlass.quickSpring) {
+                            viewModel.preferences.viewMode = .list
+                        }
+                    } label: {
+                        HStack {
+                            Text("List")
+                            if viewModel.preferences.viewMode == .list {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+                }
+
+                Divider()
+
+                Button {
+                    withAnimation(LiquidGlass.quickSpring) {
+                        viewModel.isShowingActionPanel = true
+                    }
+                } label: {
+                    Label("Actions Palette (⌘K)", systemImage: "command")
+                }
+
+                Button {
+                    viewModel.openFilePicker()
+                } label: {
+                    Label("Open Files... (⌘O)", systemImage: "folder")
+                }
+
+                Button {
+                    SettingsWindowController.shared.show()
+                } label: {
+                    Label("Preferences... (⌘,)", systemImage: "gearshape")
+                }
+
+                if !viewModel.droppedFiles.isEmpty || viewModel.activeCommand != nil || !viewModel.searchQuery.isEmpty {
+                    Divider()
+                    Button(role: .destructive) {
+                        withAnimation(LiquidGlass.standardSpring) {
+                            viewModel.clearAll()
+                        }
+                    } label: {
+                        Label("Clear All (⎋)", systemImage: "xmark.circle")
+                    }
+                }
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(Color.white.opacity(0.85))
+                    .frame(width: 26, height: 26)
+                    .contentShape(Rectangle())
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .help("View options (Grid/List) & settings")
         }
-        .padding(.horizontal, 4)
+        .padding(.horizontal, 16)
+        .frame(maxWidth: 460)
+        .frame(height: 46)
+        .liquidGlassCapsule()
     }
 
-    // MARK: - Top Area: Tool Navigation Capsule
+    // MARK: - Layer A: Floating Navigation Capsule (When in Tool/Result)
 
     private var toolNavigationCapsuleView: some View {
         HStack(spacing: 10) {
-            GlassButton("Back", icon: "chevron.left", shortcutBadge: "⎋", variant: .secondary, size: .small) {
-                withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+            Button {
+                withAnimation(LiquidGlass.standardSpring) {
                     viewModel.goBack()
                 }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 11, weight: .semibold))
+                    Text("Back")
+                        .font(.system(size: 12, weight: .medium))
+                }
+                .foregroundStyle(Color.white.opacity(0.90))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Capsule().fill(Color.white.opacity(0.10)))
             }
+            .buttonStyle(.plain)
 
             if let activeCmd = viewModel.activeCommand {
                 HStack(spacing: 8) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(LiquidGlass.bridgeTint.opacity(0.18))
-                            .frame(width: 24, height: 24)
-                        Image(systemName: activeCmd.systemIcon)
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(LiquidGlass.bridgeTint)
-                    }
+                    ToolSquircleIcon(command: activeCmd, size: 22, cornerRadius: 5)
 
                     Text(activeCmd.title)
-                        .font(.figmaHeadline)
-                        .foregroundStyle(.primary)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.white)
 
                     GlassPill(activeCmd.category.displayName, style: .accent)
                 }
             } else if viewModel.currentResult != nil {
-                HStack(spacing: 8) {
+                HStack(spacing: 6) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 15))
-                        .foregroundStyle(.green)
+                        .font(.system(size: 13))
+                        .foregroundStyle(Color.green)
                     Text("Result Preview")
-                        .font(.figmaHeadline)
-                        .foregroundStyle(.primary)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.white)
                 }
             } else if viewModel.isShowingSettings {
-                HStack(spacing: 8) {
+                HStack(spacing: 6) {
                     Image(systemName: "gearshape.fill")
-                        .font(.system(size: 14))
-                        .foregroundStyle(LiquidGlass.bridgeTint)
+                        .font(.system(size: 12))
+                        .foregroundStyle(LiquidGlass.brandAccent)
                     Text("Preferences")
-                        .font(.figmaHeadline)
-                        .foregroundStyle(.primary)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.white)
                 }
             }
 
@@ -310,49 +289,59 @@ public struct LauncherView: View {
 
             if viewModel.activeCommand != nil {
                 GlassButton("Actions", icon: "command", shortcutBadge: "⌘K", variant: .ghost, size: .small, tooltip: "Actions (⌘K)") {
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+                    withAnimation(LiquidGlass.quickSpring) {
                         viewModel.isShowingActionPanel.toggle()
                     }
                 }
 
                 if !viewModel.droppedFiles.isEmpty {
-                    GlassButton("", icon: "eye", shortcutBadge: "Space", variant: .ghost, size: .small, tooltip: "Quick Look preview (Space)") {
-                        if let first = viewModel.droppedFiles.first {
-                            QuickLookManager.shared.toggle(url: first.url)
-                        }
-                    }
-
                     GlassButton("Change", icon: "folder", shortcutBadge: "⌘O", variant: .ghost, size: .small, tooltip: "Change file (⌘O)") {
                         viewModel.openFilePicker()
                     }
                 } else if viewModel.activeCommand?.id != "qr.generate" && viewModel.activeCommand?.id != "barcode.generate" {
-                    GlassButton("Open File...", icon: "folder", shortcutBadge: "⌘O", variant: .secondary, size: .small) {
+                    GlassButton("Open...", icon: "folder", shortcutBadge: "⌘O", variant: .secondary, size: .small) {
                         viewModel.openFilePicker()
                     }
                 }
             } else if viewModel.currentResult != nil {
-                GlassButton("New Action", icon: "plus", shortcutBadge: "⌘N", variant: .primary, size: .small) {
-                    withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                GlassButton("New", icon: "plus", shortcutBadge: "⌘N", variant: .primary, size: .small) {
+                    withAnimation(LiquidGlass.standardSpring) {
                         viewModel.clearAll()
                     }
                 }
             }
 
-            GlassButton("", icon: "gearshape", shortcutBadge: "⌘,", variant: .ghost, size: .small, tooltip: "Settings (⌘,)") {
-                SettingsWindowController.shared.show()
+            // Ellipsis Menu
+            Menu {
+                Button {
+                    SettingsWindowController.shared.show()
+                } label: {
+                    Label("Preferences... (⌘,)", systemImage: "gearshape")
+                }
+
+                Divider()
+
+                Button(role: .destructive) {
+                    withAnimation(LiquidGlass.standardSpring) {
+                        viewModel.clearAll()
+                    }
+                } label: {
+                    Label("Close Tool (⎋)", systemImage: "xmark.circle")
+                }
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(Color.white.opacity(0.85))
+                    .frame(width: 26, height: 26)
+                    .contentShape(Rectangle())
             }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
         }
         .padding(.horizontal, 14)
-        .frame(minHeight: LiquidGlass.searchFieldHeight)
-        .background {
-            RoundedRectangle(cornerRadius: LiquidGlass.cardRadius, style: .continuous)
-                .fill(.thickMaterial)
-                .overlay {
-                    RoundedRectangle(cornerRadius: LiquidGlass.cardRadius, style: .continuous)
-                        .stroke(LiquidGlass.bridgeTint.opacity(0.24), lineWidth: 0.7)
-                }
-                .shadow(color: Color.black.opacity(0.18), radius: 14, x: 0, y: 6)
-        }
+        .frame(maxWidth: 600)
+        .frame(height: 46)
+        .liquidGlassCapsule()
     }
 
     private var searchPlaceholder: String {
@@ -365,87 +354,369 @@ public struct LauncherView: View {
         return "Search Morph or drop a file..."
     }
 
-    // MARK: - Bottom Area: Results Surface
+    // MARK: - Layer B: Main Card Surface (28pt Squircle Island)
 
-    @ViewBuilder
-    private var resultsSurfaceView: some View {
-        GlassCard(cornerRadius: 14) {
-            VStack(spacing: 0) {
-                if viewModel.isShowingSettings {
-                    SettingsView(preferences: viewModel.preferences) {
-                        withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
-                            viewModel.isShowingSettings = false
-                        }
+    private var mainCardSurfaceView: some View {
+        VStack(spacing: 0) {
+            // Category Filter Chips (when in search / discovery mode)
+            if !isToolOrResultOpen {
+                categoryChipsView
+                    .padding(.top, 14)
+                    .padding(.bottom, 10)
+            }
+
+            // Main Content Area
+            contentAreaView
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            // Persistent Footer Bar (only in discovery mode)
+            if !isToolOrResultOpen {
+                Divider()
+                    .overlay(Color.white.opacity(0.08))
+                footerShortcutBar
+            }
+        }
+        .liquidGlassSurface(radius: 28)
+    }
+
+    // MARK: - Category Filter Chips Row
+
+    private var categoryChipsView: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                // "All Tools" Chip
+                categoryChip(
+                    title: "All Tools",
+                    icon: "square.grid.2x2",
+                    isSelected: viewModel.selectedCategory == nil
+                ) {
+                    withAnimation(LiquidGlass.quickSpring) {
+                        viewModel.selectedCategory = nil
+                        viewModel.selectedIndex = 0
                     }
-                } else if let result = viewModel.currentResult {
-                    ResultPreviewView(viewModel: viewModel, result: result)
-                } else if let activeCmd = viewModel.activeCommand {
-                    if activeCmd.category == .qrBarcode && (activeCmd.id == "qr.generate" || activeCmd.id == "barcode.generate") {
-                        QRCodeOperationsView(viewModel: viewModel)
-                    } else if !viewModel.droppedFiles.isEmpty {
-                        switch activeCmd.category {
-                        case .image:
-                            ImageOperationsView(viewModel: viewModel)
-                        case .pdf:
-                            PDFOperationsView(viewModel: viewModel)
-                        case .archive:
-                            ArchiveOperationsView(viewModel: viewModel)
-                        case .qrBarcode:
-                            QRCodeOperationsView(viewModel: viewModel)
-                        }
-                    } else {
-                        toolEmptyDropTargetView(command: activeCmd)
-                    }
-                } else if !viewModel.droppedFiles.isEmpty && viewModel.activeCommand == nil {
-                    fileDroppedContextualView
-                } else {
-                    commandListView
                 }
 
-                // Persistent Footer (only when in launcher search/browse mode)
-                if !isToolOrResultOpen {
-                    Divider().overlay(.quaternary)
-                    footerShortcutBar
+                // Category Chips
+                ForEach(ConversionCategory.allCases) { cat in
+                    categoryChip(
+                        title: cat.displayName,
+                        icon: cat.icon,
+                        isSelected: viewModel.selectedCategory == cat
+                    ) {
+                        withAnimation(LiquidGlass.quickSpring) {
+                            viewModel.selectedCategory = cat
+                            viewModel.selectedIndex = 0
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 18)
+        }
+    }
+
+    private func categoryChip(title: String, icon: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                Image(systemName: icon)
+                    .font(.system(size: 10, weight: isSelected ? .bold : .medium))
+                Text(title)
+                    .font(.system(size: 11, weight: isSelected ? .semibold : .medium))
+            }
+            .padding(.horizontal, 11)
+            .padding(.vertical, 6)
+            .background {
+                if isSelected {
+                    Capsule()
+                        .fill(Color.white.opacity(0.18))
+                        .overlay {
+                            Capsule()
+                                .strokeBorder(Color.white.opacity(0.35), lineWidth: 0.75)
+                        }
+                } else {
+                    Capsule()
+                        .fill(Color.white.opacity(0.06))
+                        .overlay {
+                            Capsule()
+                                .strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5)
+                        }
+                }
+            }
+            .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.70))
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Content Area Router
+
+    @ViewBuilder
+    private var contentAreaView: some View {
+        if viewModel.isShowingSettings {
+            SettingsView(preferences: viewModel.preferences) {
+                withAnimation(LiquidGlass.standardSpring) {
+                    viewModel.isShowingSettings = false
+                }
+            }
+        } else if let result = viewModel.currentResult {
+            ResultPreviewView(viewModel: viewModel, result: result)
+        } else if let activeCmd = viewModel.activeCommand {
+            if activeCmd.category == .qrBarcode && (activeCmd.id == "qr.generate" || activeCmd.id == "barcode.generate") {
+                QRCodeOperationsView(viewModel: viewModel)
+            } else if !viewModel.droppedFiles.isEmpty {
+                switch activeCmd.category {
+                case .image:
+                    ImageOperationsView(viewModel: viewModel)
+                case .pdf:
+                    PDFOperationsView(viewModel: viewModel)
+                case .archive:
+                    ArchiveOperationsView(viewModel: viewModel)
+                case .qrBarcode:
+                    QRCodeOperationsView(viewModel: viewModel)
+                }
+            } else {
+                toolEmptyDropTargetView(command: activeCmd)
+            }
+        } else if !viewModel.droppedFiles.isEmpty && viewModel.activeCommand == nil {
+            fileDroppedContextualView
+        } else {
+            // Launcher Main Discovery: List Mode or Grid Mode
+            if viewModel.preferences.viewMode == .grid {
+                gridModeDiscoveryView
+            } else {
+                listModeDiscoveryView
+            }
+        }
+    }
+
+    // MARK: - List Mode Discovery View (Design Reference 1)
+
+    private var listModeDiscoveryView: some View {
+        VStack(spacing: 0) {
+            let commands = viewModel.filteredCommands
+
+            if commands.isEmpty {
+                emptyUnavailableView
+            } else {
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        VStack(spacing: 8) {
+                            // Top Shelf (Favorite / Top 5 squircle apps) when in default browse mode
+                            if viewModel.searchQuery.isEmpty && viewModel.selectedCategory == nil && viewModel.droppedFiles.isEmpty {
+                                topShelfView
+                                    .padding(.top, 2)
+                                    .padding(.bottom, 6)
+
+                                Divider()
+                                    .overlay(Color.white.opacity(0.10))
+                                    .padding(.horizontal, 14)
+                            }
+
+                            // Vertical list of tools
+                            LazyVStack(spacing: 3) {
+                                ForEach(Array(commands.enumerated()), id: \.element.id) { index, command in
+                                    listCommandRow(index: index, command: command)
+                                }
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.bottom, 8)
+                        }
+                    }
+                    .scrollIndicators(.hidden)
+                    .onChange(of: viewModel.selectedIndex) { _, newIndex in
+                        proxy.scrollTo(newIndex, anchor: .center)
+                    }
                 }
             }
         }
     }
 
+    // MARK: - Top Shelf Row (5 large squircle icons)
+
+    private var topShelfView: some View {
+        HStack(spacing: 0) {
+            ForEach(viewModel.topShelfCommands) { cmd in
+                Button {
+                    viewModel.selectCommand(cmd)
+                } label: {
+                    VStack(spacing: 6) {
+                        ToolSquircleIcon(command: cmd, size: 48, cornerRadius: 12)
+
+                        Text(cmd.title)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(Color.white.opacity(0.90))
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                            .frame(maxWidth: 96)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 14)
+    }
+
+    // MARK: - List Row Item
+
+    private func listCommandRow(index: Int, command: ConversionCommand) -> some View {
+        let isSelected = (index == viewModel.selectedIndex)
+        let isFavorite = viewModel.preferences.isFavorite(id: command.id)
+
+        return HStack(spacing: 12) {
+            // Squircle icon matching app style
+            ToolSquircleIcon(command: command, size: 34, cornerRadius: 8.5)
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(command.title)
+                        .font(.system(size: 13, weight: isSelected ? .semibold : .medium))
+                        .foregroundStyle(Color.white)
+
+                    if isFavorite {
+                        Image(systemName: "star.fill")
+                            .font(.system(size: 9))
+                            .foregroundStyle(Color.yellow)
+                    }
+
+                    Spacer()
+                    GlassPill(command.category.displayName, style: isSelected ? .accent : .standard)
+                }
+
+                Text(command.subtitle)
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color.white.opacity(0.55))
+                    .lineLimit(1)
+            }
+
+            if isSelected {
+                Text("↩")
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .foregroundStyle(Color.white.opacity(0.70))
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 2)
+                    .background(RoundedRectangle(cornerRadius: 4, style: .continuous).fill(Color.white.opacity(0.14)))
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background {
+            if isSelected {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.white.opacity(0.12))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .strokeBorder(Color.white.opacity(0.18), lineWidth: 0.75)
+                    }
+            }
+        }
+        .contentShape(Rectangle())
+        .id(index)
+        .onTapGesture {
+            viewModel.selectedIndex = index
+            viewModel.selectCommand(command)
+        }
+    }
+
+    // MARK: - Grid Mode Discovery View (Design Reference 2 & 3)
+
+    private var gridModeDiscoveryView: some View {
+        VStack(spacing: 0) {
+            let commands = viewModel.filteredCommands
+
+            if commands.isEmpty {
+                emptyUnavailableView
+            } else {
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(minimum: 68, maximum: 92), spacing: 8), count: 7), spacing: 14) {
+                            ForEach(Array(commands.enumerated()), id: \.element.id) { index, command in
+                                gridCommandCell(index: index, command: command)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                    }
+                    .scrollIndicators(.hidden)
+                    .onChange(of: viewModel.selectedIndex) { _, newIndex in
+                        proxy.scrollTo(newIndex, anchor: .center)
+                    }
+                }
+            }
+        }
+    }
+
+    private func gridCommandCell(index: Int, command: ConversionCommand) -> some View {
+        let isSelected = (index == viewModel.selectedIndex)
+
+        return Button {
+            viewModel.selectedIndex = index
+            viewModel.selectCommand(command)
+        } label: {
+            VStack(spacing: 6) {
+                ZStack {
+                    ToolSquircleIcon(command: command, size: 50, cornerRadius: 12.5)
+
+                    if isSelected {
+                        RoundedRectangle(cornerRadius: 12.5, style: .continuous)
+                            .strokeBorder(Color.white, lineWidth: 2)
+                            .shadow(color: LiquidGlass.brandAccent.opacity(0.6), radius: 6)
+                    }
+                }
+
+                Text(command.title)
+                    .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
+                    .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.85))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .frame(height: 28, alignment: .top)
+            }
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .id(index)
+    }
+
+    private var emptyUnavailableView: some View {
+        ContentUnavailableView {
+            Label("No Matching Operations", systemImage: "magnifyingglass")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Color.white)
+        } description: {
+            Text("No operations matched \"\(viewModel.searchQuery)\".\nTry searching for 'compress', 'resize', 'convert', 'pdf', 'zip', or 'qr'")
+                .font(.system(size: 12))
+                .foregroundStyle(Color.white.opacity(0.60))
+        }
+        .frame(maxHeight: .infinity)
+    }
+
     // MARK: - Tool Empty Drop Target View
 
     private func toolEmptyDropTargetView(command: ConversionCommand) -> some View {
-        VStack(spacing: 16) {
+        VStack(spacing: LiquidGlass.spaceLG) {
             Spacer()
 
-            ZStack {
-                Circle()
-                    .fill(.quaternary)
-                    .frame(width: 68, height: 68)
-                Image(systemName: command.systemIcon)
-                    .symbolRenderingMode(.hierarchical)
-                    .font(.system(size: 32, weight: .semibold))
-                    .foregroundStyle(LiquidGlass.bridgeTint)
-            }
+            ToolSquircleIcon(command: command, size: 64, cornerRadius: 16)
 
-            VStack(spacing: 6) {
+            VStack(spacing: 4) {
                 Text("Select a file for \(command.title)")
-                    .font(.figmaTitle3(emphasized: true))
-                    .foregroundStyle(.primary)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color.white)
 
                 Text(dropPromptDescription(for: command))
-                    .font(.figmaCallout())
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.white.opacity(0.65))
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 380)
             }
 
-            HStack(spacing: 12) {
+            HStack(spacing: LiquidGlass.spaceMD) {
                 GlassButton("Choose File...", icon: "folder", shortcutBadge: "⌘O", variant: .primary, size: .regular) {
                     viewModel.openFilePicker()
                 }
 
                 GlassButton("Cancel", shortcutBadge: "⎋", variant: .secondary, size: .regular) {
-                    withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                    withAnimation(LiquidGlass.standardSpring) {
                         viewModel.goBack()
                     }
                 }
@@ -455,7 +726,7 @@ public struct LauncherView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(24)
+        .padding(LiquidGlass.spaceXL)
     }
 
     private func dropPromptDescription(for command: ConversionCommand) -> String {
@@ -474,12 +745,12 @@ public struct LauncherView: View {
     // MARK: - File Dropped Contextual View
 
     private var fileDroppedContextualView: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: LiquidGlass.spaceSM) {
             // File Information Header
             if let first = viewModel.droppedFiles.first {
                 HStack(spacing: 12) {
                     if first.category == .image {
-                        ImageThumbnailView(url: first.url, maxPixelSize: 100, cornerRadius: 6)
+                        ImageThumbnailView(url: first.url, maxPixelSize: 100, cornerRadius: 8)
                             .frame(width: 44, height: 44)
                     } else if first.category == .pdf {
                         PDFPageThumbnailView(url: first.url, pageIndex: 0, pageNumber: 1, onTap: {
@@ -488,206 +759,77 @@ public struct LauncherView: View {
                         .frame(width: 36, height: 46)
                     } else {
                         ZStack {
-                            RoundedRectangle(cornerRadius: 6).fill(Color.orange.opacity(0.2))
+                            RoundedRectangle(cornerRadius: 8).fill(Color.orange.opacity(0.16))
                                 .frame(width: 44, height: 44)
                             Image(systemName: "archivebox.fill")
                                 .font(.system(size: 20))
-                                .foregroundStyle(.orange)
+                                .foregroundStyle(Color.orange)
                         }
                     }
 
                     VStack(alignment: .leading, spacing: 2) {
                         HStack {
                             Text(first.filename)
-                                .font(.figmaHeadline)
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(Color.white)
                                 .lineLimit(1)
                             Spacer()
                             Button {
                                 viewModel.droppedFiles = []
                             } label: {
                                 Image(systemName: "xmark.circle")
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color.white.opacity(0.60))
                             }
                             .buttonStyle(.plain)
                             .help("Remove dropped file (⌘⌫)")
                         }
 
                         Text(first.summaryDescription)
-                            .font(.figmaSubheadline())
-                            .foregroundStyle(.secondary)
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.white.opacity(0.60))
                             .monospacedDigit()
                     }
                 }
-                .padding(12)
-                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.quaternary))
-                .padding(.horizontal, 12)
-                .padding(.top, 10)
+                .padding(10)
+                .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.white.opacity(0.06)))
+                .padding(.horizontal, 18)
+                .padding(.top, 6)
             }
 
             Text("Suggested actions for this file:")
-                .font(.figmaSubheadline(emphasized: true))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 14)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Color.white.opacity(0.65))
+                .padding(.horizontal, 18)
 
-            // Suggested Operations List
-            ScrollView {
-                LazyVStack(spacing: 3) {
-                    ForEach(Array(viewModel.filteredCommands.enumerated()), id: \.element.id) { index, command in
-                        commandRow(index: index, command: command)
-                    }
-                }
-                .padding(.horizontal, 10)
-            }
-        }
-    }
-
-    // MARK: - Command List View (Raycast Command Discovery)
-
-    private var commandListView: some View {
-        VStack(spacing: 0) {
-            let commands = viewModel.filteredCommands
-
-            if commands.isEmpty {
-                ContentUnavailableView {
-                    Label("No Matching Operations", systemImage: "magnifyingglass")
-                        .font(.figmaTitle3(emphasized: true))
-                } description: {
-                    Text("No operations matched \"\(viewModel.searchQuery)\".\nTry searching for 'compress', 'resize', 'convert', 'pdf', 'zip', or 'qr'")
-                        .font(.figmaCallout())
-                }
-                .frame(maxHeight: .infinity)
-            } else {
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 6) {
-                            // When search is empty and no category is filtered, show Favorites & Recents sections!
-                            if viewModel.searchQuery.isEmpty && viewModel.selectedCategory == nil && viewModel.droppedFiles.isEmpty {
-                                // FAVORITES SECTION
-                                if !viewModel.favoriteCommands.isEmpty {
-                                    sectionHeader(title: "FAVORITES", icon: "star.fill", color: .yellow)
-                                    ForEach(Array(viewModel.favoriteCommands.enumerated()), id: \.element.id) { index, cmd in
-                                        commandRow(index: index, command: cmd)
-                                    }
-                                }
-
-                                // RECENT TOOLS SECTION
-                                if !viewModel.recentCommands.isEmpty {
-                                    sectionHeader(title: "RECENT TOOLS", icon: "clock.arrow.circlepath", color: .secondary)
-                                    ForEach(Array(viewModel.recentCommands.prefix(4).enumerated()), id: \.element.id) { index, cmd in
-                                        let favCount = viewModel.favoriteCommands.count
-                                        commandRow(index: favCount + index, command: cmd)
-                                    }
-                                }
-
-                                // ALL TOOLS SECTION
-                                sectionHeader(title: "ALL TOOLS", icon: "square.grid.2x2", color: .secondary)
-                                ForEach(Array(commands.enumerated()), id: \.element.id) { index, cmd in
-                                    commandRow(index: index, command: cmd)
-                                }
-                            } else {
-                                // Filtered list (search query or category filter)
-                                ForEach(Array(commands.enumerated()), id: \.element.id) { index, command in
-                                    commandRow(index: index, command: command)
-                                }
-                            }
+            // Suggested Operations List or Grid
+            if viewModel.preferences.viewMode == .grid {
+                ScrollView {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(minimum: 68, maximum: 92), spacing: 8), count: 7), spacing: 14) {
+                        ForEach(Array(viewModel.filteredCommands.enumerated()), id: \.element.id) { index, command in
+                            gridCommandCell(index: index, command: command)
                         }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
                     }
-                    .scrollIndicators(.hidden)
-                    .onChange(of: viewModel.selectedIndex) { _, newIndex in
-                        proxy.scrollTo(newIndex, anchor: .center)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 6)
+                }
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 3) {
+                        ForEach(Array(viewModel.filteredCommands.enumerated()), id: \.element.id) { index, command in
+                            listCommandRow(index: index, command: command)
+                        }
                     }
+                    .padding(.horizontal, 14)
                 }
             }
-        }
-    }
-
-    private func sectionHeader(title: String, icon: String, color: Color) -> some View {
-        HStack(spacing: 5) {
-            Image(systemName: icon)
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(color)
-            Text(title)
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(.secondary)
-        }
-        .padding(.horizontal, 8)
-        .padding(.top, 6)
-    }
-
-    private func commandRow(index: Int, command: ConversionCommand) -> some View {
-        let isSelected = (index == viewModel.selectedIndex)
-        let isFavorite = viewModel.preferences.isFavorite(id: command.id)
-
-        return HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(isSelected ? AnyShapeStyle(LiquidGlass.bridgeAccentGradient) : AnyShapeStyle(.quaternary))
-                    .frame(width: 32, height: 32)
-
-                Image(systemName: command.systemIcon)
-                    .symbolRenderingMode(isSelected ? .monochrome : .hierarchical)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(isSelected ? AnyShapeStyle(Color.white) : AnyShapeStyle(LiquidGlass.bridgeTint))
-            }
-
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(command.title)
-                        .font(.figmaHeadline)
-                        .foregroundStyle(.primary)
-
-                    if isFavorite {
-                        Image(systemName: "star.fill")
-                            .font(.system(size: 9))
-                            .foregroundStyle(.yellow)
-                    }
-
-                    Spacer()
-                    GlassPill(command.category.displayName, style: isSelected ? .accent : .standard)
-                }
-
-                Text(command.subtitle)
-                    .font(.figmaSubheadline())
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-
-            if isSelected {
-                Text("↩")
-                    .font(.figmaCaption1(emphasized: true))
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(RoundedRectangle(cornerRadius: 4, style: .continuous).fill(.quaternary))
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 7)
-        .background {
-            if isSelected {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(LiquidGlass.bridgeTint.opacity(0.16))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .stroke(LiquidGlass.bridgeTint.opacity(0.40), lineWidth: 1.0)
-                    }
-            }
-        }
-        .contentShape(Rectangle())
-        .id(index)
-        .onTapGesture {
-            viewModel.selectedIndex = index
-            viewModel.selectCommand(command)
         }
     }
 
     // MARK: - Footer Shortcut Bar
 
     private var footerShortcutBar: some View {
-        HStack(spacing: 12) {
-            shortcutBadge("↑↓", label: "Navigate")
+        HStack(spacing: LiquidGlass.spaceMD) {
+            shortcutBadge("↑↓/←→", label: "Navigate")
             shortcutBadge("↩", label: "Select")
             shortcutBadge("Space", label: "Preview")
             shortcutBadge("⌘K", label: "Actions")
@@ -696,32 +838,32 @@ public struct LauncherView: View {
 
             Spacer()
 
-            HStack(spacing: 5) {
+            HStack(spacing: 4) {
                 Image(systemName: "lock.shield.fill")
                     .symbolRenderingMode(.hierarchical)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.green)
+                    .font(.system(size: 10))
+                    .foregroundStyle(Color.green)
                 Text("100% Offline & Private")
-                    .font(.figmaCaption1(emphasized: true))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(Color.white.opacity(0.60))
             }
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, 18)
         .padding(.vertical, 8)
     }
 
     private func shortcutBadge(_ key: String, label: String) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 3) {
             Text(key)
-                .font(.figmaCaption2(emphasized: true))
+                .font(.system(size: 9, weight: .semibold, design: .monospaced))
                 .monospacedDigit()
                 .padding(.horizontal, 4)
                 .padding(.vertical, 2)
-                .background(RoundedRectangle(cornerRadius: 4, style: .continuous).fill(.quaternary))
-                .foregroundStyle(.secondary)
+                .background(RoundedRectangle(cornerRadius: 3.5, style: .continuous).fill(Color.white.opacity(0.10)))
+                .foregroundStyle(Color.white.opacity(0.80))
             Text(label)
-                .font(.figmaCaption1())
-                .foregroundStyle(.secondary)
+                .font(.system(size: 10))
+                .foregroundStyle(Color.white.opacity(0.60))
         }
     }
 

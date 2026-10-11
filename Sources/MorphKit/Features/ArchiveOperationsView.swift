@@ -12,38 +12,38 @@ public struct ArchiveOperationsView: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: LiquidGlass.spaceMD) {
             // Header / Dropped Files Card
             if let first = viewModel.droppedFiles.first {
-                GlassCard {
-                    HStack(spacing: 12) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(Color.orange.opacity(0.18))
-                                .frame(width: 48, height: 48)
-                            Image(systemName: isExtractionOrInspect ? "tray.and.arrow.up.fill" : "archivebox.fill")
-                                .font(.system(size: 22, weight: .semibold))
-                                .foregroundStyle(.orange)
-                        }
-
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(first.filename)
-                                .font(.system(size: 13, weight: .semibold))
-                                .lineLimit(1)
-                            Text(first.summaryDescription)
-                                .font(.system(size: 11))
-                                .foregroundStyle(.secondary)
-                                .monospacedDigit()
-                        }
-
-                        Spacer()
-
-                        if viewModel.droppedFiles.count > 1 {
-                            GlassPill("+\(viewModel.droppedFiles.count - 1) more files", style: .accent)
-                        }
+                HStack(spacing: LiquidGlass.spaceMD) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(Color.orange.opacity(0.16))
+                            .frame(width: 44, height: 44)
+                        Image(systemName: isExtractionOrInspect ? "tray.and.arrow.up.fill" : "archivebox.fill")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(Color.orange)
                     }
-                    .padding(10)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(first.filename)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Color.primary)
+                            .lineLimit(1)
+                        Text(first.summaryDescription)
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.secondary)
+                            .monospacedDigit()
+                    }
+
+                    Spacer()
+
+                    if viewModel.droppedFiles.count > 1 {
+                        GlassPill("+\(viewModel.droppedFiles.count - 1) more files", style: .accent)
+                    }
                 }
+                .padding(10)
+                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.primary.opacity(0.04)))
             }
 
             // Options configuration
@@ -56,27 +56,26 @@ public struct ArchiveOperationsView: View {
             Spacer(minLength: 4)
 
             // Execution Bar
-            HStack {
+            HStack(spacing: LiquidGlass.spaceMD) {
                 if viewModel.isProcessing {
                     HStack(spacing: 8) {
-                        Image(systemName: "sparkles")
-                            .foregroundStyle(LiquidGlass.bridgeTint)
-                            .symbolEffect(.pulse)
+                        ProgressView()
+                            .scaleEffect(0.7)
+                            .frame(width: 16, height: 16)
                         ProgressView(value: viewModel.progress)
                             .progressViewStyle(.linear)
-                            .frame(maxWidth: 160)
+                            .frame(maxWidth: 140)
                         Text(isExtractionOrInspect ? "Extracting archive..." : "Creating archive...")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.secondary)
                     }
                 } else if let error = viewModel.errorMessage {
                     HStack(spacing: 6) {
                         Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundStyle(.red)
-                            .symbolEffect(.pulse)
+                            .foregroundStyle(Color.red)
                         Text(error)
-                            .font(.system(size: 12))
-                            .foregroundStyle(.red)
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.red)
                             .lineLimit(2)
                     }
                 }
@@ -84,13 +83,13 @@ public struct ArchiveOperationsView: View {
                 Spacer()
 
                 GlassButton("Cancel", shortcutBadge: "⎋", variant: .secondary) {
-                    withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                    withAnimation(LiquidGlass.standardSpring) {
                         viewModel.goBack()
                     }
                 }
 
                 GlassButton(
-                    isExtractionOrInspect ? "Extract Now" : "Create Archive",
+                    isExtractionOrInspect ? "Extract Archive" : "Create Archive",
                     icon: isExtractionOrInspect ? "tray.and.arrow.up" : "archivebox",
                     shortcutBadge: "↩",
                     variant: .primary
@@ -102,7 +101,7 @@ public struct ArchiveOperationsView: View {
                 .disabled(viewModel.droppedFiles.isEmpty || viewModel.isProcessing)
             }
         }
-        .padding(14)
+        .padding(LiquidGlass.spaceLG)
         .onAppear {
             if isExtractionOrInspect, let first = viewModel.droppedFiles.first {
                 loadArchiveEntries(url: first.url)
@@ -113,12 +112,12 @@ public struct ArchiveOperationsView: View {
     // MARK: - Compression Options
 
     private var compressionOptionsView: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: LiquidGlass.spaceSM) {
             Text("Archive Format")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.secondary)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Color.secondary)
 
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 ForEach(ArchiveFormat.allCases) { format in
                     GlassButton(
                         format.rawValue,
@@ -130,34 +129,31 @@ public struct ArchiveOperationsView: View {
                 }
             }
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text("Archive Name")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.secondary)
 
                 HStack(spacing: 6) {
                     TextField("Archive Name", text: $viewModel.customOutputFilename)
-                        .textFieldStyle(.plain)
+                        .textFieldStyle(.roundedBorder)
                         .font(.system(size: 12))
-                        .padding(8)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(.quaternary))
 
                     Text(".\(viewModel.archiveFormat.fileExtension)")
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondary)
                 }
             }
             .padding(.top, 4)
 
-            // Multiple files summary
             if viewModel.droppedFiles.count > 1 {
                 HStack(spacing: 6) {
                     Image(systemName: "info.circle")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondary)
                         .font(.system(size: 11))
                     Text("\(viewModel.droppedFiles.count) items will be compressed together preserving structure.")
                         .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondary)
                 }
                 .padding(.top, 2)
             }
@@ -167,60 +163,56 @@ public struct ArchiveOperationsView: View {
     // MARK: - Extraction Options
 
     private var extractionOptionsView: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: LiquidGlass.spaceSM) {
             HStack {
                 Text("Archive Contents")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.secondary)
 
                 Spacer()
 
                 if !viewModel.archiveEntries.isEmpty {
                     Text("\(viewModel.archiveEntries.count) items inside")
                         .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondary)
+                        .monospacedDigit()
                 }
             }
 
             if viewModel.isLoadingArchiveEntries {
                 HStack(spacing: 8) {
-                    ProgressView().controlSize(.small)
-                    Text("Reading archive index...")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
+                    ProgressView()
+                        .scaleEffect(0.6)
+                    Text("Reading archive directory...")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.secondary)
                 }
-                .frame(height: 100)
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, minHeight: 90)
             } else if viewModel.archiveEntries.isEmpty {
-                Text("No preview entries found in this archive.")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-                    .frame(height: 80)
+                Text("Unable to inspect entries or empty archive.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color.secondary)
+                    .frame(maxWidth: .infinity, minHeight: 70)
             } else {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 4) {
-                        ForEach(Array(viewModel.archiveEntries.prefix(25).enumerated()), id: \.offset) { _, entry in
+                    LazyVStack(alignment: .leading, spacing: 3) {
+                        ForEach(viewModel.archiveEntries, id: \.self) { entry in
                             HStack(spacing: 6) {
                                 Image(systemName: entry.hasSuffix("/") ? "folder" : "doc")
                                     .font(.system(size: 10))
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color.secondary)
                                 Text(entry)
-                                    .font(.system(size: 11, design: .monospaced))
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(Color.primary)
                                     .lineLimit(1)
-                                    .foregroundStyle(.primary)
                             }
-                        }
-                        if viewModel.archiveEntries.count > 25 {
-                            Text("... and \(viewModel.archiveEntries.count - 25) more items")
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundStyle(.secondary)
-                                .padding(.top, 2)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
                         }
                     }
-                    .padding(8)
                 }
-                .frame(height: 120)
-                .background(RoundedRectangle(cornerRadius: 6).fill(.quaternary))
+                .frame(maxHeight: 130)
+                .background(RoundedRectangle(cornerRadius: 6).fill(Color.primary.opacity(0.04)))
             }
         }
     }
@@ -228,10 +220,10 @@ public struct ArchiveOperationsView: View {
     private func loadArchiveEntries(url: URL) {
         viewModel.isLoadingArchiveEntries = true
         Task.detached(priority: .userInitiated) {
-            let (_, _, entries) = (try? ArchiveEngine.shared.inspect(url: url)) ?? (0, 0, [])
+            let entries = (try? ArchiveEngine.shared.inspect(url: url).entries) ?? []
             await MainActor.run {
-                self.viewModel.archiveEntries = entries
-                self.viewModel.isLoadingArchiveEntries = false
+                viewModel.archiveEntries = entries
+                viewModel.isLoadingArchiveEntries = false
             }
         }
     }

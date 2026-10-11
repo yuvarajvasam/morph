@@ -27,6 +27,10 @@ public struct ActionItem: Identifiable {
     }
 }
 
+/// Raycast-style Contextual Action Sheet (⌘K) built with native macOS HIG:
+/// - Fast keyboard-driven command execution
+/// - Grouped sections (Primary Action, File Actions, Tool Actions, Application)
+/// - Visual hierarchy and clear shortcut hints
 public struct ActionPanelView: View {
     @ObservedObject var viewModel: LauncherViewModel
     let onDismiss: () -> Void
@@ -179,62 +183,63 @@ public struct ActionPanelView: View {
     public var body: some View {
         VStack(spacing: 0) {
             // Header Search Field
-            HStack(spacing: 8) {
+            HStack(spacing: LiquidGlass.spaceSM) {
                 Image(systemName: "command")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(LiquidGlass.bridgeTint)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(LiquidGlass.brandAccent)
 
                 TextField("Search Actions...", text: $viewModel.actionSearchQuery)
                     .textFieldStyle(.plain)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 13, weight: .regular))
                     .focused($isActionSearchFocused)
 
                 GlassButton("Done", shortcutBadge: "⎋", variant: .ghost, size: .small) {
                     onDismiss()
                 }
             }
-            .padding(10)
-            .background(.ultraThinMaterial)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(Color(nsColor: .controlBackgroundColor).opacity(0.40))
 
-            Divider().overlay(.quaternary)
+            Divider().overlay(Color(nsColor: .separatorColor).opacity(0.3))
 
             // Actions List
             ScrollView {
-                LazyVStack(spacing: 3) {
+                LazyVStack(spacing: 2) {
                     let actions = filteredActions
                     ForEach(Array(actions.enumerated()), id: \.element.id) { index, item in
                         actionRow(index: index, item: item)
                     }
                 }
-                .padding(8)
+                .padding(6)
             }
             .frame(maxHeight: 280)
 
-            Divider().overlay(.quaternary)
+            Divider().overlay(Color(nsColor: .separatorColor).opacity(0.3))
 
             // Bottom bar
             HStack {
                 Text("Actions")
                     .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.secondary)
                 Spacer()
                 Text("Press ↩ to execute")
                     .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.secondary)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(.ultraThinMaterial)
+            .background(Color(nsColor: .controlBackgroundColor).opacity(0.40))
         }
         .frame(width: 380)
         .background {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.thickMaterial)
+                .fill(.regularMaterial)
                 .overlay {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(.quaternary, lineWidth: 1)
+                        .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
                 }
-                .shadow(color: .black.opacity(0.35), radius: 24, x: 0, y: 12)
+                .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 8)
         }
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -246,33 +251,37 @@ public struct ActionPanelView: View {
     private func actionRow(index: Int, item: ActionItem) -> some View {
         let isSelected = (index == viewModel.selectedActionIndex)
 
-        return HStack(spacing: 10) {
+        return HStack(spacing: 8) {
             Image(systemName: item.systemIcon)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(item.isDestructive ? Color.red : (isSelected ? Color.white : LiquidGlass.bridgeTint))
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(item.isDestructive ? Color.red : (isSelected ? LiquidGlass.brandAccent : Color.secondary))
                 .frame(width: 18)
 
             Text(item.title)
                 .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
-                .foregroundStyle(item.isDestructive ? Color.red : (isSelected ? Color.white : Color.primary))
+                .foregroundStyle(item.isDestructive ? Color.red : Color.primary)
 
             Spacer()
 
             if let shortcut = item.shortcut {
                 Text(shortcut)
-                    .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                    .foregroundStyle(isSelected ? Color.white.opacity(0.8) : Color.secondary)
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 2)
-                    .background(RoundedRectangle(cornerRadius: 4).fill(isSelected ? Color.white.opacity(0.2) : Color.primary.opacity(0.06)))
+                    .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(Color.secondary)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 1.5)
+                    .background(RoundedRectangle(cornerRadius: 3).fill(Color.primary.opacity(0.06)))
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
         .background {
             if isSelected {
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(item.isDestructive ? Color.red.opacity(0.8) : LiquidGlass.bridgeTint)
+                    .fill(item.isDestructive ? Color.red.opacity(0.12) : LiquidGlass.brandAccent.opacity(0.12))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .strokeBorder(item.isDestructive ? Color.red.opacity(0.35) : LiquidGlass.brandAccent.opacity(0.35), lineWidth: 0.8)
+                    }
             }
         }
         .contentShape(Rectangle())

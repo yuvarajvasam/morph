@@ -76,20 +76,20 @@ public struct GlassComparisonView: View {
                 // Split Divider Line
                 Rectangle()
                     .fill(Color.white)
-                    .frame(width: 2)
-                    .shadow(color: .black.opacity(0.35), radius: 3, x: 0, y: 0)
+                    .frame(width: 1.5)
+                    .shadow(color: Color.black.opacity(0.30), radius: 2, x: 0, y: 0)
                     .position(x: size.width * model.splitPosition, y: size.height / 2)
 
                 // Drag handle knob
-                HStack(spacing: 3) {
+                HStack(spacing: 2) {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 8, weight: .bold))
+                        .font(.system(size: 7, weight: .bold))
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 8, weight: .bold))
+                        .font(.system(size: 7, weight: .bold))
                 }
                 .foregroundStyle(Color.black)
-                .frame(width: 26, height: 26)
-                .background(Circle().fill(Color.white).shadow(color: .black.opacity(0.35), radius: 4))
+                .frame(width: 24, height: 24)
+                .background(Circle().fill(Color.white).shadow(color: Color.black.opacity(0.25), radius: 3))
                 .position(x: size.width * model.splitPosition, y: size.height / 2)
                 .gesture(
                     DragGesture()
@@ -107,19 +107,19 @@ public struct GlassComparisonView: View {
                 VStack {
                     HStack {
                         GlassPill("Original", icon: "photo", style: .standard)
-                            .padding(.leading, 12)
+                            .padding(.leading, 10)
                         Spacer()
                         GlassPill("Processed", icon: "sparkles", style: .accent)
-                            .padding(.trailing, 12)
+                            .padding(.trailing, 10)
                     }
-                    .padding(.top, 12)
+                    .padding(.top, 10)
                     Spacer()
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: LiquidGlass.cardRadius, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: LiquidGlass.cardRadius, style: .continuous)
-                    .stroke(.quaternary, lineWidth: 0.5)
+                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.5)
             }
         }
         .onAppear {

@@ -18,6 +18,13 @@ public enum AppearanceMode: String, CaseIterable, Identifiable {
     public var id: String { rawValue }
 }
 
+public enum LauncherViewMode: String, CaseIterable, Identifiable {
+    case list = "List"
+    case grid = "Grid"
+
+    public var id: String { rawValue }
+}
+
 public enum LauncherSizePreset: String, CaseIterable, Identifiable {
     case compact = "Compact"
     case comfortable = "Comfortable"
@@ -27,9 +34,9 @@ public enum LauncherSizePreset: String, CaseIterable, Identifiable {
 
     public var dimensions: (width: CGFloat, height: CGFloat) {
         switch self {
-        case .compact: return (620, 420)
-        case .comfortable: return (680, 460)
-        case .large: return (760, 520)
+        case .compact: return (620, 500)
+        case .comfortable: return (680, 560)
+        case .large: return (760, 640)
         }
     }
 }
@@ -139,6 +146,12 @@ public final class PreferencesManager: ObservableObject {
     @Published public var launcherSize: LauncherSizePreset {
         didSet {
             defaults.set(launcherSize.rawValue, forKey: "launcherSize")
+        }
+    }
+
+    @Published public var viewMode: LauncherViewMode {
+        didSet {
+            defaults.set(viewMode.rawValue, forKey: "viewMode")
         }
     }
 
@@ -311,6 +324,12 @@ public final class PreferencesManager: ObservableObject {
             self.launcherSize = .comfortable
         }
 
+        if let modeRaw = defaults.string(forKey: "viewMode"), let mode = LauncherViewMode(rawValue: modeRaw) {
+            self.viewMode = mode
+        } else {
+            self.viewMode = .list
+        }
+
         if let textRaw = defaults.string(forKey: "textSize"), let text = TextSizeMode(rawValue: textRaw) {
             self.textSize = text
         } else {
@@ -480,6 +499,7 @@ public final class PreferencesManager: ObservableObject {
         self.textSize = .standard
         self.animationPreference = .system
         self.transparencyPreference = .system
+        self.viewMode = .list
 
         self.defaultImagePreset = .balanced
         self.defaultImageFormat = .preserveOriginal

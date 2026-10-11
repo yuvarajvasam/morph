@@ -219,15 +219,33 @@ public final class FloatingPanelController: NSObject, NSWindowDelegate {
                 }
             }
 
-            // Navigation in Command List: Up (126), Down (125), Return (36)
+            // Navigation in Command List: Up (126), Down (125), Left (123), Right (124), Return (36)
             if self.viewModel.activeCommand == nil && self.viewModel.currentResult == nil && !self.viewModel.isShowingSettings {
-                if event.keyCode == 126 {
-                    self.viewModel.navigateUp()
-                    return nil
-                }
-                if event.keyCode == 125 {
-                    self.viewModel.navigateDown()
-                    return nil
+                if !event.modifierFlags.contains(.command) {
+                    if event.keyCode == 126 {
+                        if PreferencesManager.shared.viewMode == .grid {
+                            self.viewModel.navigateGridUp()
+                        } else {
+                            self.viewModel.navigateUp()
+                        }
+                        return nil
+                    }
+                    if event.keyCode == 125 {
+                        if PreferencesManager.shared.viewMode == .grid {
+                            self.viewModel.navigateGridDown()
+                        } else {
+                            self.viewModel.navigateDown()
+                        }
+                        return nil
+                    }
+                    if event.keyCode == 123 {
+                        self.viewModel.navigateLeft()
+                        return nil
+                    }
+                    if event.keyCode == 124 {
+                        self.viewModel.navigateRight()
+                        return nil
+                    }
                 }
                 if event.keyCode == 36 {
                     self.viewModel.selectCurrent()

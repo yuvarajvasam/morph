@@ -1,5 +1,10 @@
 import SwiftUI
 
+/// Unified PDF Operations Screen (Layer B Content Surface) conforming to macOS HIG:
+/// Hierarchy:
+/// 1. Document Preview & Metadata
+/// 2. Essential Options (Compression Presets, Page Selection, Merge Order, Split Modes, Rotation)
+/// 3. Execution Bar with single dominant Primary Action (#C74634)
 public struct PDFOperationsView: View {
     @ObservedObject var viewModel: LauncherViewModel
 
@@ -8,57 +13,57 @@ public struct PDFOperationsView: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            // File Information Card with Real Thumbnail
+        VStack(alignment: .leading, spacing: LiquidGlass.spaceMD) {
+            // 1. File Information Header with Real PDF Thumbnail
             if let first = viewModel.droppedFiles.first {
-                GlassCard {
-                    HStack(spacing: 12) {
-                        // Real First Page PDF Thumbnail
-                        PDFPageThumbnailView(
-                            url: first.url,
-                            pageIndex: 0,
-                            pageNumber: 1,
-                            isSelected: false,
-                            rotationAngle: viewModel.activeCommand?.id == "pdf.rotate" ? viewModel.rotationSelection : 0,
-                            onTap: {
-                                QuickLookManager.shared.toggle(url: first.url)
-                            }
-                        )
-                        .frame(width: 50, height: 65)
-
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(first.filename)
-                                .font(.system(size: 13, weight: .semibold))
-                                .lineLimit(1)
-                            Text(first.summaryDescription)
-                                .font(.system(size: 11))
-                                .foregroundStyle(.secondary)
-                                .monospacedDigit()
-                        }
-
-                        Spacer()
-
-                        Button {
+                HStack(spacing: LiquidGlass.spaceMD) {
+                    PDFPageThumbnailView(
+                        url: first.url,
+                        pageIndex: 0,
+                        pageNumber: 1,
+                        isSelected: false,
+                        rotationAngle: viewModel.activeCommand?.id == "pdf.rotate" ? viewModel.rotationSelection : 0,
+                        size: CGSize(width: 38, height: 48),
+                        showPageLabel: false,
+                        onTap: {
                             QuickLookManager.shared.toggle(url: first.url)
-                        } label: {
-                            Image(systemName: "eye.fill")
-                                .font(.system(size: 12))
-                                .foregroundStyle(.secondary)
-                                .padding(6)
-                                .background(Circle().fill(.quaternary))
                         }
-                        .buttonStyle(.plain)
-                        .help("Quick Look preview (Space)")
+                    )
 
-                        if viewModel.droppedFiles.count > 1 {
-                            GlassPill("\(viewModel.droppedFiles.count) documents", style: .accent)
-                        }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(first.filename)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Color.primary)
+                            .lineLimit(1)
+                        Text(first.summaryDescription)
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.secondary)
+                            .monospacedDigit()
                     }
-                    .padding(10)
+
+                    Spacer()
+
+                    Button {
+                        QuickLookManager.shared.toggle(url: first.url)
+                    } label: {
+                        Image(systemName: "eye.fill")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.secondary)
+                            .padding(6)
+                            .background(Circle().fill(Color.primary.opacity(0.06)))
+                    }
+                    .buttonStyle(.plain)
+                    .help("Quick Look preview (Space)")
+
+                    if viewModel.droppedFiles.count > 1 {
+                        GlassPill("\(viewModel.droppedFiles.count) documents", style: .accent)
+                    }
                 }
+                .padding(10)
+                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.primary.opacity(0.04)))
             }
 
-            // Specific Configuration per command
+            // 2. Specific Configuration per Command
             if let cmd = viewModel.activeCommand {
                 switch cmd.id {
                 case "pdf.compress":
@@ -84,28 +89,27 @@ public struct PDFOperationsView: View {
 
             Spacer(minLength: 4)
 
-            // Execution Bar
-            HStack {
+            // 3. Execution Bar
+            HStack(spacing: LiquidGlass.spaceMD) {
                 if viewModel.isProcessing {
                     HStack(spacing: 8) {
-                        Image(systemName: "sparkles")
-                            .foregroundStyle(LiquidGlass.bridgeTint)
-                            .symbolEffect(.pulse)
+                        ProgressView()
+                            .scaleEffect(0.7)
+                            .frame(width: 16, height: 16)
                         ProgressView(value: viewModel.progress)
                             .progressViewStyle(.linear)
-                            .frame(maxWidth: 160)
+                            .frame(maxWidth: 140)
                         Text("Processing locally...")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.secondary)
                     }
                 } else if let error = viewModel.errorMessage {
                     HStack(spacing: 6) {
                         Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundStyle(.red)
-                            .symbolEffect(.pulse)
+                            .foregroundStyle(Color.red)
                         Text(error)
-                            .font(.system(size: 12))
-                            .foregroundStyle(.red)
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.red)
                             .lineLimit(2)
                     }
                 }
@@ -116,7 +120,7 @@ public struct PDFOperationsView: View {
                     viewModel.goBack()
                 }
 
-                GlassButton("Process Now", icon: "sparkles", shortcutBadge: "↩", variant: .primary) {
+                GlassButton(actionTitle, icon: "sparkles", shortcutBadge: "↩", variant: .primary) {
                     applyPDFSettings()
                     Task {
                         await viewModel.runActiveCommand()
@@ -125,41 +129,64 @@ public struct PDFOperationsView: View {
                 .disabled(viewModel.isProcessing)
             }
         }
-        .padding(18)
+        .padding(LiquidGlass.spaceLG)
+    }
+
+    private var actionTitle: String {
+        switch viewModel.activeCommand?.id {
+        case "pdf.compress": return "Compress PDF"
+        case "pdf.merge": return "Merge PDFs"
+        case "pdf.split": return "Split PDF"
+        case "pdf.toImage": return "Export Images"
+        case "pdf.rotate": return "Rotate PDF"
+        case "pdf.extractPages": return "Extract Pages"
+        case "pdf.removePages", "pdf.managePages": return "Remove Pages"
+        case "pdf.reorderPages": return "Reorder Pages"
+        default: return "Process Now"
+        }
     }
 
     // MARK: - Option Subviews
 
     private var compressPDFOptionsView: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: LiquidGlass.spaceSM) {
             Text("Optimization Preset")
-                .font(.figmaCallout(emphasized: true))
-                .foregroundStyle(.secondary)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Color.secondary)
 
-            HStack(spacing: 10) {
+            HStack(spacing: LiquidGlass.spaceSM) {
                 ForEach(CompressionPreset.allCases) { preset in
-                    GlassCard(isSelected: viewModel.pdfSettings.compressionPreset == preset) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            HStack {
-                                Text(preset.rawValue)
-                                    .font(.figmaHeadline)
-                                Spacer()
-                                if viewModel.pdfSettings.compressionPreset == preset {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundStyle(LiquidGlass.bridgeTint)
-                                        .symbolEffect(.bounce, value: viewModel.pdfSettings.compressionPreset)
-                                        .font(.system(size: 12))
-                                }
-                            }
+                    let isSelected = viewModel.pdfSettings.compressionPreset == preset
 
-                            Text(preset == .light ? "Optimizes document streams while maintaining original image resolution." : "Downsamples embedded photos to \(Int(preset.pdfTargetDPI)) DPI.")
-                                .font(.figmaSubheadline())
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .monospacedDigit()
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(preset.rawValue)
+                                .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
+                                .foregroundStyle(isSelected ? LiquidGlass.brandAccent : Color.primary)
+                            Spacer()
+                            if isSelected {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(LiquidGlass.brandAccent)
+                                    .font(.system(size: 11))
+                            }
                         }
-                        .padding(12)
+
+                        Text(preset == .light ? "Optimizes streams while maintaining original image resolution." : "Downsamples embedded photos to \(Int(preset.pdfTargetDPI)) DPI.")
+                            .font(.system(size: 10))
+                            .foregroundStyle(Color.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
+                    .padding(8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background {
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(isSelected ? LiquidGlass.brandAccent.opacity(0.12) : Color.primary.opacity(0.04))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                    .strokeBorder(isSelected ? LiquidGlass.brandAccent.opacity(0.40) : Color.primary.opacity(0.06), lineWidth: isSelected ? 1.0 : 0.5)
+                            }
+                    }
+                    .contentShape(Rectangle())
                     .onTapGesture {
                         viewModel.pdfSettings.compressionPreset = preset
                     }
@@ -169,36 +196,36 @@ public struct PDFOperationsView: View {
     }
 
     private var mergePDFOptionsView: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: LiquidGlass.spaceSM) {
             Text("Documents to Merge")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.secondary)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Color.secondary)
 
             ScrollView {
-                VStack(spacing: 6) {
+                VStack(spacing: 4) {
                     ForEach(Array(viewModel.droppedFiles.enumerated()), id: \.element.id) { index, item in
                         HStack {
                             Text("\(index + 1).")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.secondary)
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(Color.secondary)
                                 .monospacedDigit()
                             Text(item.filename)
-                                .font(.system(size: 12))
+                                .font(.system(size: 11))
+                                .foregroundStyle(Color.primary)
                                 .lineLimit(1)
                             Spacer()
                             Text("\(item.pageCount ?? 0) pages")
-                                .font(.system(size: 11))
-                                .foregroundStyle(.secondary)
+                                .font(.system(size: 10))
+                                .foregroundStyle(Color.secondary)
                                 .monospacedDigit()
                         }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(Color.primary.opacity(0.04)))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(RoundedRectangle(cornerRadius: 5).fill(Color.primary.opacity(0.04)))
                     }
                 }
             }
             .scrollIndicators(.hidden)
-            .scrollBounceBehavior(.basedOnSize)
             .frame(maxHeight: 110)
 
             LabeledContent {
@@ -207,13 +234,13 @@ public struct PDFOperationsView: View {
             } label: {
                 Text("Output Filename:")
                     .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.secondary)
             }
         }
     }
 
     private var splitPDFOptionsView: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: LiquidGlass.spaceSM) {
             Picker("Mode", selection: $viewModel.splitModeTab) {
                 Text("Split Every Page").tag(0)
                 Text("Extract Range").tag(1)
@@ -227,23 +254,23 @@ public struct PDFOperationsView: View {
                 } label: {
                     Text("Page Range (e.g. 1-3, 5):")
                         .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondary)
                 }
             } else {
                 Text("Every page will be extracted into a separate standalone PDF document.")
                     .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.secondary)
             }
         }
     }
 
     private var pdfToImageOptionsView: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: LiquidGlass.spaceSM) {
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Image Format")
                         .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondary)
                     Picker("Format", selection: $viewModel.pdfSettings.pdfToImageFormat) {
                         Text("PNG (Lossless)").tag(ImageFormat.png)
                         Text("JPEG (Compact)").tag(ImageFormat.jpeg)
@@ -254,7 +281,7 @@ public struct PDFOperationsView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Render Resolution")
                         .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondary)
                     Picker("Resolution", selection: $viewModel.dpiSelection) {
                         Text("72 DPI (Screen)").tag(CGFloat(72.0))
                         Text("150 DPI (Print)").tag(CGFloat(150.0))
@@ -267,16 +294,16 @@ public struct PDFOperationsView: View {
     }
 
     private var rotatePDFOptionsView: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: LiquidGlass.spaceSM) {
             HStack {
                 Text("Rotation Angle")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.secondary)
                 Spacer()
                 Text("\(viewModel.rotationSelection)°")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.system(size: 11, weight: .bold))
                     .monospacedDigit()
-                    .foregroundStyle(LiquidGlass.bridgeTint)
+                    .foregroundStyle(LiquidGlass.brandAccent)
             }
 
             Picker("Angle", selection: $viewModel.rotationSelection) {
@@ -289,7 +316,7 @@ public struct PDFOperationsView: View {
             // Visual Page Thumbnails with Live Rotation
             if let first = viewModel.droppedFiles.first, let count = first.pageCount {
                 ScrollView(.horizontal) {
-                    HStack(spacing: 12) {
+                    HStack(spacing: 10) {
                         ForEach(1...count, id: \.self) { pageNum in
                             PDFPageThumbnailView(
                                 url: first.url,
@@ -300,25 +327,24 @@ public struct PDFOperationsView: View {
                             )
                         }
                     }
-                    .padding(.vertical, 6)
+                    .padding(.vertical, 4)
                 }
                 .scrollIndicators(.hidden)
-                .scrollBounceBehavior(.basedOnSize)
             }
         }
     }
 
     private var extractPagesOptionsView: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: LiquidGlass.spaceSM) {
             HStack {
                 Text("Select Pages to Extract")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.secondary)
                 Spacer()
                 Text("\(viewModel.selectedPageIndices.count) selected")
                     .font(.system(size: 11, weight: .bold))
                     .monospacedDigit()
-                    .foregroundStyle(LiquidGlass.bridgeTint)
+                    .foregroundStyle(LiquidGlass.brandAccent)
             }
 
             if let first = viewModel.droppedFiles.first, let count = first.pageCount {
@@ -343,25 +369,24 @@ public struct PDFOperationsView: View {
                             )
                         }
                     }
-                    .padding(.vertical, 6)
+                    .padding(.vertical, 4)
                 }
                 .scrollIndicators(.hidden)
-                .scrollBounceBehavior(.basedOnSize)
             }
         }
     }
 
     private var removePagesOptionsView: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: LiquidGlass.spaceSM) {
             HStack {
                 Text("Select Pages to Remove")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.secondary)
                 Spacer()
                 Text("\(viewModel.selectedPageIndices.count) marked for deletion")
                     .font(.system(size: 11, weight: .bold))
                     .monospacedDigit()
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Color.red)
             }
 
             if let first = viewModel.droppedFiles.first, let count = first.pageCount {
@@ -386,19 +411,18 @@ public struct PDFOperationsView: View {
                             )
                         }
                     }
-                    .padding(.vertical, 6)
+                    .padding(.vertical, 4)
                 }
                 .scrollIndicators(.hidden)
-                .scrollBounceBehavior(.basedOnSize)
             }
         }
     }
 
     private var reorderPagesOptionsView: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: LiquidGlass.spaceSM) {
             Text("Reorder Pages (Use arrows to reposition)")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.secondary)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Color.secondary)
 
             if let first = viewModel.droppedFiles.first {
                 ScrollView(.horizontal) {
@@ -440,10 +464,9 @@ public struct PDFOperationsView: View {
                             }
                         }
                     }
-                    .padding(.vertical, 6)
+                    .padding(.vertical, 4)
                 }
                 .scrollIndicators(.hidden)
-                .scrollBounceBehavior(.basedOnSize)
             }
         }
     }

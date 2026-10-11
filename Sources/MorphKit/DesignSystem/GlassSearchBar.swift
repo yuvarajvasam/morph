@@ -1,11 +1,20 @@
 import SwiftUI
 import AppKit
 
+/// Spotlight/Raycast-inspired Search Control (Layer A) adhering to macOS HIG:
+/// - Immediate focus on launch
+/// - Clear native typography and placeholder
+/// - Restrained focus ring with Morph brand accent (#C74634)
+/// - Single-layer floating surface (no nested glass cards)
 public struct GlassSearchBar: View {
     @Binding var text: String
     var placeholder: String = "Search operations, formats, or drop files..."
     @FocusState private var isFocused: Bool
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.accessibilityReduceTransparency) private var systemReduceTransparency
+
+    private var shouldReduceTransparency: Bool {
+        systemReduceTransparency || LiquidGlass.shouldReduceTransparency
+    }
 
     public init(text: Binding<String>, placeholder: String = "Search operations, formats, or drop files...") {
         self._text = text
@@ -16,14 +25,14 @@ public struct GlassSearchBar: View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
                 .symbolRenderingMode(.hierarchical)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(isFocused ? AnyShapeStyle(LiquidGlass.bridgeTint) : AnyShapeStyle(.secondary))
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(isFocused ? AnyShapeStyle(LiquidGlass.brandAccent) : AnyShapeStyle(Color.secondary))
                 .animation(LiquidGlass.quickSpring, value: isFocused)
 
             TextField(placeholder, text: $text)
                 .textFieldStyle(.plain)
-                .font(.figmaBody())
-                .foregroundStyle(.primary)
+                .font(.system(size: 13, weight: .regular))
+                .foregroundStyle(Color.primary)
                 .focused($isFocused)
 
             if !text.isEmpty {
@@ -31,42 +40,42 @@ public struct GlassSearchBar: View {
                     text = ""
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 13))
+                        .foregroundStyle(Color.secondary)
                 }
                 .buttonStyle(.plain)
                 .help("Clear search (⎋)")
-                .transition(.opacity.combined(with: .scale(scale: 0.85)))
+                .transition(.opacity)
             }
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, 12)
         .frame(minHeight: LiquidGlass.searchFieldHeight)
         .background {
-            if reduceTransparency || LiquidGlass.shouldReduceTransparency {
+            if shouldReduceTransparency {
                 RoundedRectangle(cornerRadius: LiquidGlass.cardRadius, style: .continuous)
                     .fill(Color(nsColor: .controlBackgroundColor))
                     .overlay {
                         RoundedRectangle(cornerRadius: LiquidGlass.cardRadius, style: .continuous)
-                            .stroke(
-                                isFocused ? AnyShapeStyle(LiquidGlass.bridgeTint) : AnyShapeStyle(.quaternary),
-                                lineWidth: isFocused ? 1.5 : 0.5
+                            .strokeBorder(
+                                isFocused ? LiquidGlass.brandAccent.opacity(0.65) : Color(nsColor: .separatorColor).opacity(0.35),
+                                lineWidth: isFocused ? 1.0 : 0.5
                             )
                     }
             } else {
                 RoundedRectangle(cornerRadius: LiquidGlass.cardRadius, style: .continuous)
-                    .fill(.thickMaterial)
+                    .fill(Color(nsColor: .controlBackgroundColor).opacity(0.50))
                     .overlay {
                         RoundedRectangle(cornerRadius: LiquidGlass.cardRadius, style: .continuous)
-                            .stroke(
-                                isFocused ? AnyShapeStyle(LiquidGlass.bridgeTint.opacity(0.80)) : AnyShapeStyle(.quaternary),
-                                lineWidth: isFocused ? 1.5 : 0.5
+                            .strokeBorder(
+                                isFocused ? AnyShapeStyle(LiquidGlass.brandAccent.opacity(0.65)) : AnyShapeStyle(Color.primary.opacity(0.08)),
+                                lineWidth: isFocused ? 1.0 : 0.5
                             )
                     }
                     .shadow(
-                        color: isFocused ? LiquidGlass.bridgeTint.opacity(0.20) : Color.black.opacity(0.08),
-                        radius: isFocused ? 8 : 4,
+                        color: isFocused ? LiquidGlass.brandAccent.opacity(0.12) : Color.black.opacity(0.04),
+                        radius: isFocused ? 6 : 2,
                         x: 0,
-                        y: 2
+                        y: 1
                     )
             }
         }
