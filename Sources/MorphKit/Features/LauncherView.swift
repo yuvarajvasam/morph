@@ -169,8 +169,8 @@ public struct LauncherView: View {
     // MARK: - Exact Tool Navigation Header (Matching Reference Images 1, 2, 3, 4)
 
     private var integratedToolNavigationHeader: some View {
-        HStack(spacing: 10) {
-            // Exact Back Button: Clean Chevron Left (No text, no pill!)
+        HStack(spacing: 12) {
+            // Clean Chevron Left Back Button
             Button {
                 withAnimation(LiquidGlass.standardSpring) {
                     viewModel.goBack()
@@ -185,40 +185,30 @@ public struct LauncherView: View {
             .buttonStyle(.plain)
             .help("Back (⎋)")
 
-            // Exact Search Representation directly next to `<` (as in Image 1 & 4)
-            TextField(toolSearchPlaceholder, text: $viewModel.searchQuery)
-                .textFieldStyle(.plain)
-                .font(.system(size: 15, weight: .regular))
-                .foregroundStyle(Color.white)
-                .focused($isSearchFocused)
+            // Clean Tool Title (Search is not needed inside a tool)
+            if let activeCmd = viewModel.activeCommand {
+                Text(activeCmd.title)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Color.white)
+            } else if viewModel.currentResult != nil {
+                Text("Result Preview")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Color.white)
+            } else if viewModel.isShowingSettings {
+                Text("Settings")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Color.white)
+            }
 
             Spacer()
 
-            if !viewModel.searchQuery.isEmpty {
-                Button {
-                    viewModel.searchQuery = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 13))
-                        .foregroundStyle(Color.white.opacity(0.50))
-                }
-                .buttonStyle(.plain)
+            // Dropped File Badge
+            if !viewModel.droppedFiles.isEmpty {
+                GlassPill("\(viewModel.droppedFiles.count) file\(viewModel.droppedFiles.count > 1 ? "s" : "")", icon: "paperclip", style: .accent)
             }
         }
         .padding(.horizontal, 16)
         .frame(height: 48)
-    }
-
-    private var toolSearchPlaceholder: String {
-        if let activeCmd = viewModel.activeCommand {
-            if activeCmd.title.lowercased().starts(with: "search") {
-                return "\(activeCmd.title.lowercased())..."
-            }
-            return "Search..."
-        } else if viewModel.currentResult != nil {
-            return "Search preview..."
-        }
-        return "Search..."
     }
 
     private var ellipsisMenuButton: some View {
@@ -339,7 +329,11 @@ public struct LauncherView: View {
                         isSelected: viewModel.selectedCategory == cat
                     ) {
                         withAnimation(LiquidGlass.quickSpring) {
-                            viewModel.selectedCategory = cat
+                            if viewModel.selectedCategory == cat {
+                                viewModel.selectedCategory = nil
+                            } else {
+                                viewModel.selectedCategory = cat
+                            }
                             viewModel.selectedIndex = 0
                         }
                     }
@@ -462,8 +456,8 @@ public struct LauncherView: View {
 
                             // Vertical list of tools
                             LazyVStack(spacing: 2) {
-                                ForEach(Array(commands.enumerated()), id: \.element.id) { index, command in
-                                    listCommandRow(index: index, command: command)
+                                ForEach(commands) { command in
+                                    listCommandRow(command: command)
                                 }
                             }
                             .padding(.horizontal, 12)
@@ -472,7 +466,9 @@ public struct LauncherView: View {
                     }
                     .scrollIndicators(.hidden)
                     .onChange(of: viewModel.selectedIndex) { _, newIndex in
-                        proxy.scrollTo(newIndex, anchor: .center)
+                        if commands.indices.contains(newIndex) {
+                            proxy.scrollTo(commands[newIndex].id, anchor: .center)
+                        }
                     }
                 }
             }
@@ -508,8 +504,9 @@ public struct LauncherView: View {
 
     // MARK: - List Row Item
 
-    private func listCommandRow(index: Int, command: ConversionCommand) -> some View {
-        let isSelected = (index == viewModel.selectedIndex)
+    private func listCommandRow(command: ConversionCommand) -> some View {
+        let isSelected = (viewModel.filteredCommands.indices.contains(viewModel.selectedIndex) &&
+                          viewModel.filteredCommands[viewModel.selectedIndex].id == command.id)
 
         return HStack(spacing: 12) {
             // Compact Squircle icon matching app style
@@ -550,9 +547,11 @@ public struct LauncherView: View {
             }
         }
         .contentShape(Rectangle())
-        .id(index)
+        .id(command.id)
         .onTapGesture {
-            viewModel.selectedIndex = index
+            if let idx = viewModel.filteredCommands.firstIndex(where: { $0.id == command.id }) {
+                viewModel.selectedIndex = idx
+            }
             viewModel.selectCommand(command)
         }
     }
@@ -586,8 +585,8 @@ public struct LauncherView: View {
                             }
 
                             LazyVGrid(columns: Array(repeating: GridItem(.flexible(minimum: 68, maximum: 92), spacing: 8), count: 7), spacing: 14) {
-                                ForEach(Array(commands.enumerated()), id: \.element.id) { index, command in
-                                    gridCommandCell(index: index, command: command)
+                                ForEach(commands) { command in
+                                    gridCommandCell(command: command)
                                 }
                             }
                             .padding(.horizontal, 16)
@@ -596,18 +595,23 @@ public struct LauncherView: View {
                     }
                     .scrollIndicators(.hidden)
                     .onChange(of: viewModel.selectedIndex) { _, newIndex in
-                        proxy.scrollTo(newIndex, anchor: .center)
+                        if commands.indices.contains(newIndex) {
+                            proxy.scrollTo(commands[newIndex].id, anchor: .center)
+                        }
                     }
                 }
             }
         }
     }
 
-    private func gridCommandCell(index: Int, command: ConversionCommand) -> some View {
-        let isSelected = (index == viewModel.selectedIndex)
+    private func gridCommandCell(command: ConversionCommand) -> some View {
+        let isSelected = (viewModel.filteredCommands.indices.contains(viewModel.selectedIndex) &&
+                          viewModel.filteredCommands[viewModel.selectedIndex].id == command.id)
 
         return Button {
-            viewModel.selectedIndex = index
+            if let idx = viewModel.filteredCommands.firstIndex(where: { $0.id == command.id }) {
+                viewModel.selectedIndex = idx
+            }
             viewModel.selectCommand(command)
         } label: {
             VStack(spacing: 6) {
@@ -618,8 +622,10 @@ public struct LauncherView: View {
                         RoundedRectangle(cornerRadius: 12.5, style: .continuous)
                             .strokeBorder(Color.white, lineWidth: 2)
                             .shadow(color: LiquidGlass.brandAccent.opacity(0.6), radius: 6)
+                            .frame(width: 50, height: 50)
                     }
                 }
+                .frame(width: 50, height: 50)
 
                 Text(command.title)
                     .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
@@ -632,7 +638,7 @@ public struct LauncherView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .id(index)
+        .id(command.id)
     }
 
     // MARK: - Columns Mode Discovery View (Finder-style 3-column layout)
@@ -756,10 +762,13 @@ public struct LauncherView: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(spacing: 2) {
-                            ForEach(Array(commands.enumerated()), id: \.element.id) { index, command in
-                                let isSelected = (index == viewModel.selectedIndex)
+                            ForEach(commands) { command in
+                                let isSelected = (viewModel.filteredCommands.indices.contains(viewModel.selectedIndex) &&
+                                                  viewModel.filteredCommands[viewModel.selectedIndex].id == command.id)
                                 Button {
-                                    viewModel.selectedIndex = index
+                                    if let idx = viewModel.filteredCommands.firstIndex(where: { $0.id == command.id }) {
+                                        viewModel.selectedIndex = idx
+                                    }
                                 } label: {
                                     HStack(spacing: 9) {
                                         ToolSquircleIcon(command: command, size: 28, cornerRadius: 7)
@@ -794,7 +803,7 @@ public struct LauncherView: View {
                                     )
                                 }
                                 .buttonStyle(.plain)
-                                .id(index)
+                                .id(command.id)
                                 .simultaneousGesture(TapGesture(count: 2).onEnded {
                                     viewModel.selectCommand(command)
                                 })
@@ -1027,90 +1036,143 @@ public struct LauncherView: View {
     // MARK: - Incompatible File Format View
 
     private func incompatibleFileView(command: ConversionCommand, notice: String) -> some View {
-        VStack(spacing: 0) {
-            Spacer()
+        VStack(spacing: 10) {
+            // 1. File Information Header with proper thumbnail & Incompatible badge
+            if let first = viewModel.droppedFiles.first {
+                HStack(spacing: 12) {
+                    if first.category == .image {
+                        ImageThumbnailView(url: first.url, maxPixelSize: 100, cornerRadius: 8)
+                            .frame(width: 40, height: 40)
+                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    } else if first.category == .pdf {
+                        PDFPageThumbnailView(
+                            url: first.url,
+                            pageIndex: 0,
+                            pageNumber: 1,
+                            size: CGSize(width: 34, height: 42),
+                            showPageLabel: false,
+                            onTap: {
+                                QuickLookManager.shared.toggle(url: first.url)
+                            }
+                        )
+                        .frame(width: 34, height: 42)
+                        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    } else {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 8).fill(Color.orange.opacity(0.16))
+                                .frame(width: 40, height: 40)
+                            Image(systemName: "archivebox.fill")
+                                .font(.system(size: 18))
+                                .foregroundStyle(Color.orange)
+                        }
+                    }
 
-            VStack(spacing: LiquidGlass.spaceLG) {
-                // Incompatible badge with warning emblem
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(first.filename)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Color.white)
+                            .lineLimit(1)
+
+                        Text(first.summaryDescription)
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.white.opacity(0.60))
+                            .monospacedDigit()
+                    }
+
+                    Spacer()
+
+                    Text("Incompatible")
+                        .font(.system(size: 10.5, weight: .semibold))
+                        .foregroundStyle(Color.orange)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Capsule().fill(Color.orange.opacity(0.15)))
+
+                    Button {
+                        withAnimation(LiquidGlass.standardSpring) {
+                            viewModel.droppedFiles = []
+                            viewModel.errorMessage = nil
+                        }
+                    } label: {
+                        Image(systemName: "xmark.circle")
+                            .foregroundStyle(Color.white.opacity(0.60))
+                    }
+                    .buttonStyle(.plain)
+                    .help("Remove file")
+                }
+                .padding(10)
+                .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.white.opacity(0.06)))
+                .padding(.horizontal, 18)
+                .padding(.top, 4)
+            }
+
+            Spacer(minLength: 4)
+
+            // 2. Central Incompatible Warning Card (clean frosted container)
+            VStack(spacing: LiquidGlass.spaceMD) {
+                // Warning icon emblem
                 ZStack {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [Color.orange.opacity(0.20), Color.red.opacity(0.15)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 72, height: 72)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                .strokeBorder(Color.orange.opacity(0.35), lineWidth: 1)
-                        )
+                    Circle()
+                        .fill(Color.orange.opacity(0.16))
+                        .frame(width: 56, height: 56)
 
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 32, weight: .semibold))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [Color(red: 255/255, green: 179/255, blue: 64/255), Color(red: 255/255, green: 105/255, blue: 60/255)],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .shadow(color: Color.orange.opacity(0.4), radius: 6, x: 0, y: 2)
+                        .font(.system(size: 26, weight: .semibold))
+                        .foregroundStyle(Color.orange)
                 }
 
-                VStack(spacing: 8) {
+                VStack(spacing: 4) {
                     Text("File Format Not Supported")
-                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
                         .foregroundStyle(Color.white)
 
                     Text(notice)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(Color.white.opacity(0.85))
+                        .font(.system(size: 12.5, weight: .medium))
+                        .foregroundStyle(Color.white.opacity(0.80))
                         .multilineTextAlignment(.center)
-                        .frame(maxWidth: 420)
+                        .frame(maxWidth: 440)
                 }
 
-                // Supported Formats Pill Row
+                // Supported Formats Pills
                 if !command.supportedExtensions.isEmpty {
-                    VStack(spacing: 6) {
+                    VStack(spacing: 5) {
                         Text("SUPPORTED FORMATS FOR \(command.title.uppercased())")
-                            .font(.system(size: 10, weight: .bold))
+                            .font(.system(size: 9.5, weight: .bold))
                             .foregroundStyle(Color.white.opacity(0.45))
                             .tracking(0.5)
 
                         HStack(spacing: 6) {
                             ForEach(Array(command.supportedExtensions.sorted()), id: \.self) { ext in
                                 Text(ext.uppercased())
-                                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                                    .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
                                     .foregroundStyle(Color.white.opacity(0.90))
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 3.5)
+                                    .padding(.horizontal, 7)
+                                    .padding(.vertical, 3)
                                     .background(
-                                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                        RoundedRectangle(cornerRadius: 5, style: .continuous)
                                             .fill(Color.white.opacity(0.08))
                                     )
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                        RoundedRectangle(cornerRadius: 5, style: .continuous)
                                             .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.5)
                                     )
                             }
                         }
                     }
-                    .padding(.vertical, 4)
+                    .padding(.vertical, 2)
                 }
 
                 // Recommended alternative tools for the dropped file
                 let alternatives = viewModel.suggestedAlternativeCommands
                 if !alternatives.isEmpty {
-                    VStack(spacing: 8) {
+                    VStack(spacing: 6) {
                         Text("SUGGESTED TOOLS FOR THIS FILE")
-                            .font(.system(size: 10, weight: .bold))
+                            .font(.system(size: 9.5, weight: .bold))
                             .foregroundStyle(LiquidGlass.brandAccent.opacity(0.85))
                             .tracking(0.5)
 
                         HStack(spacing: 8) {
-                            ForEach(Array(alternatives.prefix(3)), id: \.id) { altCmd in
+                            ForEach(Array(alternatives.prefix(4)), id: \.id) { altCmd in
                                 Button {
                                     withAnimation(LiquidGlass.standardSpring) {
                                         viewModel.selectCommand(altCmd, promptForFilesIfEmpty: false)
@@ -1120,17 +1182,17 @@ public struct LauncherView: View {
                                         Image(systemName: altCmd.systemIcon)
                                             .font(.system(size: 11, weight: .medium))
                                         Text(altCmd.title)
-                                            .font(.system(size: 12, weight: .medium))
+                                            .font(.system(size: 11.5, weight: .medium))
                                     }
                                     .foregroundStyle(Color.white)
                                     .padding(.horizontal, 10)
-                                    .padding(.vertical, 6)
+                                    .padding(.vertical, 5)
                                     .background(
-                                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                        RoundedRectangle(cornerRadius: 7, style: .continuous)
                                             .fill(Color.white.opacity(0.08))
                                     )
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                        RoundedRectangle(cornerRadius: 7, style: .continuous)
                                             .strokeBorder(Color.white.opacity(0.15), lineWidth: 0.8)
                                     )
                                 }
@@ -1138,47 +1200,39 @@ public struct LauncherView: View {
                             }
                         }
                     }
-                    .padding(.top, 4)
+                    .padding(.top, 2)
                 }
 
                 // Action buttons
-                HStack(spacing: LiquidGlass.spaceMD) {
-                    GlassButton("Choose Different File...", icon: "folder", shortcutBadge: "⌘O", variant: .primary, size: .regular) {
+                HStack(spacing: 12) {
+                    GlassButton("Choose Different File...", icon: "folder", shortcutBadge: "⌘O", variant: .primary, size: .small) {
                         viewModel.openFilePicker()
                     }
 
-                    GlassButton("Clear File", icon: "xmark.circle", shortcutBadge: "⎋", variant: .secondary, size: .regular) {
+                    GlassButton("Clear File", icon: "xmark.circle", shortcutBadge: "⎋", variant: .secondary, size: .small) {
                         withAnimation(LiquidGlass.standardSpring) {
                             viewModel.droppedFiles = []
                             viewModel.errorMessage = nil
                         }
                     }
                 }
-                .padding(.top, 6)
+                .padding(.top, 4)
             }
-            .frame(maxWidth: 500)
-            .padding(.vertical, 28)
-            .padding(.horizontal, 28)
+            .frame(maxWidth: 480)
+            .padding(.vertical, 20)
+            .padding(.horizontal, 24)
             .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(Color.black.opacity(0.28))
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color.black.opacity(0.25))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .strokeBorder(
-                        LinearGradient(
-                            colors: [Color.orange.opacity(0.35), Color.red.opacity(0.20)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1
-                    )
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(Color.white.opacity(0.10), lineWidth: 1)
             )
 
-            Spacer()
+            Spacer(minLength: 8)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(LiquidGlass.spaceXL)
     }
 
     // MARK: - File Dropped Contextual View
@@ -1191,11 +1245,20 @@ public struct LauncherView: View {
                     if first.category == .image {
                         ImageThumbnailView(url: first.url, maxPixelSize: 100, cornerRadius: 8)
                             .frame(width: 44, height: 44)
+                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     } else if first.category == .pdf {
-                        PDFPageThumbnailView(url: first.url, pageIndex: 0, pageNumber: 1, onTap: {
-                            QuickLookManager.shared.toggle(url: first.url)
-                        })
+                        PDFPageThumbnailView(
+                            url: first.url,
+                            pageIndex: 0,
+                            pageNumber: 1,
+                            size: CGSize(width: 36, height: 46),
+                            showPageLabel: false,
+                            onTap: {
+                                QuickLookManager.shared.toggle(url: first.url)
+                            }
+                        )
                         .frame(width: 36, height: 46)
+                        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                     } else {
                         ZStack {
                             RoundedRectangle(cornerRadius: 8).fill(Color.orange.opacity(0.16))
@@ -1244,8 +1307,8 @@ public struct LauncherView: View {
             if viewModel.preferences.viewMode == .grid {
                 ScrollView {
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(minimum: 68, maximum: 92), spacing: 8), count: 7), spacing: 14) {
-                        ForEach(Array(viewModel.filteredCommands.enumerated()), id: \.element.id) { index, command in
-                            gridCommandCell(index: index, command: command)
+                        ForEach(viewModel.filteredCommands) { command in
+                            gridCommandCell(command: command)
                         }
                     }
                     .padding(.horizontal, 16)
@@ -1254,11 +1317,12 @@ public struct LauncherView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 2) {
-                        ForEach(Array(viewModel.filteredCommands.enumerated()), id: \.element.id) { index, command in
-                            listCommandRow(index: index, command: command)
+                        ForEach(viewModel.filteredCommands) { command in
+                            listCommandRow(command: command)
                         }
                     }
                     .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
                 }
             }
         }

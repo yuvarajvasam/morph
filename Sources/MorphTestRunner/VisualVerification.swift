@@ -87,12 +87,25 @@ public func runVisualVerification() async throws {
     vmDrop.handleDroppedURLs([samplePhotoURL])
     render(LauncherView(viewModel: vmDrop), filename: "04_launcher_dropped_file.png")
 
+    // 4b. Launcher with Dropped PDF File (Testing PDF thumbnail inside header card)
+    let vmDropPDF = LauncherViewModel()
+    vmDropPDF.preferences.viewMode = .grid
+    vmDropPDF.handleDroppedURLs([samplePDFURL])
+    render(LauncherView(viewModel: vmDropPDF), filename: "04b_launcher_dropped_pdf.png")
+
     // 5. Category Selection Mode (Images Category with Respective Tools)
     let vmCat = LauncherViewModel()
     vmCat.selectedCategory = .image
     render(LauncherView(viewModel: vmCat), filename: "05_launcher_category_images.png")
 
-    // 6. Image Compression Tool Screen
+    // 5b. Category Selection Mode in Grid (QR & Barcodes Category with its respective tools)
+    let vmCatQR = LauncherViewModel()
+    vmCatQR.preferences.viewMode = .grid
+    vmCatQR.selectedCategory = .qrBarcode
+    vmCatQR.selectedIndex = 1
+    render(LauncherView(viewModel: vmCatQR), filename: "05b_launcher_category_qr_grid.png")
+
+    // 6. Image Compression Tool Screen (Clean header, no search)
     let vmImage = LauncherViewModel()
     vmImage.handleDroppedURLs([samplePhotoURL])
     vmImage.activeCommand = registry.allCommands.first(where: { $0.id == "image.compress" })

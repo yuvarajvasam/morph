@@ -117,20 +117,21 @@ public final class LauncherViewModel: ObservableObject {
     }
 
     public var filteredCommands: [ConversionCommand] {
+        let baseCommands: [ConversionCommand]
         if !droppedFiles.isEmpty {
             let suggestions = registry.suggestedCommands(for: droppedFiles.map { $0.url })
-            if !searchQuery.isEmpty {
-                let searched = registry.search(query: searchQuery)
-                return suggestions.filter { sug in searched.contains(where: { $0.id == sug.id }) }
+            if let category = selectedCategory {
+                let catMatches = suggestions.filter { $0.matches(category: category) }
+                baseCommands = catMatches.isEmpty ? registry.allCommands.filter { $0.matches(category: category) } : catMatches
+            } else {
+                baseCommands = suggestions
             }
-            return suggestions
-        }
-
-        let baseCommands: [ConversionCommand]
-        if let category = selectedCategory {
-            baseCommands = registry.allCommands.filter { $0.matches(category: category) }
         } else {
-            baseCommands = registry.allCommands
+            if let category = selectedCategory {
+                baseCommands = registry.allCommands.filter { $0.matches(category: category) }
+            } else {
+                baseCommands = registry.allCommands
+            }
         }
 
         if searchQuery.isEmpty {

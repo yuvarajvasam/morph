@@ -175,11 +175,14 @@ public struct ResultPreviewView: View {
                         url: primaryURL,
                         pageIndex: 0,
                         pageNumber: 1,
+                        size: CGSize(width: 44, height: 58),
+                        showPageLabel: false,
                         onTap: {
                             QuickLookManager.shared.toggle(url: primaryURL)
                         }
                     )
                     .frame(width: 44, height: 58)
+                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(primaryURL.lastPathComponent)
