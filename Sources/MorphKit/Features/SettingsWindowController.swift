@@ -4,6 +4,9 @@ import AppKit
 public final class MorphSettingsWindow: NSWindow {
     public override var canBecomeKey: Bool { true }
     public override var canBecomeMain: Bool { true }
+    public override func zoom(_ sender: Any?) {
+        // Window cannot be maximized - fixed size
+    }
 }
 
 @MainActor
@@ -25,7 +28,7 @@ public final class SettingsWindowController: NSObject, NSWindowDelegate {
 
         let newWindow = MorphSettingsWindow(
             contentRect: NSRect(x: 0, y: 0, width: 860, height: 600),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+            styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
@@ -40,7 +43,12 @@ public final class SettingsWindowController: NSObject, NSWindowDelegate {
         newWindow.standardWindowButton(.closeButton)?.isHidden = true
         newWindow.standardWindowButton(.miniaturizeButton)?.isHidden = true
         newWindow.standardWindowButton(.zoomButton)?.isHidden = true
-        newWindow.minSize = NSSize(width: 780, height: 520)
+        newWindow.standardWindowButton(.zoomButton)?.isEnabled = false
+        newWindow.minSize = NSSize(width: 860, height: 600)
+        newWindow.maxSize = NSSize(width: 860, height: 600)
+        newWindow.setContentSize(NSSize(width: 860, height: 600))
+        newWindow.showsResizeIndicator = false
+        newWindow.collectionBehavior = [.fullScreenNone]
         newWindow.contentView = hostingView
         newWindow.delegate = self
         newWindow.isReleasedWhenClosed = false

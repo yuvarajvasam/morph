@@ -107,28 +107,22 @@ public struct SettingsWindowView: View {
 
     public var body: some View {
         HStack(spacing: 0) {
-            // LEFT SIDEBAR PANE (~230pt, Matches Reference Image)
+            // LEFT SIDEBAR PANE (~236pt, Matches Reference Image)
             sidebarPane
                 .frame(width: 236)
                 .background(Color(red: 16/255, green: 17/255, blue: 20/255).opacity(0.85))
-
-            // VERTICAL HAIRLINE SEPARATOR
-            Rectangle()
-                .fill(Color.white.opacity(0.06))
-                .frame(width: 1)
 
             // RIGHT DETAIL SETTINGS CONTENT
             detailPane
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color(red: 22/255, green: 23/255, blue: 27/255).opacity(0.92))
         }
-        .frame(minWidth: 840, minHeight: 580)
+        .frame(width: 860, height: 600)
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
+                .strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5)
         }
-        .shadow(color: Color.black.opacity(0.55), radius: 36, x: 0, y: 18)
         .alert("Reset All Settings?", isPresented: $tabState.showResetConfirm) {
             Button("Cancel", role: .cancel) {}
             Button("Reset to Defaults", role: .destructive) {
@@ -163,14 +157,10 @@ public struct SettingsWindowView: View {
                 }
                 .buttonStyle(.plain)
 
-                Button {
-                    NSApp.keyWindow?.zoom(nil)
-                } label: {
-                    Circle()
-                        .fill(Color(red: 40/255, green: 200/255, blue: 64/255))
-                        .frame(width: 12, height: 12)
-                }
-                .buttonStyle(.plain)
+                // Zoom Button (Green - Disabled, window is fixed-size and cannot be maximized)
+                Circle()
+                    .fill(Color(red: 40/255, green: 200/255, blue: 64/255).opacity(0.40))
+                    .frame(width: 12, height: 12)
 
                 Spacer()
             }
@@ -239,12 +229,9 @@ public struct SettingsWindowView: View {
                         sidebarItem(tab: tab)
                     }
 
-                    // Section Divider
-                    Rectangle()
-                        .fill(Color.white.opacity(0.06))
-                        .frame(height: 1)
-                        .padding(.vertical, 6)
-                        .padding(.horizontal, 12)
+                    // Subtle Group Spacing (No harsh dividing line)
+                    Color.clear
+                        .frame(height: 8)
 
                     // Group 2: Engines & Tools
                     ForEach(filteredToolTabs) { tab in
@@ -379,8 +366,6 @@ public struct SettingsWindowView: View {
             .padding(.top, 16)
             .padding(.bottom, 10)
 
-            Divider()
-                .overlay(Color.white.opacity(0.05))
 
             // Detail Content ScrollView
             ScrollView(.vertical, showsIndicators: true) {
@@ -881,7 +866,7 @@ public struct SettingsWindowView: View {
                 .foregroundStyle(Color.white)
             }
 
-            Divider().overlay(Color.white.opacity(0.05)).padding(.vertical, 4)
+            Spacer().frame(height: 4)
 
             Button("Reset All Preferences to Defaults...") {
                 tabState.showResetConfirm = true
@@ -1090,29 +1075,24 @@ public struct SettingsWindowView: View {
     }
 
     private func settingRow<Control: View>(title: String, subtitle: String? = nil, @ViewBuilder control: () -> Control) -> some View {
-        VStack(spacing: 0) {
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.system(size: 13, weight: .regular))
-                        .foregroundStyle(Color.white)
+        HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 13, weight: .regular))
+                    .foregroundStyle(Color.white)
 
-                    if let subtitle {
-                        Text(subtitle)
-                            .font(.system(size: 11))
-                            .foregroundStyle(Color.white.opacity(0.45))
-                    }
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.white.opacity(0.45))
                 }
-
-                Spacer()
-
-                control()
             }
-            .padding(.vertical, 9)
 
-            Divider()
-                .overlay(Color.white.opacity(0.05))
+            Spacer()
+
+            control()
         }
+        .padding(.vertical, 8)
     }
 
     private func selectCustomFolder() {
