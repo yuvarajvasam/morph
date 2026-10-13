@@ -21,6 +21,7 @@ public enum AppearanceMode: String, CaseIterable, Identifiable {
 public enum LauncherViewMode: String, CaseIterable, Identifiable {
     case list = "List"
     case grid = "Grid"
+    case columns = "Columns"
 
     public var id: String { rawValue }
 }

@@ -251,6 +251,20 @@ public struct LauncherView: View {
                         }
                     }
                 }
+
+                Button {
+                    withAnimation(LiquidGlass.quickSpring) {
+                        preferences.viewMode = .columns
+                        viewModel.objectWillChange.send()
+                    }
+                } label: {
+                    HStack {
+                        Text("Columns")
+                        if preferences.viewMode == .columns {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
             }
 
             Divider()
@@ -399,11 +413,14 @@ public struct LauncherView: View {
         } else if !viewModel.droppedFiles.isEmpty && viewModel.activeCommand == nil {
             fileDroppedContextualView
         } else {
-            // Launcher Main Discovery: List Mode or Grid Mode
+            // Launcher Main Discovery: List Mode, Grid Mode, or Columns Mode
             Group {
-                if preferences.viewMode == .grid {
+                switch preferences.viewMode {
+                case .grid:
                     gridModeDiscoveryView
-                } else {
+                case .columns:
+                    columnsModeDiscoveryView
+                case .list:
                     listModeDiscoveryView
                 }
             }
@@ -612,6 +629,283 @@ public struct LauncherView: View {
         }
         .buttonStyle(.plain)
         .id(index)
+    }
+
+    // MARK: - Columns Mode Discovery View (Finder-style 3-column layout)
+
+    private var columnsModeDiscoveryView: some View {
+        HStack(spacing: 0) {
+            // Column 1: Categories Sidebar
+            columnCategoriesView
+                .frame(width: 175)
+
+            Divider()
+                .overlay(Color.white.opacity(0.08))
+
+            // Column 2: Tools List in Selected Category
+            columnCommandsListView
+                .frame(width: 245)
+
+            Divider()
+                .overlay(Color.white.opacity(0.08))
+
+            // Column 3: Inspector / Tool Preview & Action Pane
+            columnInspectorPreviewView
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var columnCategoriesView: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("CATEGORIES")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(Color.white.opacity(0.35))
+                    .padding(.horizontal, 14)
+                    .padding(.top, 10)
+                    .padding(.bottom, 4)
+
+                // All Tools Row
+                categoryColumnRow(
+                    title: "All Tools",
+                    icon: "square.grid.2x2",
+                    count: viewModel.registry.allCommands.count,
+                    isSelected: viewModel.selectedCategory == nil
+                ) {
+                    viewModel.selectedCategory = nil
+                    viewModel.selectedIndex = 0
+                }
+
+                // Individual Category Rows
+                ForEach(CommandCategory.allCases) { cat in
+                    let count = viewModel.registry.allCommands.filter { $0.matches(category: cat) }.count
+                    categoryColumnRow(
+                        title: cat.displayName,
+                        icon: cat.icon,
+                        count: count,
+                        isSelected: viewModel.selectedCategory == cat
+                    ) {
+                        viewModel.selectedCategory = cat
+                        viewModel.selectedIndex = 0
+                    }
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.bottom, 12)
+        }
+        .scrollIndicators(.hidden)
+    }
+
+    private func categoryColumnRow(title: String, icon: String, count: Int, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(isSelected ? LiquidGlass.brandAccent : Color.white.opacity(0.70))
+                    .frame(width: 18)
+
+                Text(title)
+                    .font(.system(size: 12.5, weight: isSelected ? .semibold : .regular))
+                    .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.85))
+
+                Spacer()
+
+                Text("\(count)")
+                    .font(.system(size: 10.5, weight: .medium))
+                    .foregroundStyle(isSelected ? Color.white.opacity(0.85) : Color.white.opacity(0.35))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 1.5)
+                    .background(Capsule().fill(isSelected ? Color.white.opacity(0.20) : Color.white.opacity(0.06)))
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(isSelected ? LiquidGlass.brandAccent : Color.white.opacity(0.25))
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(isSelected ? LiquidGlass.brandAccent.opacity(0.18) : Color.clear)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var columnCommandsListView: some View {
+        let commands = viewModel.filteredCommands
+
+        return VStack(spacing: 0) {
+            if commands.isEmpty {
+                VStack(spacing: 8) {
+                    Spacer()
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 20))
+                        .foregroundStyle(Color.white.opacity(0.3))
+                    Text("No Tools Found")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(Color.white.opacity(0.5))
+                    Spacer()
+                }
+            } else {
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(spacing: 2) {
+                            ForEach(Array(commands.enumerated()), id: \.element.id) { index, command in
+                                let isSelected = (index == viewModel.selectedIndex)
+                                Button {
+                                    viewModel.selectedIndex = index
+                                } label: {
+                                    HStack(spacing: 9) {
+                                        ToolSquircleIcon(command: command, size: 28, cornerRadius: 7)
+
+                                        VStack(alignment: .leading, spacing: 1.5) {
+                                            Text(command.title)
+                                                .font(.system(size: 12.5, weight: isSelected ? .semibold : .medium))
+                                                .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.90))
+                                                .lineLimit(1)
+
+                                            Text(command.subtitle)
+                                                .font(.system(size: 10))
+                                                .foregroundStyle(Color.white.opacity(0.45))
+                                                .lineLimit(1)
+                                        }
+
+                                        Spacer()
+
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 9, weight: .bold))
+                                            .foregroundStyle(isSelected ? Color.white.opacity(0.70) : Color.clear)
+                                    }
+                                    .padding(.horizontal, 9)
+                                    .padding(.vertical, 6)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                            .fill(isSelected ? LiquidGlass.brandAccent.opacity(0.24) : Color.clear)
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                            .strokeBorder(isSelected ? Color.white.opacity(0.20) : Color.clear, lineWidth: 0.5)
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                                .id(index)
+                                .simultaneousGesture(TapGesture(count: 2).onEnded {
+                                    viewModel.selectCommand(command)
+                                })
+                            }
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 8)
+                    }
+                    .scrollIndicators(.hidden)
+                    .onChange(of: viewModel.selectedIndex) { _, newIndex in
+                        proxy.scrollTo(newIndex, anchor: .center)
+                    }
+                }
+            }
+        }
+    }
+
+    private var columnInspectorPreviewView: some View {
+        let commands = viewModel.filteredCommands
+        let selectedCmd: ConversionCommand? = (viewModel.selectedIndex >= 0 && viewModel.selectedIndex < commands.count)
+            ? commands[viewModel.selectedIndex]
+            : commands.first
+
+        return Group {
+            if let cmd = selectedCmd {
+                ScrollView {
+                    VStack(spacing: 16) {
+                        Spacer().frame(height: 10)
+
+                        // Hero Icon
+                        ToolSquircleIcon(command: cmd, size: 68, cornerRadius: 17)
+                            .shadow(color: Color.black.opacity(0.3), radius: 10, y: 5)
+
+                        // Title & Category
+                        VStack(spacing: 4) {
+                            Text(cmd.title)
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(Color.white)
+                                .multilineTextAlignment(.center)
+
+                            GlassPill(cmd.category.displayName, icon: cmd.category.icon, style: .accent)
+                        }
+
+                        // Subtitle / Description
+                        Text(cmd.subtitle)
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.white.opacity(0.65))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 16)
+
+                        Divider()
+                            .overlay(Color.white.opacity(0.08))
+                            .padding(.horizontal, 16)
+
+                        // Capabilities / Details
+                        VStack(alignment: .leading, spacing: 10) {
+                            if !cmd.supportedExtensions.isEmpty {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text("SUPPORTED FORMATS")
+                                        .font(.system(size: 10, weight: .bold))
+                                        .foregroundStyle(Color.white.opacity(0.40))
+
+                                    HStack(spacing: 5) {
+                                        ForEach(Array(cmd.supportedExtensions.sorted().prefix(5)), id: \.self) { ext in
+                                            Text(ext.uppercased())
+                                                .font(.system(size: 10, weight: .semibold))
+                                                .foregroundStyle(Color.white.opacity(0.85))
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 2.5)
+                                                .background(
+                                                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                                        .fill(Color.white.opacity(0.08))
+                                                )
+                                        }
+                                    }
+                                }
+                            }
+
+                            if cmd.supportsMultipleFiles {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "square.stack.3d.up.fill")
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(LiquidGlass.brandAccent)
+                                    Text("Batch processing supported")
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(Color.white.opacity(0.70))
+                                }
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 20)
+
+                        Spacer().frame(height: 6)
+
+                        // Action Button
+                        GlassButton("Open Tool", icon: "arrow.right.circle.fill", shortcutBadge: "↩", variant: .primary, size: .regular) {
+                            viewModel.selectCommand(cmd)
+                        }
+                        .padding(.horizontal, 20)
+
+                        Spacer().frame(height: 12)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .scrollIndicators(.hidden)
+            } else {
+                VStack(spacing: 8) {
+                    Spacer()
+                    Text("Select a tool to view details")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.white.opacity(0.40))
+                    Spacer()
+                }
+            }
+        }
     }
 
     private var emptyUnavailableView: some View {

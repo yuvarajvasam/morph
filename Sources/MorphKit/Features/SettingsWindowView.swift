@@ -650,6 +650,83 @@ public struct SettingsWindowView: View {
                         }
                     }
                     .buttonStyle(.plain)
+
+                    // Visual Card 3: Columns Mode (Multi-column browser)
+                    Button {
+                        withAnimation(LiquidGlass.quickSpring) {
+                            preferences.viewMode = .columns
+                        }
+                    } label: {
+                        VStack(spacing: 8) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [
+                                                Color(red: 35/255, green: 40/255, blue: 50/255),
+                                                Color(red: 22/255, green: 26/255, blue: 32/255),
+                                                Color(red: 14/255, green: 16/255, blue: 20/255)
+                                            ],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .frame(width: 168, height: 96)
+                                    .overlay {
+                                        // Miniature 3-column frame
+                                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                            .fill(Color.black.opacity(0.55))
+                                            .frame(width: 120, height: 68)
+                                            .overlay {
+                                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                                    .strokeBorder(Color.white.opacity(0.15), lineWidth: 0.5)
+                                                HStack(spacing: 0) {
+                                                    // Col 1
+                                                    VStack(spacing: 3) {
+                                                        RoundedRectangle(cornerRadius: 1).fill(Color.white.opacity(0.40)).frame(width: 24, height: 4)
+                                                        RoundedRectangle(cornerRadius: 1).fill(Color.white.opacity(0.25)).frame(width: 24, height: 4)
+                                                        RoundedRectangle(cornerRadius: 1).fill(Color.white.opacity(0.25)).frame(width: 24, height: 4)
+                                                    }
+                                                    .frame(maxWidth: .infinity)
+
+                                                    Rectangle().fill(Color.white.opacity(0.15)).frame(width: 1)
+
+                                                    // Col 2
+                                                    VStack(spacing: 3) {
+                                                        RoundedRectangle(cornerRadius: 1).fill(Color.white.opacity(0.30)).frame(width: 28, height: 4)
+                                                        RoundedRectangle(cornerRadius: 1).fill(Color.white.opacity(0.50)).frame(width: 28, height: 4)
+                                                        RoundedRectangle(cornerRadius: 1).fill(Color.white.opacity(0.30)).frame(width: 28, height: 4)
+                                                    }
+                                                    .frame(maxWidth: .infinity)
+
+                                                    Rectangle().fill(Color.white.opacity(0.15)).frame(width: 1)
+
+                                                    // Col 3
+                                                    VStack(spacing: 3) {
+                                                        RoundedRectangle(cornerRadius: 2).fill(Color.white.opacity(0.40)).frame(width: 14, height: 14)
+                                                        RoundedRectangle(cornerRadius: 1).fill(Color.white.opacity(0.20)).frame(width: 22, height: 3)
+                                                    }
+                                                    .frame(maxWidth: .infinity)
+                                                }
+                                                .padding(4)
+                                            }
+                                    }
+
+                                if preferences.viewMode == .columns {
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .strokeBorder(Color.white.opacity(0.90), lineWidth: 1.5)
+                                }
+                            }
+
+                            Text("Columns")
+                                .font(.system(size: 11, weight: preferences.viewMode == .columns ? .semibold : .regular))
+                                .foregroundStyle(preferences.viewMode == .columns ? Color.white : Color.white.opacity(0.65))
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 3)
+                                .background(Capsule().fill(Color.white.opacity(preferences.viewMode == .columns ? 0.16 : 0.05)))
+                        }
+                    }
+                    .buttonStyle(.plain)
                 }
                 .padding(.top, 4)
             }

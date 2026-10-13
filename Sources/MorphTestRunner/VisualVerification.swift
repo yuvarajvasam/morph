@@ -72,6 +72,11 @@ public func runVisualVerification() async throws {
     vmGrid.preferences.viewMode = .grid
     render(LauncherView(viewModel: vmGrid), filename: "02_launcher_grid_mode.png")
 
+    // 2b. Launcher Columns View Mode (Finder-style 3-column layout)
+    let vmColumns = LauncherViewModel()
+    vmColumns.preferences.viewMode = .columns
+    render(LauncherView(viewModel: vmColumns), filename: "02b_launcher_columns_mode.png")
+
     // 3. Launcher Search Query ("compress")
     let vmSearch = LauncherViewModel()
     vmSearch.searchQuery = "compress"
