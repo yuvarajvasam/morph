@@ -3,10 +3,12 @@ import UniformTypeIdentifiers
 
 public struct LauncherView: View {
     @ObservedObject public var viewModel: LauncherViewModel
+    @ObservedObject private var preferences: PreferencesManager
     @FocusState private var isSearchFocused: Bool
 
     public init(viewModel: LauncherViewModel = LauncherViewModel()) {
         self.viewModel = viewModel
+        self.preferences = viewModel.preferences
     }
 
     private var isToolOrResultOpen: Bool {
@@ -29,12 +31,12 @@ public struct LauncherView: View {
             // LAYER C: PERSISTENT FOOTER BAR (Always visible in all modes, matching Reference Images)
             persistentFooterBar
         }
-        .frame(width: viewModel.preferences.launcherSize.dimensions.width,
-               height: viewModel.preferences.launcherSize.dimensions.height)
+        .frame(width: preferences.launcherSize.dimensions.width,
+               height: preferences.launcherSize.dimensions.height)
         .liquidGlassSurface(radius: 28)
         .animation(LiquidGlass.standardSpring, value: isToolOrResultOpen)
         .animation(LiquidGlass.quickSpring, value: viewModel.selectedCategory)
-        .animation(LiquidGlass.quickSpring, value: viewModel.preferences.viewMode)
+        .animation(LiquidGlass.quickSpring, value: preferences.viewMode)
         .onChange(of: isToolOrResultOpen) { _, isOpen in
             if !isOpen {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -191,12 +193,13 @@ public struct LauncherView: View {
             Section("View content as") {
                 Button {
                     withAnimation(LiquidGlass.quickSpring) {
-                        viewModel.preferences.viewMode = .grid
+                        preferences.viewMode = .grid
+                        viewModel.objectWillChange.send()
                     }
                 } label: {
                     HStack {
                         Text("Grid")
-                        if viewModel.preferences.viewMode == .grid {
+                        if preferences.viewMode == .grid {
                             Image(systemName: "checkmark")
                         }
                     }
@@ -204,12 +207,13 @@ public struct LauncherView: View {
 
                 Button {
                     withAnimation(LiquidGlass.quickSpring) {
-                        viewModel.preferences.viewMode = .list
+                        preferences.viewMode = .list
+                        viewModel.objectWillChange.send()
                     }
                 } label: {
                     HStack {
                         Text("List")
-                        if viewModel.preferences.viewMode == .list {
+                        if preferences.viewMode == .list {
                             Image(systemName: "checkmark")
                         }
                     }
@@ -363,11 +367,14 @@ public struct LauncherView: View {
             fileDroppedContextualView
         } else {
             // Launcher Main Discovery: List Mode or Grid Mode
-            if viewModel.preferences.viewMode == .grid {
-                gridModeDiscoveryView
-            } else {
-                listModeDiscoveryView
+            Group {
+                if preferences.viewMode == .grid {
+                    gridModeDiscoveryView
+                } else {
+                    listModeDiscoveryView
+                }
             }
+            .transition(.opacity)
         }
     }
 

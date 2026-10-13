@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import UserNotifications
+import Combine
 
 @MainActor
 public final class LauncherViewModel: ObservableObject {
@@ -65,10 +66,17 @@ public final class LauncherViewModel: ObservableObject {
     public let registry = ConversionRegistry.shared
     public let processor = FileProcessor.shared
     public let preferences = PreferencesManager.shared
+    private var cancellables = Set<AnyCancellable>()
 
     public init() {
         self.imageSettings.compressionPreset = preferences.defaultImagePreset
         self.pdfSettings.compressionPreset = preferences.defaultPDFPreset
+
+        preferences.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
     }
 
     public var formattedQRPayload: String {
