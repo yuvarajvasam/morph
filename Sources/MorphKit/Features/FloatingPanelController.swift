@@ -23,21 +23,22 @@ public final class FloatingPanelController: NSObject, NSWindowDelegate {
 
         let launcherView = LauncherView(viewModel: viewModel)
         let hostingView = NSHostingView(rootView: launcherView)
+        hostingView.wantsLayer = true
+        hostingView.layer?.backgroundColor = NSColor.clear.cgColor
 
         let dims = PreferencesManager.shared.launcherSize.dimensions
         let newPanel = MorphFloatingPanel(
             contentRect: NSRect(x: 0, y: 0, width: dims.width, height: dims.height),
-            styleMask: [.titled, .fullSizeContentView, .nonactivatingPanel],
+            styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
         )
 
-        newPanel.titleVisibility = .hidden
-        newPanel.titlebarAppearsTransparent = true
         newPanel.isMovableByWindowBackground = true
         newPanel.isOpaque = false
         newPanel.backgroundColor = .clear
         newPanel.hasShadow = false
+        newPanel.invalidateShadow()
         newPanel.level = .floating
         newPanel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         newPanel.contentView = hostingView

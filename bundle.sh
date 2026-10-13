@@ -4,7 +4,7 @@ set -e
 echo "📦 Bundling Morph.app..."
 
 # 1. Compile debug binary
-swift build
+swift build --disable-index-store
 
 BINARY_PATH=".build/out/Products/Debug/morph"
 if [ ! -f "$BINARY_PATH" ]; then

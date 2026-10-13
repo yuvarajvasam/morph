@@ -117,7 +117,6 @@ public struct LiquidGlassSurfaceModifier: ViewModifier {
                             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                                 .stroke(Color(nsColor: .separatorColor).opacity(0.4), lineWidth: 0.5)
                         }
-                        .shadow(color: Color.black.opacity(0.22), radius: 14, x: 0, y: 6)
                 } else {
                     ZStack {
                         // Desktop wallpaper blur
@@ -155,7 +154,6 @@ public struct LiquidGlassSurfaceModifier: ViewModifier {
                                 lineWidth: 0.75
                             )
                     }
-                    .shadow(color: Color.black.opacity(0.42), radius: 26, x: 0, y: 14)
                 }
             }
     }
