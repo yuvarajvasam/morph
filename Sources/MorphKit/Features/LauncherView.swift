@@ -111,9 +111,15 @@ public struct LauncherView: View {
 
     private var integratedSearchBarHeader: some View {
         HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(Color.white.opacity(0.60))
+            // Morph Icon in place of search icon
+            ZStack {
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .fill(LiquidGlass.brandAccentGradient)
+                    .frame(width: 18, height: 18)
+                Image(systemName: "circle.grid.2x2.fill")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(Color.white)
+            }
 
             // Search Text Field
             TextField(searchPlaceholder, text: $viewModel.searchQuery)
@@ -141,9 +147,6 @@ public struct LauncherView: View {
             if !viewModel.droppedFiles.isEmpty {
                 GlassPill("\(viewModel.droppedFiles.count) file\(viewModel.droppedFiles.count > 1 ? "s" : "")", icon: "paperclip", style: .accent)
             }
-
-            // Ellipsis Menu (...)
-            ellipsisMenuButton
         }
         .padding(.horizontal, 16)
         .frame(height: 48)
@@ -187,9 +190,6 @@ public struct LauncherView: View {
                 }
                 .buttonStyle(.plain)
             }
-
-            // Ellipsis Menu (...)
-            ellipsisMenuButton
         }
         .padding(.horizontal, 16)
         .frame(height: 48)
@@ -271,13 +271,14 @@ public struct LauncherView: View {
             }
         } label: {
             Image(systemName: "ellipsis")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(Color.white.opacity(0.70))
-                .frame(width: 24, height: 24)
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(Color.white.opacity(0.85))
+                .frame(width: 18, height: 16)
                 .contentShape(Rectangle())
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
+        .fixedSize()
         .help("View options (Grid/List) & settings")
     }
 
@@ -841,19 +842,8 @@ public struct LauncherView: View {
                     .foregroundStyle(Color.white.opacity(0.88))
                     .lineLimit(1)
             } else {
-                // Root Morph Launcher State
-                ZStack {
-                    RoundedRectangle(cornerRadius: 4, style: .continuous)
-                        .fill(LiquidGlass.brandAccentGradient)
-                        .frame(width: 16, height: 16)
-                    Image(systemName: "circle.grid.2x2.fill")
-                        .font(.system(size: 8, weight: .bold))
-                        .foregroundStyle(Color.white)
-                }
-
-                Text("Morph")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Color.white.opacity(0.88))
+                // Three Dots Menu (...) in place of Morph
+                ellipsisMenuButton
             }
         }
         .padding(.horizontal, 10)
@@ -865,6 +855,7 @@ public struct LauncherView: View {
                     Capsule().strokeBorder(Color.white.opacity(0.06), lineWidth: 0.5)
                 }
         )
+        .fixedSize()
     }
 
     // MARK: - Bottom Right Actions Pill (Matching Reference Images 1, 2)
