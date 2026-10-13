@@ -94,6 +94,11 @@ public func runVisualVerification() async throws {
     vmImage.activeCommand = registry.allCommands.first(where: { $0.id == "image.compress" })
     render(LauncherView(viewModel: vmImage), filename: "06_image_compression_tool.png")
 
+    // 6b. Tool Empty Drop Target Screen (Matching User Reference Image 2)
+    let vmEmptyTool = LauncherViewModel()
+    vmEmptyTool.activeCommand = registry.allCommands.first(where: { $0.id == "image.resize" })
+    render(LauncherView(viewModel: vmEmptyTool), filename: "11_tool_empty_drop_state.png")
+
     // 7. PDF Operations Tool Screen (Compress)
     let vmPDF = LauncherViewModel()
     vmPDF.handleDroppedURLs([samplePDFURL])

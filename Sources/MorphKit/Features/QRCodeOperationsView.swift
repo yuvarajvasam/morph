@@ -349,7 +349,7 @@ public struct QRCodeOperationsView: View {
                         .padding(.top, 4)
                 }
             } else {
-                Text("Drop an image with a QR code or barcode to scan.")
+                Text("Drag and drop an image with a QR code or barcode to scan.")
                     .font(.system(size: 12))
                     .foregroundStyle(Color.secondary)
             }

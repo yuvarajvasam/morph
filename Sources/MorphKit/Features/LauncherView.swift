@@ -61,7 +61,7 @@ public struct LauncherView: View {
                             Image(systemName: "arrow.down.doc.fill")
                                 .font(.system(size: 42))
                                 .foregroundStyle(LiquidGlass.brandAccent)
-                            Text("Drop files to inspect & process with Morph")
+                            Text("Drag and drop files to inspect & process with Morph")
                                 .font(.system(size: 15, weight: .semibold))
                                 .foregroundStyle(Color.white)
                         }
@@ -142,9 +142,6 @@ public struct LauncherView: View {
                 GlassPill("\(viewModel.droppedFiles.count) file\(viewModel.droppedFiles.count > 1 ? "s" : "")", icon: "paperclip", style: .accent)
             }
 
-            // Filter Category Dropdown (matching `All ᐯ` in Reference Image 1)
-            filterCategoryMenuButton
-
             // Ellipsis Menu (...)
             ellipsisMenuButton
         }
@@ -191,9 +188,6 @@ public struct LauncherView: View {
                 .buttonStyle(.plain)
             }
 
-            // Filter Category Dropdown (matching `All ᐯ` in Reference Image 1)
-            filterCategoryMenuButton
-
             // Ellipsis Menu (...)
             ellipsisMenuButton
         }
@@ -211,45 +205,6 @@ public struct LauncherView: View {
             return "Search preview..."
         }
         return "Search..."
-    }
-
-    private var filterCategoryMenuButton: some View {
-        Menu {
-            Button("All") {
-                withAnimation(LiquidGlass.quickSpring) {
-                    viewModel.selectedCategory = nil
-                    viewModel.selectedIndex = 0
-                }
-            }
-            ForEach(ConversionCategory.allCases) { cat in
-                Button(cat.displayName) {
-                    withAnimation(LiquidGlass.quickSpring) {
-                        viewModel.selectedCategory = cat
-                        viewModel.selectedIndex = 0
-                    }
-                }
-            }
-        } label: {
-            HStack(spacing: 4) {
-                Text(viewModel.selectedCategory?.displayName ?? "All")
-                    .font(.system(size: 12, weight: .medium))
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 8, weight: .semibold))
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(Color.white.opacity(0.08))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .strokeBorder(Color.white.opacity(0.06), lineWidth: 0.5)
-                    }
-            )
-            .foregroundStyle(Color.white.opacity(0.85))
-        }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
     }
 
     private var ellipsisMenuButton: some View {
@@ -331,9 +286,9 @@ public struct LauncherView: View {
             return "Filter actions for \(viewModel.droppedFiles.first?.filename ?? "file")..."
         }
         if let cat = viewModel.selectedCategory {
-            return "Search in \(cat.displayName)..."
+            return "Search in \(cat.displayName), or drag & drop files..."
         }
-        return "Search Morph or drop a file..."
+        return "Search, or drag & drop files..."
     }
 
     // MARK: - Category Filter Chips Row
@@ -665,7 +620,7 @@ public struct LauncherView: View {
             ToolSquircleIcon(command: command, size: 64, cornerRadius: 16)
 
             VStack(spacing: 4) {
-                Text("Select a file for \(command.title)")
+                Text("Drag and drop a file for \(command.title)")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Color.white)
 
@@ -698,13 +653,13 @@ public struct LauncherView: View {
     private func dropPromptDescription(for command: ConversionCommand) -> String {
         switch command.category {
         case .image:
-            return "Drop PNG, JPEG, WebP, or HEIC images here, or browse files"
+            return "Drag and drop PNG, JPEG, WebP, or HEIC images here, or browse files"
         case .pdf:
-            return "Drop PDF documents here, or browse files"
+            return "Drag and drop PDF documents here, or browse files"
         case .archive:
-            return "Drop an archive or files to compress / extract"
+            return "Drag and drop an archive or files to compress / extract"
         case .qrBarcode:
-            return "Drop an image containing a QR code or barcode to scan"
+            return "Drag and drop an image containing a QR code or barcode to scan"
         }
     }
 
