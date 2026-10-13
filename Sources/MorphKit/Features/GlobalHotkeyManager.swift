@@ -23,6 +23,19 @@ public final class GlobalHotkeyManager {
 
     private init() {}
 
+    public func registerFromPreferences(action: @escaping () -> Void) {
+        self.action = action
+        let shortcut = PreferencesManager.shared.globalShortcut
+        let mods: UInt32 = shortcut.contains("⌘") ? UInt32(cmdKey) : UInt32(optionKey)
+        register(keyCode: UInt32(kVK_Space), modifiers: mods, action: action)
+    }
+
+    public func rebind() {
+        if let currentAction = self.action {
+            registerFromPreferences(action: currentAction)
+        }
+    }
+
     public func register(
         keyCode: UInt32 = UInt32(kVK_Space),
         modifiers: UInt32 = UInt32(optionKey),

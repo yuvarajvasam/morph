@@ -105,6 +105,7 @@ public struct LiquidGlassCapsuleModifier: ViewModifier {
 /// - Specular highlight rim and deep elevation shadow
 public struct LiquidGlassSurfaceModifier: ViewModifier {
     @Environment(\.accessibilityReduceTransparency) private var systemReduceTransparency
+    @ObservedObject private var preferences = PreferencesManager.shared
     var cornerRadius: CGFloat = 28.0
 
     public func body(content: Content) -> some View {
@@ -140,19 +141,21 @@ public struct LiquidGlassSurfaceModifier: ViewModifier {
                     .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
                     .overlay {
                         // Specular top-edge hairline highlight
-                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .strokeBorder(
-                                LinearGradient(
-                                    colors: [
-                                        Color.white.opacity(0.26),
-                                        Color.white.opacity(0.06),
-                                        Color.clear
-                                    ],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                ),
-                                lineWidth: 0.75
-                            )
+                        if preferences.showSpecularHighlight {
+                            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.white.opacity(0.26),
+                                            Color.white.opacity(0.06),
+                                            Color.clear
+                                        ],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    ),
+                                    lineWidth: 0.75
+                                )
+                        }
                     }
                 }
             }

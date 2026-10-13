@@ -88,20 +88,26 @@ public final class FloatingPanelController: NSObject, NSWindowDelegate {
             // Escape key (53)
             if event.keyCode == 53 {
                 QuickLookManager.shared.dismiss()
-                if self.viewModel.isShowingSettings ||
-                    self.viewModel.currentResult != nil ||
-                    self.viewModel.activeCommand != nil ||
-                    !self.viewModel.droppedFiles.isEmpty ||
-                    self.viewModel.selectedCategory != nil {
-                    self.viewModel.goBack()
+                let doubleEscape = PreferencesManager.shared.doubleEscapeClearanceEnabled
+                if doubleEscape {
+                    if self.viewModel.isShowingSettings ||
+                        self.viewModel.currentResult != nil ||
+                        self.viewModel.activeCommand != nil ||
+                        !self.viewModel.droppedFiles.isEmpty ||
+                        self.viewModel.selectedCategory != nil {
+                        self.viewModel.goBack()
+                        return nil
+                    }
+                    if !self.viewModel.searchQuery.isEmpty {
+                        self.viewModel.searchQuery = ""
+                        return nil
+                    }
+                    self.hide()
+                    return nil
+                } else {
+                    self.hide()
                     return nil
                 }
-                if !self.viewModel.searchQuery.isEmpty {
-                    self.viewModel.searchQuery = ""
-                    return nil
-                }
-                self.hide()
-                return nil
             }
 
             // Command + W
@@ -176,11 +182,15 @@ public final class FloatingPanelController: NSObject, NSWindowDelegate {
                 }
             }
 
-            // Spacebar (Keycode 49) - Quick Look preview in Result view
-            if event.keyCode == 49 {
-                if self.viewModel.currentResult != nil {
-                    self.viewModel.toggleQuickLook()
-                    return nil
+            // Spacebar (Keycode 49) - Quick Look preview for result or dropped files
+            if event.keyCode == 49 && PreferencesManager.shared.spacebarQuickLookEnabled {
+                let firstResp = panel.firstResponder
+                let isEditingText = (firstResp is NSTextView)
+                if !isEditingText {
+                    if self.viewModel.currentResult != nil || !self.viewModel.droppedFiles.isEmpty {
+                        self.viewModel.toggleQuickLook()
+                        return nil
+                    }
                 }
             }
 

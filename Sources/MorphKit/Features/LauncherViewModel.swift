@@ -211,7 +211,7 @@ public final class LauncherViewModel: ObservableObject {
         selectCommand(commands[selectedIndex])
     }
 
-    public func selectCommand(_ command: ConversionCommand) {
+    public func selectCommand(_ command: ConversionCommand, promptForFilesIfEmpty: Bool = true) {
         self.activeCommand = command
         self.currentResult = nil
         self.errorMessage = nil
@@ -233,10 +233,15 @@ public final class LauncherViewModel: ObservableObject {
             self.dpiSelection = preferences.defaultPDFRasterDPI
             self.pdfSettings.pdfToImageFormat = preferences.defaultPDFToImageFormat
             self.pdfSettings.imageToPDFPageSize = preferences.defaultImageToPDFPageSize
+        } else if command.category == .archive {
+            self.archiveFormat = preferences.defaultArchiveFormat
+        } else if command.category == .qrBarcode {
+            self.qrErrorCorrection = preferences.defaultQRErrorCorrection
+            self.qrPixelSize = preferences.defaultQRPixelSize
         }
 
         // If command does not require input file (like QR/Barcode generator), skip file picker
-        if command.id != "qr.generate" && command.id != "barcode.generate" && droppedFiles.isEmpty {
+        if promptForFilesIfEmpty && command.id != "qr.generate" && command.id != "barcode.generate" && droppedFiles.isEmpty {
             openFilePicker()
         }
     }
@@ -300,7 +305,7 @@ public final class LauncherViewModel: ObservableObject {
     public func openFilePicker() {
         let panel = NSOpenPanel()
         panel.canChooseFiles = true
-        panel.canChooseDirectories = false
+        panel.canChooseDirectories = (activeCommand?.id == "archive.compress")
         panel.allowsMultipleSelection = activeCommand?.supportsMultipleFiles ?? true
         panel.title = "Select files for Morph"
 
@@ -425,6 +430,36 @@ public final class LauncherViewModel: ObservableObject {
                 }
             } else {
                 targetDirectory = droppedFiles.first?.url.deletingLastPathComponent()
+            }
+
+            // Synchronize active parameters from user interface state
+            if command.id == "image.resize" {
+                switch resizeTab {
+                case 0:
+                    let w = Int(exactWidth) ?? 1920
+                    let h = Int(exactHeight) ?? 1080
+                    imageSettings.resizeMode = .exact(width: w, height: h)
+                case 1:
+                    let mw = Int(maxWidth) ?? 1920
+                    imageSettings.resizeMode = .maxWidth(mw)
+                case 2:
+                    let mh = Int(maxHeight) ?? 1080
+                    imageSettings.resizeMode = .maxHeight(mh)
+                case 3:
+                    imageSettings.resizeMode = .percentage(Int(resizePercentage))
+                default:
+                    break
+                }
+            } else if command.id == "pdf.split" {
+                if splitModeTab == 0 {
+                    pdfSettings.splitMode = .allPages
+                } else {
+                    pdfSettings.splitMode = .pageRange(splitRangeText)
+                }
+            } else if command.id == "pdf.toImage" {
+                pdfSettings.pdfToImageDPI = dpiSelection
+            } else if command.id == "pdf.rotate" {
+                pdfSettings.rotationAngle = rotationSelection
             }
 
             switch command.id {
@@ -619,6 +654,9 @@ public final class LauncherViewModel: ObservableObject {
                     destinationDirectory: targetDirectory
                 )
                 self.currentResult = res
+                if preferences.revealInFinderOnExtract, let outURL = res.outputURLs.first {
+                    revealInFinder(url: outURL)
+                }
 
             case "archive.inspect":
                 guard let first = droppedFiles.first else { throw ProcessingError.emptyInput }

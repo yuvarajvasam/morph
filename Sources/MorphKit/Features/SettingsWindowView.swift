@@ -800,11 +800,10 @@ public struct SettingsWindowView: View {
             }
 
             settingRow(title: "Specular Edge Highlight", subtitle: "1.0pt subtle continuous outer glow on window frames.") {
-                Toggle("", isOn: .constant(true))
+                Toggle("", isOn: $preferences.showSpecularHighlight)
                     .labelsHidden()
                     .toggleStyle(.switch)
                     .tint(LiquidGlass.brandAccent)
-                    .disabled(true)
             }
         }
     }
@@ -858,14 +857,14 @@ public struct SettingsWindowView: View {
             sectionHeader("Keyboard Navigation Behavior")
 
             settingRow(title: "Spacebar Quick Look", subtitle: "Preview selected input images and PDFs in Quick Look overlay.") {
-                Toggle("", isOn: .constant(true))
+                Toggle("", isOn: $preferences.spacebarQuickLookEnabled)
                     .labelsHidden()
                     .toggleStyle(.switch)
                     .tint(LiquidGlass.brandAccent)
             }
 
             settingRow(title: "Double-Escape Clearance", subtitle: "Press Escape once to go back, twice to close Morph.") {
-                Toggle("", isOn: .constant(true))
+                Toggle("", isOn: $preferences.doubleEscapeClearanceEnabled)
                     .labelsHidden()
                     .toggleStyle(.switch)
                     .tint(LiquidGlass.brandAccent)
@@ -1048,16 +1047,17 @@ public struct SettingsWindowView: View {
             sectionHeader("Archive Engine Defaults")
 
             settingRow(title: "Default Format", subtitle: "Standard format when compressing folder or multi-file archives.") {
-                Picker("", selection: .constant("ZIP Archive")) {
-                    Text("ZIP Archive").tag("ZIP Archive")
-                    Text("TAR GZip (.tar.gz)").tag("TAR GZip (.tar.gz)")
+                Picker("", selection: $preferences.defaultArchiveFormat) {
+                    ForEach(ArchiveFormat.allCases) { format in
+                        Text(format.rawValue).tag(format)
+                    }
                 }
                 .pickerStyle(.menu)
                 .frame(maxWidth: 160)
             }
 
             settingRow(title: "Reveal in Finder on Extract", subtitle: "Automatically highlight newly extracted directories.") {
-                Toggle("", isOn: .constant(true))
+                Toggle("", isOn: $preferences.revealInFinderOnExtract)
                     .labelsHidden()
                     .toggleStyle(.switch)
                     .tint(LiquidGlass.brandAccent)
@@ -1072,21 +1072,20 @@ public struct SettingsWindowView: View {
             sectionHeader("QR & Barcode Engine Defaults")
 
             settingRow(title: "Error Correction Level", subtitle: "Redundancy percentage to allow scanning of damaged codes.") {
-                Picker("", selection: .constant("High (30% recovery)")) {
-                    Text("Low (7%)").tag("Low (7%)")
-                    Text("Medium (15%)").tag("Medium (15%)")
-                    Text("Quartile (25%)").tag("Quartile (25%)")
-                    Text("High (30% recovery)").tag("High (30% recovery)")
+                Picker("", selection: $preferences.defaultQRErrorCorrection) {
+                    ForEach(QRErrorCorrection.allCases) { ec in
+                        Text(ec.rawValue).tag(ec)
+                    }
                 }
                 .pickerStyle(.menu)
                 .frame(maxWidth: 180)
             }
 
             settingRow(title: "High-DPI Output Scaling", subtitle: "Resolution multiplier for crisp vector export.") {
-                Picker("", selection: .constant("4x (1024×1024 pt)")) {
-                    Text("2x (512×512 pt)").tag("2x (512×512 pt)")
-                    Text("4x (1024×1024 pt)").tag("4x (1024×1024 pt)")
-                    Text("8x (2048×2048 pt)").tag("8x (2048×2048 pt)")
+                Picker("", selection: $preferences.defaultQRPixelSize) {
+                    Text("2x (512×512 pt)").tag(CGFloat(512.0))
+                    Text("4x (1024×1024 pt)").tag(CGFloat(1024.0))
+                    Text("8x (2048×2048 pt)").tag(CGFloat(2048.0))
                 }
                 .pickerStyle(.menu)
                 .frame(maxWidth: 180)

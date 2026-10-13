@@ -216,28 +216,27 @@ public final class QRCodeEngine: @unchecked Sendable {
             throw ProcessingError.corruptedFile("Unable to load image for code detection.")
         }
 
-        // Try Vision barcode detection first
+        // Try fast in-process CoreImage detector first
         var detectedPayloads: [String] = []
-
-        let request = VNDetectBarcodesRequest()
-        let handler = VNImageRequestHandler(ciImage: ciImage, options: [:])
-        try handler.perform([request])
-
-        if let results = request.results {
-            for res in results {
-                if let payload = res.payloadStringValue, !payload.isEmpty {
-                    detectedPayloads.append(payload)
+        if let detector = CIDetector(ofType: CIDetectorTypeQRCode, context: context, options: [CIDetectorAccuracy: CIDetectorAccuracyHigh]) {
+            let features = detector.features(in: ciImage)
+            for f in features {
+                if let qrFeature = f as? CIQRCodeFeature, let message = qrFeature.messageString, !message.isEmpty {
+                    detectedPayloads.append(message)
                 }
             }
         }
 
-        // Fallback to CIDetector if Vision returned nothing
+        // Fallback to Vision barcode detection if not found (e.g. 1D barcodes)
         if detectedPayloads.isEmpty {
-            if let detector = CIDetector(ofType: CIDetectorTypeQRCode, context: context, options: [CIDetectorAccuracy: CIDetectorAccuracyHigh]) {
-                let features = detector.features(in: ciImage)
-                for f in features {
-                    if let qrFeature = f as? CIQRCodeFeature, let message = qrFeature.messageString, !message.isEmpty {
-                        detectedPayloads.append(message)
+            let request = VNDetectBarcodesRequest()
+            let handler = VNImageRequestHandler(ciImage: ciImage, options: [:])
+            try? handler.perform([request])
+
+            if let results = request.results {
+                for res in results {
+                    if let payload = res.payloadStringValue, !payload.isEmpty {
+                        detectedPayloads.append(payload)
                     }
                 }
             }

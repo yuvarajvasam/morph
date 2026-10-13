@@ -114,6 +114,7 @@ public final class PreferencesManager: ObservableObject {
     @Published public var globalShortcut: String {
         didSet {
             defaults.set(globalShortcut, forKey: "globalShortcut")
+            GlobalHotkeyManager.shared.rebind()
         }
     }
 
@@ -253,6 +254,54 @@ public final class PreferencesManager: ObservableObject {
     @Published public var stripPDFMetadata: Bool {
         didSet {
             defaults.set(stripPDFMetadata, forKey: "stripPDFMetadata")
+        }
+    }
+
+    // MARK: - Archive Tools Settings
+
+    @Published public var defaultArchiveFormat: ArchiveFormat {
+        didSet {
+            defaults.set(defaultArchiveFormat.rawValue, forKey: "defaultArchiveFormat")
+        }
+    }
+
+    @Published public var revealInFinderOnExtract: Bool {
+        didSet {
+            defaults.set(revealInFinderOnExtract, forKey: "revealInFinderOnExtract")
+        }
+    }
+
+    // MARK: - QR & Barcode Tools Settings
+
+    @Published public var defaultQRErrorCorrection: QRErrorCorrection {
+        didSet {
+            defaults.set(defaultQRErrorCorrection.rawValue, forKey: "defaultQRErrorCorrection")
+        }
+    }
+
+    @Published public var defaultQRPixelSize: CGFloat {
+        didSet {
+            defaults.set(Double(defaultQRPixelSize), forKey: "defaultQRPixelSize")
+        }
+    }
+
+    // MARK: - Navigation & Behavior Settings
+
+    @Published public var spacebarQuickLookEnabled: Bool {
+        didSet {
+            defaults.set(spacebarQuickLookEnabled, forKey: "spacebarQuickLookEnabled")
+        }
+    }
+
+    @Published public var doubleEscapeClearanceEnabled: Bool {
+        didSet {
+            defaults.set(doubleEscapeClearanceEnabled, forKey: "doubleEscapeClearanceEnabled")
+        }
+    }
+
+    @Published public var showSpecularHighlight: Bool {
+        didSet {
+            defaults.set(showSpecularHighlight, forKey: "showSpecularHighlight")
         }
     }
 
@@ -398,6 +447,28 @@ public final class PreferencesManager: ObservableObject {
         self.confirmDestructivePageRemoval = defaults.object(forKey: "confirmDestructivePageRemoval") != nil ? defaults.bool(forKey: "confirmDestructivePageRemoval") : true
         self.stripPDFMetadata = defaults.bool(forKey: "stripPDFMetadata")
 
+        // Archive Tools
+        if let arcFmtRaw = defaults.string(forKey: "defaultArchiveFormat"), let fmt = ArchiveFormat(rawValue: arcFmtRaw) {
+            self.defaultArchiveFormat = fmt
+        } else {
+            self.defaultArchiveFormat = .zip
+        }
+        self.revealInFinderOnExtract = defaults.object(forKey: "revealInFinderOnExtract") != nil ? defaults.bool(forKey: "revealInFinderOnExtract") : true
+
+        // QR & Barcode Tools
+        if let qrErrRaw = defaults.string(forKey: "defaultQRErrorCorrection"), let err = QRErrorCorrection(rawValue: qrErrRaw) {
+            self.defaultQRErrorCorrection = err
+        } else {
+            self.defaultQRErrorCorrection = .high
+        }
+        let storedPixelSize = defaults.double(forKey: "defaultQRPixelSize")
+        self.defaultQRPixelSize = storedPixelSize > 0 ? CGFloat(storedPixelSize) : 1024.0
+
+        // Navigation & Behavior
+        self.spacebarQuickLookEnabled = defaults.object(forKey: "spacebarQuickLookEnabled") != nil ? defaults.bool(forKey: "spacebarQuickLookEnabled") : true
+        self.doubleEscapeClearanceEnabled = defaults.object(forKey: "doubleEscapeClearanceEnabled") != nil ? defaults.bool(forKey: "doubleEscapeClearanceEnabled") : true
+        self.showSpecularHighlight = defaults.object(forKey: "showSpecularHighlight") != nil ? defaults.bool(forKey: "showSpecularHighlight") : true
+
         // Output Settings
         if let locRaw = defaults.string(forKey: "outputLocationMode"), let loc = OutputLocationMode(rawValue: locRaw) {
             self.outputLocationMode = loc
@@ -516,6 +587,16 @@ public final class PreferencesManager: ObservableObject {
         self.defaultImageToPDFPageSize = .matchImage
         self.confirmDestructivePageRemoval = true
         self.stripPDFMetadata = false
+
+        self.defaultArchiveFormat = .zip
+        self.revealInFinderOnExtract = true
+
+        self.defaultQRErrorCorrection = .high
+        self.defaultQRPixelSize = 1024.0
+
+        self.spacebarQuickLookEnabled = true
+        self.doubleEscapeClearanceEnabled = true
+        self.showSpecularHighlight = true
 
         self.outputLocationMode = .sameAsSource
         self.customFolderPath = ""

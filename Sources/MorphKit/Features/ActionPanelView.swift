@@ -82,6 +82,66 @@ public struct ActionPanelView: View {
             ))
         }
 
+        // Result Actions
+        if let res = viewModel.currentResult, let primaryURL = res.primaryOutputURL {
+            items.append(ActionItem(
+                title: "Open Output File",
+                systemIcon: "arrow.up.forward.app",
+                shortcut: "⌘O",
+                section: "Result Actions",
+                perform: {
+                    onDismiss()
+                    viewModel.openFile(url: primaryURL)
+                }
+            ))
+
+            items.append(ActionItem(
+                title: "Reveal in Finder",
+                systemIcon: "folder",
+                shortcut: "⌘R",
+                section: "Result Actions",
+                perform: {
+                    onDismiss()
+                    viewModel.revealInFinder(url: primaryURL)
+                }
+            ))
+
+            items.append(ActionItem(
+                title: "Copy Output to Clipboard",
+                systemIcon: "doc.on.doc",
+                shortcut: "⌘C",
+                section: "Result Actions",
+                perform: {
+                    onDismiss()
+                    viewModel.copyOutputToClipboard()
+                }
+            ))
+
+            items.append(ActionItem(
+                title: "Save Output As...",
+                systemIcon: "arrow.down.doc",
+                shortcut: "⌘S",
+                section: "Result Actions",
+                perform: {
+                    onDismiss()
+                    viewModel.saveOutputAs(url: primaryURL)
+                }
+            ))
+
+            items.append(ActionItem(
+                title: "Copy Result File Path",
+                systemIcon: "link",
+                shortcut: "⌥⌘C",
+                section: "Result Actions",
+                perform: {
+                    onDismiss()
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(primaryURL.path, forType: .string)
+                    viewModel.copyStatusMessage = "Path Copied"
+                }
+            ))
+        }
+
         // File Actions
         if let first = viewModel.droppedFiles.first {
             items.append(ActionItem(

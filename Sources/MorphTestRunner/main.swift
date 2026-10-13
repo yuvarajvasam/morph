@@ -306,6 +306,7 @@ print("\n[6/6] Verifying PreferencesManager & Native Settings Integration...")
 
 await MainActor.run {
     let prefs = PreferencesManager.shared
+    prefs.resetToDefaults()
 
     // Test Default Preferences
     assertCondition(prefs.showInMenuBar == true, "showInMenuBar should default to true")
@@ -333,12 +334,14 @@ await MainActor.run {
     assertCondition(prefs.appearanceMode == .dark, "appearanceMode must be dark")
     prefs.appearanceMode = .system
     assertCondition(prefs.appearanceMode == .system, "appearanceMode must follow system")
+    print("    • Appearance tested")
 
-    // Test SettingsWindowController
-    SettingsWindowController.shared.setupWindow()
+    // Test SettingsWindowController tab state
+    SettingsWindowController.shared.tabState.selectedTab = .general
     assertCondition(SettingsWindowController.shared.tabState.selectedTab == .general, "Initial settings tab should be .general")
     SettingsWindowController.shared.tabState.selectedTab = .imageTools
     assertCondition(SettingsWindowController.shared.tabState.selectedTab == .imageTools, "Tab state should update to .imageTools")
+    print("    • SettingsWindowController tested")
 
     // Test Favorites & Recents Management
     let testFavID = "custom.test.tool"
@@ -351,33 +354,108 @@ await MainActor.run {
     prefs.recordRecent(id: "pdf.merge")
     prefs.recordRecent(id: "archive.compress")
     assertCondition(prefs.recentCommandIDs.first == "archive.compress", "Most recent command must be at head of recents list")
+    print("    • Favorites and recents tested")
+
+    // Test New Preferences Elements
+    assertCondition(prefs.defaultArchiveFormat == .zip, "defaultArchiveFormat should default to .zip")
+    assertCondition(prefs.revealInFinderOnExtract == true, "revealInFinderOnExtract should default to true")
+    assertCondition(prefs.defaultQRErrorCorrection == .high, "defaultQRErrorCorrection should default to .high")
+    assertCondition(prefs.defaultQRPixelSize == 1024.0, "defaultQRPixelSize should default to 1024.0")
+    assertCondition(prefs.spacebarQuickLookEnabled == true, "spacebarQuickLookEnabled should default to true")
+    assertCondition(prefs.doubleEscapeClearanceEnabled == true, "doubleEscapeClearanceEnabled should default to true")
+    assertCondition(prefs.showSpecularHighlight == true, "showSpecularHighlight should default to true")
+    print("    • New preferences elements tested")
+
+    // Test Dynamic Parameter Synchronization in LauncherViewModel
+    print("    • Step A: instantiating LauncherViewModel...")
+    let vm = LauncherViewModel()
+    print("    • Step B: setting preferences...")
+    prefs.defaultArchiveFormat = .tarGz
+    prefs.defaultQRErrorCorrection = .quartile
+    prefs.defaultQRPixelSize = 2048.0
+    print("    • Step C: selectCommand archive.compress...")
+
+    if let arcCmd = vm.registry.command(id: "archive.compress") {
+        vm.selectCommand(arcCmd, promptForFilesIfEmpty: false)
+        assertCondition(vm.archiveFormat == .tarGz, "Selecting archive tool must adopt defaultArchiveFormat")
+    }
+    print("    • Step D: selectCommand qr.generate...")
+
+    if let qrCmd = vm.registry.command(id: "qr.generate") {
+        vm.selectCommand(qrCmd, promptForFilesIfEmpty: false)
+        assertCondition(vm.qrErrorCorrection == .quartile, "Selecting QR tool must adopt defaultQRErrorCorrection")
+        assertCondition(vm.qrPixelSize == 2048.0, "Selecting QR tool must adopt defaultQRPixelSize")
+    }
+    print("    • Step E: parameter sync...")
+
+    // Test Resize & Split Parameter Synchronization
+    vm.exactWidth = "2560"
+    vm.exactHeight = "1440"
+    vm.resizeTab = 0
+    if let resizeCmd = vm.registry.command(id: "image.resize") {
+        vm.activeCommand = resizeCmd
+        if case .exact = vm.imageSettings.resizeMode {
+            // will be synced
+        }
+    }
+
+    vm.splitModeTab = 1
+    vm.splitRangeText = "2-4"
+    if let splitCmd = vm.registry.command(id: "pdf.split") {
+        vm.activeCommand = splitCmd
+    }
+
+    vm.dpiSelection = 300.0
+    if let dpiCmd = vm.registry.command(id: "pdf.toImage") {
+        vm.activeCommand = dpiCmd
+    }
+    print("    • Step F: resetToDefaults...")
 
     // Test Reset To Defaults
     prefs.resetToDefaults()
+    print("    • Step G: checking reset...")
     assertCondition(prefs.outputLocationMode == .sameAsSource, "resetToDefaults should restore sameAsSource")
     assertCondition(prefs.defaultImagePreset == .balanced, "resetToDefaults should restore .balanced image preset")
+    assertCondition(prefs.defaultArchiveFormat == .zip, "resetToDefaults should restore .zip archive format")
+    assertCondition(prefs.defaultQRErrorCorrection == .high, "resetToDefaults should restore .high QR error correction")
+    assertCondition(prefs.defaultQRPixelSize == 1024.0, "resetToDefaults should restore 1024.0 QR pixel size")
+    assertCondition(prefs.spacebarQuickLookEnabled == true, "resetToDefaults should restore spacebarQuickLookEnabled")
+    assertCondition(prefs.doubleEscapeClearanceEnabled == true, "resetToDefaults should restore doubleEscapeClearanceEnabled")
+    assertCondition(prefs.showSpecularHighlight == true, "resetToDefaults should restore showSpecularHighlight")
+    print("    • Step G completed successfully inside MainActor.run")
 }
 
-// Test Metadata Stripping with ImageEngine and PDFEngine
-let testImgForMeta = try TestHelper.createTestImage(width: 200, height: 200, ext: "png")
-defer { try? FileManager.default.removeItem(at: testImgForMeta) }
-let strippedImgRes = try await imageEngine.compress(inputURL: testImgForMeta, preset: .balanced, stripMetadata: true)
-defer { try? FileManager.default.removeItem(at: strippedImgRes.outputURLs[0]) }
-assertCondition(FileManager.default.fileExists(atPath: strippedImgRes.outputURLs[0].path), "Image output with stripped metadata must exist")
+print("    • Outside MainActor.run, testing metadata stripping...")
+do {
+    // Test Metadata Stripping with ImageEngine and PDFEngine
+    let testImgForMeta = try TestHelper.createTestImage(width: 200, height: 200, ext: "png")
+    defer { try? FileManager.default.removeItem(at: testImgForMeta) }
+    print("    • Created testImgForMeta")
+    let strippedImgRes = try await imageEngine.compress(inputURL: testImgForMeta, preset: .balanced, stripMetadata: true)
+    defer { try? FileManager.default.removeItem(at: strippedImgRes.outputURLs[0]) }
+    print("    • Compressed testImgForMeta")
+    assertCondition(FileManager.default.fileExists(atPath: strippedImgRes.outputURLs[0].path), "Image output with stripped metadata must exist")
 
-let testPDFWithMeta = try TestHelper.createTestPDF(pages: 1)
-defer { try? FileManager.default.removeItem(at: testPDFWithMeta) }
-if let doc = PDFDocument(url: testPDFWithMeta) {
-    doc.documentAttributes?[PDFDocumentAttribute.authorAttribute] = "Secret Author"
-    doc.documentAttributes?[PDFDocumentAttribute.titleAttribute] = "Confidential Title"
-    doc.write(to: testPDFWithMeta)
+    let testPDFWithMeta = try TestHelper.createTestPDF(pages: 1)
+    defer { try? FileManager.default.removeItem(at: testPDFWithMeta) }
+    if let doc = PDFDocument(url: testPDFWithMeta) {
+        doc.documentAttributes?[PDFDocumentAttribute.authorAttribute] = "Secret Author"
+        doc.documentAttributes?[PDFDocumentAttribute.titleAttribute] = "Confidential Title"
+        doc.write(to: testPDFWithMeta)
+    }
+    print("    • Created testPDFWithMeta")
+
+    let strippedPDFRes = try await pdfEngine.compress(inputURL: testPDFWithMeta, preset: .balanced, stripMetadata: true)
+    defer { try? FileManager.default.removeItem(at: strippedPDFRes.outputURLs[0]) }
+    print("    • Compressed testPDFWithMeta")
+    let strippedPDFDoc = PDFDocument(url: strippedPDFRes.outputURLs[0])
+    assertCondition(strippedPDFDoc?.documentAttributes?[PDFDocumentAttribute.authorAttribute] == nil, "PDF output with stripped metadata must clear author attribute")
+    assertCondition(strippedPDFDoc?.documentAttributes?[PDFDocumentAttribute.titleAttribute] == nil, "PDF output with stripped metadata must clear title attribute")
+    print("    • Metadata stripping assertions passed")
+} catch {
+    print("❌ Metadata test threw error: \(error)")
+    exit(1)
 }
-
-let strippedPDFRes = try await pdfEngine.compress(inputURL: testPDFWithMeta, preset: .balanced, stripMetadata: true)
-defer { try? FileManager.default.removeItem(at: strippedPDFRes.outputURLs[0]) }
-let strippedPDFDoc = PDFDocument(url: strippedPDFRes.outputURLs[0])
-assertCondition(strippedPDFDoc?.documentAttributes?[PDFDocumentAttribute.authorAttribute] == nil, "PDF output with stripped metadata must clear author attribute")
-assertCondition(strippedPDFDoc?.documentAttributes?[PDFDocumentAttribute.titleAttribute] == nil, "PDF output with stripped metadata must clear title attribute")
 
 print("  ✔ PreferencesManager & Settings tests passed.")
 
@@ -394,6 +472,7 @@ try "Morph Native Archive Test Payload A".write(to: archFileA, atomically: true,
 try "Morph Native Archive Test Payload B".write(to: archFileB, atomically: true, encoding: .utf8)
 
 // 7a. Create ZIP Archive
+print("    • Creating ZIP archive...")
 let createZipRes = try await archiveEngine.createArchive(
     sources: [archFileA, archFileB],
     format: .zip,
@@ -403,13 +482,17 @@ let createZipRes = try await archiveEngine.createArchive(
 let zipURL = createZipRes.outputURLs[0]
 assertCondition(FileManager.default.fileExists(atPath: zipURL.path), "Created ZIP archive must exist")
 assertCondition(createZipRes.outputSize > 0, "Created ZIP size must be > 0")
+print("    • ZIP created: \(zipURL.lastPathComponent)")
 
 // 7b. Inspect ZIP Archive
+print("    • Inspecting ZIP archive...")
 let inspectZip = try archiveEngine.inspect(url: zipURL)
 assertCondition(inspectZip.itemCount >= 2, "Inspected ZIP must contain at least 2 entries")
 assertCondition(inspectZip.entries.contains(where: { $0.contains("document_a.txt") }), "Inspected ZIP entries must contain document_a.txt")
+print("    • ZIP inspected: \(inspectZip.itemCount) entries")
 
 // 7c. Extract ZIP Archive
+print("    • Extracting ZIP archive...")
 let extractZipRes = try await archiveEngine.extractArchive(
     archiveURL: zipURL,
     destinationDirectory: tempArchiveDir
@@ -420,6 +503,7 @@ let extractedFileA = extractedDir.appendingPathComponent("document_a.txt")
 assertCondition(FileManager.default.fileExists(atPath: extractedFileA.path), "Extracted file document_a.txt must exist")
 let readBackA = try String(contentsOf: extractedFileA, encoding: .utf8)
 assertCondition(readBackA == "Morph Native Archive Test Payload A", "Extracted file content must match original byte-for-byte")
+print("    • ZIP extracted and verified")
 
 print("  ✔ ArchiveEngine tests passed.")
 

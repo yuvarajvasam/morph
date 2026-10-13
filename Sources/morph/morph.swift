@@ -20,8 +20,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         FloatingPanelController.shared.setupPanel()
         FloatingPanelController.shared.show()
 
-        // Register Global System-Wide Hotkey (Option + Space)
-        GlobalHotkeyManager.shared.register {
+        // Register Global System-Wide Hotkey from Preferences (Option/Command + Space)
+        GlobalHotkeyManager.shared.registerFromPreferences {
             FloatingPanelController.shared.toggle()
         }
 

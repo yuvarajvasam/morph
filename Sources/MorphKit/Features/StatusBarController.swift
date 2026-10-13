@@ -71,6 +71,14 @@ public final class StatusBarController: NSObject {
         mergePDFItem.target = self
         menu.addItem(mergePDFItem)
 
+        let createArchiveItem = NSMenuItem(title: "Create Archive...", action: #selector(quickCreateArchive), keyEquivalent: "")
+        createArchiveItem.target = self
+        menu.addItem(createArchiveItem)
+
+        let generateQRItem = NSMenuItem(title: "Generate QR Code...", action: #selector(quickGenerateQR), keyEquivalent: "")
+        generateQRItem.target = self
+        menu.addItem(generateQRItem)
+
         menu.addItem(NSMenuItem.separator())
 
         let settingsItem = NSMenuItem(title: "Settings...", action: #selector(openSettings), keyEquivalent: ",")
@@ -117,6 +125,20 @@ public final class StatusBarController: NSObject {
     @objc private func quickMergePDF() {
         FloatingPanelController.shared.show()
         if let cmd = FloatingPanelController.shared.viewModel.registry.command(id: "pdf.merge") {
+            FloatingPanelController.shared.viewModel.selectCommand(cmd)
+        }
+    }
+
+    @objc private func quickCreateArchive() {
+        FloatingPanelController.shared.show()
+        if let cmd = FloatingPanelController.shared.viewModel.registry.command(id: "archive.compress") {
+            FloatingPanelController.shared.viewModel.selectCommand(cmd)
+        }
+    }
+
+    @objc private func quickGenerateQR() {
+        FloatingPanelController.shared.show()
+        if let cmd = FloatingPanelController.shared.viewModel.registry.command(id: "qr.generate") {
             FloatingPanelController.shared.viewModel.selectCommand(cmd)
         }
     }
