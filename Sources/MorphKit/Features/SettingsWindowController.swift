@@ -7,6 +7,20 @@ public final class MorphSettingsWindow: NSWindow {
     public override func zoom(_ sender: Any?) {
         // Window cannot be maximized - fixed size
     }
+    public override func cancelOperation(_ sender: Any?) {
+        SettingsWindowController.shared.hide()
+    }
+    public override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        if event.modifierFlags.contains(.command) && event.charactersIgnoringModifiers == "w" {
+            SettingsWindowController.shared.hide()
+            return true
+        }
+        if event.keyCode == 53 { // Escape
+            SettingsWindowController.shared.hide()
+            return true
+        }
+        return super.performKeyEquivalent(with: event)
+    }
 }
 
 @MainActor
@@ -15,6 +29,10 @@ public final class SettingsWindowController: NSObject, NSWindowDelegate {
 
     public let tabState = SettingsTabState()
     private var window: MorphSettingsWindow?
+
+    public var isVisible: Bool {
+        window?.isVisible == true
+    }
 
     public override init() {
         super.init()
@@ -58,6 +76,9 @@ public final class SettingsWindowController: NSObject, NSWindowDelegate {
     }
 
     public func show(section: SettingsTab? = nil) {
+        // App should not be shown when settings is open
+        FloatingPanelController.shared.hide()
+
         if window == nil {
             setupWindow()
         }

@@ -97,15 +97,19 @@ public struct GlassButton: View {
                 }
 
                 if let shortcut = shortcutBadge {
-                    Text(shortcut)
-                        .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                        .padding(.horizontal, 4)
-                        .padding(.vertical, 1.5)
-                        .background {
-                            RoundedRectangle(cornerRadius: 3, style: .continuous)
-                                .fill(shortcutBadgeBackground)
+                    HStack(spacing: 2) {
+                        ForEach(Array(shortcut.shortcutKeyTokens.enumerated()), id: \.offset) { _, token in
+                            Text(token)
+                                .font(.system(size: 8.5, weight: .bold, design: .rounded))
+                                .padding(.horizontal, token.count > 1 ? 4 : 2.5)
+                                .padding(.vertical, 1)
+                                .background {
+                                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                                        .fill(shortcutBadgeBackground)
+                                }
+                                .foregroundStyle(shortcutBadgeForeground)
                         }
-                        .foregroundStyle(shortcutBadgeForeground)
+                    }
                 }
             }
             .padding(.horizontal, variant == .ghost ? 6 : size.horizontalPadding)

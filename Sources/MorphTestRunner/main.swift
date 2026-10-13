@@ -336,12 +336,34 @@ await MainActor.run {
     assertCondition(prefs.appearanceMode == .system, "appearanceMode must follow system")
     print("    • Appearance tested")
 
-    // Test SettingsWindowController tab state
+    // Test SettingsWindowController tab state and window visibility
     SettingsWindowController.shared.tabState.selectedTab = .general
     assertCondition(SettingsWindowController.shared.tabState.selectedTab == .general, "Initial settings tab should be .general")
     SettingsWindowController.shared.tabState.selectedTab = .imageTools
     assertCondition(SettingsWindowController.shared.tabState.selectedTab == .imageTools, "Tab state should update to .imageTools")
-    print("    • SettingsWindowController tested")
+    SettingsWindowController.shared.show()
+    assertCondition(SettingsWindowController.shared.isVisible, "Settings window must be visible after show()")
+    SettingsWindowController.shared.hide()
+    assertCondition(!SettingsWindowController.shared.isVisible, "Settings window must be hidden after hide()")
+    print("    • SettingsWindowController & visibility tested")
+
+    // Test Shortcut Individual Key Token Splitting
+    assertCondition("⌥ Space".shortcutKeyTokens == ["⌥", "Space"], "⌥ Space must produce 2 individual keys")
+    assertCondition("⌘ Space".shortcutKeyTokens == ["⌘", "Space"], "⌘ Space must produce 2 individual keys")
+    assertCondition("⌘K".shortcutKeyTokens == ["⌘", "K"], "⌘K must produce 2 individual keys")
+    assertCondition("⌘O".shortcutKeyTokens == ["⌘", "O"], "⌘O must produce 2 individual keys")
+    assertCondition("⌘,".shortcutKeyTokens == ["⌘", ","], "⌘, must produce 2 individual keys")
+    assertCondition("↑ / ↓".shortcutKeyTokens == ["↑", "↓"], "↑ / ↓ must produce 2 individual keys")
+    print("    • Individual key shortcut tokens tested")
+
+    // Test Unified Interface Size & Launcher Dimensions
+    prefs.launcherSize = .compact
+    assertCondition(prefs.launcherSize.dimensions == (620, 500) && prefs.launcherSize.interfaceScale == 0.92, "Compact preset must change both dimensions (620x500) and interface scale (0.92)")
+    prefs.launcherSize = .large
+    assertCondition(prefs.launcherSize.dimensions == (780, 660) && prefs.launcherSize.interfaceScale == 1.08, "Large preset must change both dimensions (780x660) and interface scale (1.08)")
+    prefs.launcherSize = .comfortable
+    assertCondition(prefs.launcherSize.dimensions == (700, 580) && prefs.launcherSize.interfaceScale == 1.00, "Comfortable preset must change both dimensions (700x580) and interface scale (1.00)")
+    print("    • Unified interface size & launcher dimensions tested")
 
     // Test Favorites & Recents Management
     let testFavID = "custom.test.tool"

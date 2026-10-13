@@ -67,7 +67,7 @@ public enum SettingsTab: String, CaseIterable, Identifiable {
     public var subtitle: String {
         switch self {
         case .general: return "System startup, menu bar integration, and feedback."
-        case .appearance: return "Visual theme, launcher dimensions, and window modes."
+        case .appearance: return "Visual theme, interface size & dimensions, and window modes."
         case .shortcuts: return "Global hotkeys and keyboard cheatsheet."
         case .navigation: return "Keyboard focus, Vim navigation, and Quick Look."
         case .security: return "Offline local processing architecture & privacy."
@@ -140,7 +140,7 @@ public struct SettingsWindowView: View {
             // Window Traffic Light Controls (Top-Left, Native-style)
             HStack(spacing: 8) {
                 Button {
-                    NSApp.keyWindow?.performClose(nil)
+                    SettingsWindowController.shared.hide()
                 } label: {
                     Circle()
                         .fill(Color(red: 255/255, green: 95/255, blue: 87/255))
@@ -437,7 +437,7 @@ public struct SettingsWindowView: View {
                 .tint(LiquidGlass.brandAccent)
             }
 
-            settingRow(title: "Morph Hotkey") {
+            settingRow(title: "Morph Hotkey", subtitle: "System-wide shortcut to activate Morph.") {
                 HStack(spacing: 8) {
                     Button("Replace Spotlight") {
                         preferences.globalShortcut = "⌘ Space"
@@ -450,13 +450,20 @@ public struct SettingsWindowView: View {
                     .foregroundStyle(Color.white.opacity(0.85))
 
                     HStack(spacing: 4) {
-                        Text(preferences.globalShortcut)
-                            .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        Button {
+                            preferences.globalShortcut = preferences.globalShortcut.contains("⌘") ? "⌥ Space" : "⌘ Space"
+                        } label: {
+                            KeycapBadge(preferences.globalShortcut.contains("⌘") ? "⌘" : "⌥", fontSize: 12, minDimension: 22)
+                        }
+                        .buttonStyle(.plain)
+
+                        Button {
+                            preferences.globalShortcut = preferences.globalShortcut.contains("⌘") ? "⌘ Space" : "⌥ Space"
+                        } label: {
+                            KeycapBadge("Space", fontSize: 11, minDimension: 22)
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Color.white.opacity(0.12)))
-                    .foregroundStyle(Color.white)
 
                     Button {
                         preferences.globalShortcut = "⌥ Space"
@@ -521,13 +528,7 @@ public struct SettingsWindowView: View {
                 .foregroundStyle(Color.white.opacity(0.85))
             }
 
-            settingRow(title: "Interface Size", subtitle: "Adjust the size of the Morph interface") {
-                HStack(spacing: 4) {
-                    sizeButton(preset: .compact, label: "Aa", fontSize: 11)
-                    sizeButton(preset: .comfortable, label: "Aa", fontSize: 13)
-                    sizeButton(preset: .large, label: "Aa", fontSize: 15)
-                }
-            }
+            interfaceSizeAndDimensionsRow
 
             // Window Mode Visual Cards (Exact match to reference image)
             VStack(alignment: .leading, spacing: 8) {
@@ -734,24 +735,45 @@ public struct SettingsWindowView: View {
         }
     }
 
-    private func sizeButton(preset: LauncherSizePreset, label: String, fontSize: CGFloat) -> some View {
-        let isSelected = (preferences.launcherSize == preset)
-
-        return Button {
-            preferences.launcherSize = preset
-            FloatingPanelController.shared.applySize(preset)
-        } label: {
-            Text(label)
-                .font(.system(size: fontSize, weight: isSelected ? .bold : .medium))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 4)
-                .background(
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(Color.white.opacity(isSelected ? 0.14 : 0.04))
-                )
-                .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.60))
+    private var interfaceSizeAndDimensionsRow: some View {
+        settingRow(title: "Interface Size & Launcher Dimensions", subtitle: "Unified scale and window dimensions for the floating launcher.") {
+            HStack(spacing: 6) {
+                ForEach(LauncherSizePreset.allCases) { preset in
+                    let isSelected = (preferences.launcherSize == preset)
+                    let dims = preset.dimensions
+                    Button {
+                        withAnimation(LiquidGlass.quickSpring) {
+                            preferences.launcherSize = preset
+                            FloatingPanelController.shared.applySize(preset)
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text("Aa")
+                                .font(.system(size: preset == .compact ? 11 : (preset == .comfortable ? 13 : 15), weight: isSelected ? .bold : .medium))
+                            Text(preset.rawValue)
+                                .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
+                            Text("\(Int(dims.width))×\(Int(dims.height))")
+                                .font(.system(size: 9, weight: .regular, design: .monospaced))
+                                .foregroundStyle(isSelected ? Color.white.opacity(0.70) : Color.white.opacity(0.40))
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .fill(Color.white.opacity(isSelected ? 0.16 : 0.05))
+                                .overlay {
+                                    if isSelected {
+                                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                            .strokeBorder(LiquidGlass.brandAccent.opacity(0.50), lineWidth: 1)
+                                    }
+                                }
+                        )
+                        .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.70))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
         }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Section 2: Appearance Detail View
@@ -780,24 +802,7 @@ public struct SettingsWindowView: View {
                 .frame(maxWidth: 160)
             }
 
-            settingRow(title: "Launcher Dimensions", subtitle: "Set physical width profile for the floating command bar.") {
-                HStack(spacing: 6) {
-                    ForEach(LauncherSizePreset.allCases) { preset in
-                        Button {
-                            preferences.launcherSize = preset
-                            FloatingPanelController.shared.applySize(preset)
-                        } label: {
-                            Text(preset.rawValue)
-                                .font(.system(size: 11, weight: preferences.launcherSize == preset ? .semibold : .regular))
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 4)
-                                .background(RoundedRectangle(cornerRadius: 5).fill(Color.white.opacity(preferences.launcherSize == preset ? 0.18 : 0.06)))
-                                .foregroundStyle(preferences.launcherSize == preset ? Color.white : Color.white.opacity(0.70))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
+            interfaceSizeAndDimensionsRow
 
             settingRow(title: "Specular Edge Highlight", subtitle: "1.0pt subtle continuous outer glow on window frames.") {
                 Toggle("", isOn: $preferences.showSpecularHighlight)
@@ -840,12 +845,7 @@ public struct SettingsWindowView: View {
                 .font(.system(size: 10))
                 .foregroundStyle(Color.white.opacity(0.40))
 
-            Text(keys)
-                .font(.system(size: 11, weight: .bold, design: .monospaced))
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(RoundedRectangle(cornerRadius: 4).fill(Color.white.opacity(0.12)))
-                .foregroundStyle(Color.white)
+            ShortcutKeycapView(keys, spacing: 3, fontSize: 10, minDimension: 18)
         }
         .padding(.vertical, 4)
     }

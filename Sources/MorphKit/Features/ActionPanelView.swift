@@ -338,12 +338,7 @@ public struct ActionPanelView: View {
             Spacer()
 
             if let shortcut = item.shortcut {
-                Text(shortcut)
-                    .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                    .foregroundStyle(Color.secondary)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 1.5)
-                    .background(RoundedRectangle(cornerRadius: 3).fill(Color.primary.opacity(0.06)))
+                ShortcutKeycapView(shortcut, spacing: 2.5, fontSize: 9, minDimension: 14)
             }
         }
         .padding(.horizontal, 8)

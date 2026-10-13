@@ -51,6 +51,11 @@ public final class FloatingPanelController: NSObject, NSWindowDelegate {
     }
 
     public func toggle() {
+        // When settings is open then the app should not be shown
+        if SettingsWindowController.shared.isVisible {
+            return
+        }
+
         if panel == nil {
             setupPanel()
         }
@@ -65,6 +70,11 @@ public final class FloatingPanelController: NSObject, NSWindowDelegate {
     }
 
     public func show() {
+        // When settings is open then the app should not be shown
+        if SettingsWindowController.shared.isVisible {
+            return
+        }
+
         if panel == nil {
             setupPanel()
         }

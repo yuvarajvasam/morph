@@ -16,7 +16,10 @@ public struct LauncherView: View {
     }
 
     public var body: some View {
-        VStack(spacing: 0) {
+        let dims = preferences.launcherSize.dimensions
+        let scale = preferences.launcherSize.interfaceScale
+
+        return VStack(spacing: 0) {
             // LAYER A: INTEGRATED TOP HEADER (Search Bar or Tool Navigation)
             if isToolOrResultOpen {
                 integratedToolNavigationHeader
@@ -31,8 +34,9 @@ public struct LauncherView: View {
             // LAYER C: PERSISTENT FOOTER BAR (Always visible in all modes, matching Reference Images)
             persistentFooterBar
         }
-        .frame(width: preferences.launcherSize.dimensions.width,
-               height: preferences.launcherSize.dimensions.height)
+        .frame(width: dims.width / scale, height: dims.height / scale)
+        .scaleEffect(scale)
+        .frame(width: dims.width, height: dims.height)
         .liquidGlassSurface(radius: 28)
         .animation(LiquidGlass.standardSpring, value: isToolOrResultOpen)
         .animation(LiquidGlass.quickSpring, value: viewModel.selectedCategory)
@@ -1328,32 +1332,6 @@ public struct LauncherView: View {
         }
     }
 
-    // MARK: - Keycap Badge Component (Exact representation matching Reference Images 1 & 2)
-
-    public struct KeycapBadge: View {
-        public let symbol: String
-
-        public init(_ symbol: String) {
-            self.symbol = symbol
-        }
-
-        public var body: some View {
-            Text(symbol)
-                .font(.system(size: 10, weight: .bold, design: .rounded))
-                .foregroundStyle(Color.white.opacity(0.90))
-                .frame(minWidth: 16, minHeight: 16)
-                .padding(.horizontal, symbol.count > 1 ? 4 : 2)
-                .padding(.vertical, 1)
-                .background(
-                    RoundedRectangle(cornerRadius: 3.5, style: .continuous)
-                        .fill(Color.white.opacity(0.12))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 3.5, style: .continuous)
-                                .strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5)
-                        }
-                )
-        }
-    }
 
     // MARK: - Persistent Footer Bar (Exact Representation from Reference Images 1, 2, 3, 4)
 

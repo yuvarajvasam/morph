@@ -36,9 +36,46 @@ public enum LauncherSizePreset: String, CaseIterable, Identifiable {
     public var dimensions: (width: CGFloat, height: CGFloat) {
         switch self {
         case .compact: return (620, 500)
-        case .comfortable: return (680, 560)
-        case .large: return (760, 640)
+        case .comfortable: return (700, 580)
+        case .large: return (780, 660)
         }
+    }
+
+    public var interfaceScale: CGFloat {
+        switch self {
+        case .compact: return 0.92
+        case .comfortable: return 1.00
+        case .large: return 1.08
+        }
+    }
+
+    public var iconSize: CGFloat {
+        switch self {
+        case .compact: return 44
+        case .comfortable: return 50
+        case .large: return 56
+        }
+    }
+
+    public var topShelfIconSize: CGFloat {
+        switch self {
+        case .compact: return 42
+        case .comfortable: return 48
+        case .large: return 54
+        }
+    }
+
+    public var fontOffset: CGFloat {
+        switch self {
+        case .compact: return -1.0
+        case .comfortable: return 0.0
+        case .large: return 1.5
+        }
+    }
+
+    public var dimensionsSummary: String {
+        let (w, h) = dimensions
+        return "\(Int(w)) × \(Int(h)) pt"
     }
 }
 
@@ -148,6 +185,9 @@ public final class PreferencesManager: ObservableObject {
     @Published public var launcherSize: LauncherSizePreset {
         didSet {
             defaults.set(launcherSize.rawValue, forKey: "launcherSize")
+            DispatchQueue.main.async {
+                FloatingPanelController.shared.applySize(self.launcherSize)
+            }
         }
     }
 
