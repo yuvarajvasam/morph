@@ -547,7 +547,40 @@ assertCondition(barcodeCG.width > 0 && barcodeCG.height > 0, "Barcode CGImage mu
 
 print("  ✔ QRCodeEngine tests passed.")
 
-print("\n🎉 ALL TESTS PASSED SUCCESSFULLY! (100% Core Engine, Archive, QR, Settings & Safety Verified)")
+// MARK: - 9. Incompatible File Format & Tool Validation
+print("\n[9/9] Verifying File Format & Tool Incompatibility Validation...")
+await MainActor.run {
+    let vmTest = LauncherViewModel()
+    let dummyPDF = URL(fileURLWithPath: "/tmp/sample_doc.pdf")
+    let dummyJPG = URL(fileURLWithPath: "/tmp/sample_photo.jpg")
+
+    guard let imgCmd = vmTest.registry.command(id: "image.compress"),
+          let pdfCmd = vmTest.registry.command(id: "pdf.compress") else {
+        fatalError("Required test commands not found")
+    }
+
+    // 9a. Verify command supports(url:)
+    assertCondition(!imgCmd.supports(url: dummyPDF), "image.compress must NOT support .pdf file")
+    assertCondition(imgCmd.supports(url: dummyJPG), "image.compress must support .jpg file")
+    assertCondition(pdfCmd.supports(url: dummyPDF), "pdf.compress must support .pdf file")
+    assertCondition(!pdfCmd.supports(url: dummyJPG), "pdf.compress must NOT support .jpg file")
+
+    // 9b. Load incompatible file into active image tool
+    vmTest.activeCommand = imgCmd
+    vmTest.handleDroppedURLs([dummyPDF])
+
+    assertCondition(vmTest.unsupportedFileNotice != nil, "unsupportedFileNotice must be non-nil when PDF loaded in image tool")
+    assertCondition(vmTest.unsupportedFileNotice?.contains(".pdf") == true, "unsupportedFileNotice must mention .pdf format")
+    assertCondition(vmTest.unsupportedFileNotice?.contains("Compress Image") == true, "unsupportedFileNotice must mention Compress Image tool")
+    assertCondition(vmTest.errorMessage != nil, "errorMessage must be set when incompatible file is dropped")
+
+    // 9c. Verify alternative appropriate tools are recommended
+    let altTools = vmTest.suggestedAlternativeCommands
+    assertCondition(altTools.contains(where: { $0.id == "pdf.compress" }), "Suggested alternatives must include pdf.compress for a PDF file")
+}
+print("  ✔ File format incompatibility validation passed.")
+
+print("\n🎉 ALL TESTS PASSED SUCCESSFULLY! (100% Core Engine, Archive, QR, Settings & Incompatibility Safety Verified)")
 
 // Real-World Live Conversions
 try await runRealWorldVerification()

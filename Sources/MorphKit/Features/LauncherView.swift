@@ -397,15 +397,19 @@ public struct LauncherView: View {
             if activeCmd.category == .qrBarcode && (activeCmd.id == "qr.generate" || activeCmd.id == "barcode.generate") {
                 QRCodeOperationsView(viewModel: viewModel)
             } else if !viewModel.droppedFiles.isEmpty {
-                switch activeCmd.category {
-                case .image:
-                    ImageOperationsView(viewModel: viewModel)
-                case .pdf:
-                    PDFOperationsView(viewModel: viewModel)
-                case .archive:
-                    ArchiveOperationsView(viewModel: viewModel)
-                case .qrBarcode:
-                    QRCodeOperationsView(viewModel: viewModel)
+                if let unsupportedNotice = viewModel.unsupportedFileNotice {
+                    incompatibleFileView(command: activeCmd, notice: unsupportedNotice)
+                } else {
+                    switch activeCmd.category {
+                    case .image:
+                        ImageOperationsView(viewModel: viewModel)
+                    case .pdf:
+                        PDFOperationsView(viewModel: viewModel)
+                    case .archive:
+                        ArchiveOperationsView(viewModel: viewModel)
+                    case .qrBarcode:
+                        QRCodeOperationsView(viewModel: viewModel)
+                    }
                 }
             } else {
                 toolEmptyDropTargetView(command: activeCmd)
@@ -1020,6 +1024,163 @@ public struct LauncherView: View {
         }
     }
 
+    // MARK: - Incompatible File Format View
+
+    private func incompatibleFileView(command: ConversionCommand, notice: String) -> some View {
+        VStack(spacing: 0) {
+            Spacer()
+
+            VStack(spacing: LiquidGlass.spaceLG) {
+                // Incompatible badge with warning emblem
+                ZStack {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.orange.opacity(0.20), Color.red.opacity(0.15)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 72, height: 72)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .strokeBorder(Color.orange.opacity(0.35), lineWidth: 1)
+                        )
+
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 32, weight: .semibold))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color(red: 255/255, green: 179/255, blue: 64/255), Color(red: 255/255, green: 105/255, blue: 60/255)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .shadow(color: Color.orange.opacity(0.4), radius: 6, x: 0, y: 2)
+                }
+
+                VStack(spacing: 8) {
+                    Text("File Format Not Supported")
+                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.white)
+
+                    Text(notice)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(Color.white.opacity(0.85))
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: 420)
+                }
+
+                // Supported Formats Pill Row
+                if !command.supportedExtensions.isEmpty {
+                    VStack(spacing: 6) {
+                        Text("SUPPORTED FORMATS FOR \(command.title.uppercased())")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(Color.white.opacity(0.45))
+                            .tracking(0.5)
+
+                        HStack(spacing: 6) {
+                            ForEach(Array(command.supportedExtensions.sorted()), id: \.self) { ext in
+                                Text(ext.uppercased())
+                                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                                    .foregroundStyle(Color.white.opacity(0.90))
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 3.5)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                            .fill(Color.white.opacity(0.08))
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                            .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.5)
+                                    )
+                            }
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+
+                // Recommended alternative tools for the dropped file
+                let alternatives = viewModel.suggestedAlternativeCommands
+                if !alternatives.isEmpty {
+                    VStack(spacing: 8) {
+                        Text("SUGGESTED TOOLS FOR THIS FILE")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(LiquidGlass.brandAccent.opacity(0.85))
+                            .tracking(0.5)
+
+                        HStack(spacing: 8) {
+                            ForEach(Array(alternatives.prefix(3)), id: \.id) { altCmd in
+                                Button {
+                                    withAnimation(LiquidGlass.standardSpring) {
+                                        viewModel.selectCommand(altCmd, promptForFilesIfEmpty: false)
+                                    }
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: altCmd.systemIcon)
+                                            .font(.system(size: 11, weight: .medium))
+                                        Text(altCmd.title)
+                                            .font(.system(size: 12, weight: .medium))
+                                    }
+                                    .foregroundStyle(Color.white)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                            .fill(Color.white.opacity(0.08))
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                            .strokeBorder(Color.white.opacity(0.15), lineWidth: 0.8)
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                    .padding(.top, 4)
+                }
+
+                // Action buttons
+                HStack(spacing: LiquidGlass.spaceMD) {
+                    GlassButton("Choose Different File...", icon: "folder", shortcutBadge: "⌘O", variant: .primary, size: .regular) {
+                        viewModel.openFilePicker()
+                    }
+
+                    GlassButton("Clear File", icon: "xmark.circle", shortcutBadge: "⎋", variant: .secondary, size: .regular) {
+                        withAnimation(LiquidGlass.standardSpring) {
+                            viewModel.droppedFiles = []
+                            viewModel.errorMessage = nil
+                        }
+                    }
+                }
+                .padding(.top, 6)
+            }
+            .frame(maxWidth: 500)
+            .padding(.vertical, 28)
+            .padding(.horizontal, 28)
+            .background(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(Color.black.opacity(0.28))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [Color.orange.opacity(0.35), Color.red.opacity(0.20)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            )
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(LiquidGlass.spaceXL)
+    }
+
     // MARK: - File Dropped Contextual View
 
     private var fileDroppedContextualView: some View {
@@ -1222,11 +1383,17 @@ public struct LauncherView: View {
             executePrimaryAction()
         } label: {
             HStack(spacing: 5) {
+                if viewModel.unsupportedFileNotice != nil {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(Color.orange)
+                }
+
                 Text(primaryActionTitle)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Color.white.opacity(0.88))
+                    .foregroundStyle(viewModel.unsupportedFileNotice != nil ? Color.orange.opacity(0.95) : Color.white.opacity(0.88))
 
-                if viewModel.activeCommand != nil {
+                if viewModel.activeCommand != nil && viewModel.unsupportedFileNotice == nil {
                     KeycapBadge("⌘")
                     KeycapBadge("↩")
                 } else {
@@ -1237,18 +1404,22 @@ public struct LauncherView: View {
             .padding(.vertical, 5)
             .background(
                 Capsule()
-                    .fill(Color.white.opacity(0.08))
+                    .fill(viewModel.unsupportedFileNotice != nil ? Color.orange.opacity(0.12) : Color.white.opacity(0.08))
                     .overlay {
-                        Capsule().strokeBorder(Color.white.opacity(0.06), lineWidth: 0.5)
+                        Capsule().strokeBorder(viewModel.unsupportedFileNotice != nil ? Color.orange.opacity(0.32) : Color.white.opacity(0.06), lineWidth: 0.5)
                     }
             )
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
+        .disabled(viewModel.unsupportedFileNotice != nil)
     }
 
     private var primaryActionTitle: String {
         if let cmd = viewModel.activeCommand {
+            if viewModel.unsupportedFileNotice != nil {
+                return "Unsupported Format"
+            }
             switch cmd.id {
             case "image.compress": return "Compress Image"
             case "image.convert": return "Convert Image"
@@ -1277,7 +1448,12 @@ public struct LauncherView: View {
     }
 
     private func executePrimaryAction() {
-        if viewModel.activeCommand != nil {
+        if let cmd = viewModel.activeCommand {
+            if let notice = viewModel.unsupportedFileNotice {
+                viewModel.errorMessage = "\(notice) Supported formats: \(cmd.supportedFormatsDescription)."
+                SoundEffectManager.shared.playError()
+                return
+            }
             Task {
                 await viewModel.runActiveCommand()
             }

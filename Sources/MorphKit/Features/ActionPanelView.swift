@@ -47,16 +47,30 @@ public struct ActionPanelView: View {
 
         // Primary Action
         if let activeCmd = viewModel.activeCommand {
-            items.append(ActionItem(
-                title: "Run \(activeCmd.title)",
-                systemIcon: "play.fill",
-                shortcut: "↩",
-                section: "Primary Action",
-                perform: {
-                    onDismiss()
-                    Task { await viewModel.executeCurrentOperation() }
-                }
-            ))
+            if let notice = viewModel.unsupportedFileNotice {
+                items.append(ActionItem(
+                    title: "File Format Not Supported",
+                    systemIcon: "exclamationmark.triangle.fill",
+                    shortcut: nil,
+                    section: "Primary Action",
+                    perform: {
+                        onDismiss()
+                        viewModel.errorMessage = "\(notice) Supported formats: \(activeCmd.supportedFormatsDescription)."
+                        SoundEffectManager.shared.playError()
+                    }
+                ))
+            } else {
+                items.append(ActionItem(
+                    title: "Run \(activeCmd.title)",
+                    systemIcon: "play.fill",
+                    shortcut: "↩",
+                    section: "Primary Action",
+                    perform: {
+                        onDismiss()
+                        Task { await viewModel.executeCurrentOperation() }
+                    }
+                ))
+            }
         } else if let selectedCmd = viewModel.selectedCommandForActions {
             items.append(ActionItem(
                 title: "Select \(selectedCmd.title)",

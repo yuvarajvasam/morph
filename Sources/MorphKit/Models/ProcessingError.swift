@@ -4,6 +4,7 @@ public enum ProcessingError: LocalizedError, Sendable, Equatable {
     case fileNotFound(URL)
     case unreadableFile(URL)
     case unsupportedFormat(String)
+    case unsupportedFormatForTool(format: String, tool: String, supported: String)
     case invalidDimensions
     case invalidPageRange(String)
     case compressionFailed(String)
@@ -24,6 +25,8 @@ public enum ProcessingError: LocalizedError, Sendable, Equatable {
             return "Unable to read file: \(url.lastPathComponent). Please check permissions."
         case .unsupportedFormat(let ext):
             return "Unsupported format: .\(ext). Supported formats are JPEG, PNG, HEIC, WebP, and PDF."
+        case .unsupportedFormatForTool(let format, let tool, let supported):
+            return "\(format) file format is not supported for \(tool). Supported formats: \(supported)."
         case .invalidDimensions:
             return "Invalid target dimensions. Width and height must be greater than zero."
         case .invalidPageRange(let range):

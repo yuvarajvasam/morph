@@ -114,6 +114,12 @@ public func runVisualVerification() async throws {
     vmLauncherHover.isTargetedForDrop = true
     render(LauncherView(viewModel: vmLauncherHover), filename: "13_launcher_drag_hover_state.png")
 
+    // 6e. Incompatible File Format State (e.g. PDF selected for Compress Image)
+    let vmIncompatible = LauncherViewModel()
+    vmIncompatible.activeCommand = registry.allCommands.first(where: { $0.id == "image.compress" })
+    vmIncompatible.handleDroppedURLs([samplePDFURL])
+    render(LauncherView(viewModel: vmIncompatible), filename: "14_incompatible_file_format_notice.png")
+
     // 7. PDF Operations Tool Screen (Compress)
     let vmPDF = LauncherViewModel()
     vmPDF.handleDroppedURLs([samplePDFURL])

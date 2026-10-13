@@ -211,10 +211,47 @@ public final class LauncherViewModel: ObservableObject {
         selectCommand(commands[selectedIndex])
     }
 
+    // MARK: - File Format Compatibility & Validation
+
+    /// Returns a message mentioning that the selected file format is not supported for the active tool.
+    public var unsupportedFileNotice: String? {
+        guard let command = activeCommand, !droppedFiles.isEmpty else { return nil }
+        let unsupportedFiles = droppedFiles.filter { !command.supports(file: $0) }
+        guard let firstUnsupported = unsupportedFiles.first else { return nil }
+
+        let ext = firstUnsupported.url.pathExtension.isEmpty
+            ? firstUnsupported.formatName.uppercased()
+            : ".\(firstUnsupported.url.pathExtension.lowercased())"
+
+        return "\(ext) file format is not supported for \(command.title)."
+    }
+
+    /// Returns the list of unsupported files for the active command.
+    public var unsupportedFilesForActiveCommand: [FileItem] {
+        guard let command = activeCommand else { return [] }
+        return droppedFiles.filter { !command.supports(file: $0) }
+    }
+
+    /// Returns suggested alternative tools for the currently dropped files if they are incompatible with the active command.
+    public var suggestedAlternativeCommands: [ConversionCommand] {
+        guard !droppedFiles.isEmpty else { return [] }
+        let allSuggestions = registry.suggestedCommands(for: droppedFiles.map { $0.url })
+        return allSuggestions.filter { $0.id != activeCommand?.id }
+    }
+
     public func selectCommand(_ command: ConversionCommand, promptForFilesIfEmpty: Bool = true) {
         self.activeCommand = command
         self.currentResult = nil
         self.errorMessage = nil
+
+        // Check if existing dropped files are unsupported by newly selected command
+        if !droppedFiles.isEmpty {
+            let unsupported = droppedFiles.filter { !command.supports(file: $0) }
+            if let first = unsupported.first {
+                let ext = first.url.pathExtension.isEmpty ? first.formatName.uppercased() : ".\(first.url.pathExtension.lowercased())"
+                self.errorMessage = "\(ext) file format is not supported for \(command.title). Supported formats: \(command.supportedFormatsDescription)."
+            }
+        }
 
         // Initialize PDF reorder list if needed
         if let first = droppedFiles.first, let pageCount = first.pageCount, command.id == "pdf.reorderPages" {
@@ -294,6 +331,15 @@ public final class LauncherViewModel: ObservableObject {
         self.droppedFiles = inspected
         self.selectedIndex = 0
         self.errorMessage = nil
+
+        // If an active command is already chosen, validate file support immediately
+        if let activeCmd = activeCommand {
+            let unsupported = inspected.filter { !activeCmd.supports(file: $0) }
+            if let first = unsupported.first {
+                let ext = first.url.pathExtension.isEmpty ? first.formatName.uppercased() : ".\(first.url.pathExtension.lowercased())"
+                self.errorMessage = "\(ext) file format is not supported for \(activeCmd.title). Supported formats: \(activeCmd.supportedFormatsDescription)."
+            }
+        }
 
         // Initialize PDF page helpers if applicable
         if let first = inspected.first, let count = first.pageCount {
@@ -390,6 +436,13 @@ public final class LauncherViewModel: ObservableObject {
     public func runActiveCommand() async {
         guard let command = activeCommand, (!droppedFiles.isEmpty || command.id == "qr.generate" || command.id == "barcode.generate") else {
             errorMessage = "Please select an operation and at least one file."
+            SoundEffectManager.shared.playError()
+            return
+        }
+
+        // Validate that input files are supported for this tool
+        if let notice = unsupportedFileNotice {
+            errorMessage = "\(notice) Supported formats: \(command.supportedFormatsDescription)."
             SoundEffectManager.shared.playError()
             return
         }

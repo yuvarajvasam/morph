@@ -104,4 +104,46 @@ public struct ConversionCommand: Identifiable, Sendable, Equatable {
 
         return allTokensMatch
     }
+
+    /// Returns true if this command supports the given file URL.
+    public func supports(url: URL) -> Bool {
+        var isDir: ObjCBool = false
+        if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir), isDir.boolValue {
+            return id == "archive.compress"
+        }
+
+        if supportedExtensions.isEmpty {
+            // Commands that accept anything (archive.compress) or don't require files (qr.generate)
+            return true
+        }
+
+        let ext = url.pathExtension.lowercased()
+        if supportedExtensions.contains(ext) {
+            return true
+        }
+
+        let name = url.lastPathComponent.lowercased()
+        for supported in supportedExtensions {
+            if name.hasSuffix(".\(supported)") {
+                return true
+            }
+        }
+        return false
+    }
+
+    /// Returns true if this command supports the given FileItem.
+    public func supports(file: FileItem) -> Bool {
+        supports(url: file.url)
+    }
+
+    /// User-facing string of supported formats, e.g. "JPG, PNG, HEIC, WEBP, TIFF"
+    public var supportedFormatsDescription: String {
+        if supportedExtensions.isEmpty {
+            return "all file formats"
+        }
+        return supportedExtensions
+            .map { $0.uppercased() }
+            .sorted()
+            .joined(separator: ", ")
+    }
 }
