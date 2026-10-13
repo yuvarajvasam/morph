@@ -93,10 +93,21 @@ public func runVisualVerification() async throws {
     vmImage.activeCommand = registry.allCommands.first(where: { $0.id == "image.compress" })
     render(LauncherView(viewModel: vmImage), filename: "06_image_compression_tool.png")
 
-    // 6b. Tool Empty Drop Target Screen (Matching User Reference Image 2)
+    // 6b. Tool Empty Drop Target Screen (Matching User's "Create Archive" Drag and Drop screen)
     let vmEmptyTool = LauncherViewModel()
-    vmEmptyTool.activeCommand = registry.allCommands.first(where: { $0.id == "image.resize" })
+    vmEmptyTool.activeCommand = registry.allCommands.first(where: { $0.id == "archive.compress" })
     render(LauncherView(viewModel: vmEmptyTool), filename: "11_tool_empty_drop_state.png")
+
+    // 6c. Tool Active Drag & Drop Hover State (with isTargetedForDrop = true)
+    let vmDropHover = LauncherViewModel()
+    vmDropHover.activeCommand = registry.allCommands.first(where: { $0.id == "archive.compress" })
+    vmDropHover.isTargetedForDrop = true
+    render(LauncherView(viewModel: vmDropHover), filename: "12_tool_drop_hover_state.png")
+
+    // 6d. Main Launcher Active Drag & Drop Hover State
+    let vmLauncherHover = LauncherViewModel()
+    vmLauncherHover.isTargetedForDrop = true
+    render(LauncherView(viewModel: vmLauncherHover), filename: "13_launcher_drag_hover_state.png")
 
     // 7. PDF Operations Tool Screen (Compress)
     let vmPDF = LauncherViewModel()

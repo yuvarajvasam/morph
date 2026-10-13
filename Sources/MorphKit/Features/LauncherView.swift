@@ -55,20 +55,53 @@ public struct LauncherView: View {
         }
         .overlay {
             if viewModel.isTargetedForDrop {
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
-                    .strokeBorder(LiquidGlass.brandAccent, lineWidth: 2.5)
-                    .background(LiquidGlass.brandAccent.opacity(0.12))
-                    .overlay {
-                        VStack(spacing: LiquidGlass.spaceSM) {
-                            Image(systemName: "arrow.down.doc.fill")
-                                .font(.system(size: 42))
-                                .foregroundStyle(LiquidGlass.brandAccent)
-                            Text("Drag and drop files to inspect & process with Morph")
-                                .font(.system(size: 15, weight: .semibold))
-                                .foregroundStyle(Color.white)
+                ZStack {
+                    // Frosted ambient overlay
+                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        .fill(Color.black.opacity(viewModel.activeCommand == nil ? 0.65 : 0.25))
+
+                    // Accent glowing border around entire launcher window
+                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        .strokeBorder(LiquidGlass.brandAccent, lineWidth: 2.5)
+
+                    // Hero drop visual (shown on main discovery view)
+                    if viewModel.activeCommand == nil {
+                        VStack(spacing: 16) {
+                            ZStack {
+                                Circle()
+                                    .fill(LiquidGlass.brandAccent.opacity(0.20))
+                                    .frame(width: 76, height: 76)
+
+                                Image(systemName: "arrow.down.doc.fill")
+                                    .font(.system(size: 36))
+                                    .foregroundStyle(LiquidGlass.brandAccent)
+                            }
+
+                            VStack(spacing: 6) {
+                                Text("Drop Files to Morph")
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundStyle(Color.white)
+
+                                Text("Inspect, compress, convert, or batch process instantly")
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(Color.white.opacity(0.70))
+                            }
                         }
+                        .padding(.vertical, 28)
+                        .padding(.horizontal, 36)
+                        .background(
+                            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                .fill(Color(red: 20 / 255, green: 24 / 255, blue: 28 / 255).opacity(0.94))
+                                .shadow(color: Color.black.opacity(0.6), radius: 24, y: 10)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                .strokeBorder(LiquidGlass.brandAccent.opacity(0.65), style: StrokeStyle(lineWidth: 1.5, dash: [8, 6]))
+                        )
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+                .allowsHitTesting(false)
             }
         }
         .overlay(alignment: .top) {
@@ -597,35 +630,82 @@ public struct LauncherView: View {
     // MARK: - Tool Empty Drop Target View
 
     private func toolEmptyDropTargetView(command: ConversionCommand) -> some View {
-        VStack(spacing: LiquidGlass.spaceLG) {
+        VStack(spacing: 0) {
             Spacer()
 
-            ToolSquircleIcon(command: command, size: 64, cornerRadius: 16)
+            // Visual Drag & Drop Target Card
+            VStack(spacing: LiquidGlass.spaceLG) {
+                // Drop Icon with subtle drop target badge
+                ZStack {
+                    ToolSquircleIcon(command: command, size: 72, cornerRadius: 18)
 
-            VStack(spacing: 4) {
-                Text("Drag and drop a file for \(command.title)")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Color.white)
-
-                Text(dropPromptDescription(for: command))
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color.white.opacity(0.65))
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: 380)
-            }
-
-            HStack(spacing: LiquidGlass.spaceMD) {
-                GlassButton("Choose File...", icon: "folder", shortcutBadge: "⌘O", variant: .primary, size: .regular) {
-                    viewModel.openFilePicker()
+                    // Small drop overlay badge
+                    Image(systemName: "arrow.down.circle.fill")
+                        .font(.system(size: 24))
+                        .foregroundStyle(Color.white, LiquidGlass.brandAccent)
+                        .background(Circle().fill(Color.black.opacity(0.4)).frame(width: 22, height: 22))
+                        .offset(x: 28, y: 28)
+                        .shadow(color: Color.black.opacity(0.4), radius: 4)
                 }
 
-                GlassButton("Cancel", shortcutBadge: "⎋", variant: .secondary, size: .regular) {
-                    withAnimation(LiquidGlass.standardSpring) {
-                        viewModel.goBack()
+                VStack(spacing: 6) {
+                    Text("Drag and drop a file for \(command.title)")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Color.white)
+
+                    Text(dropPromptDescription(for: command))
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(Color.white.opacity(0.65))
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: 360)
+                }
+
+                // Visual "or" divider
+                HStack(spacing: 12) {
+                    Rectangle()
+                        .fill(Color.white.opacity(0.12))
+                        .frame(height: 1)
+                        .frame(maxWidth: 80)
+
+                    Text("or")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(Color.white.opacity(0.40))
+
+                    Rectangle()
+                        .fill(Color.white.opacity(0.12))
+                        .frame(height: 1)
+                        .frame(maxWidth: 80)
+                }
+                .padding(.vertical, 2)
+
+                HStack(spacing: LiquidGlass.spaceMD) {
+                    GlassButton("Choose File...", icon: "folder", shortcutBadge: "⌘O", variant: .primary, size: .regular) {
+                        viewModel.openFilePicker()
+                    }
+
+                    GlassButton("Cancel", shortcutBadge: "⎋", variant: .secondary, size: .regular) {
+                        withAnimation(LiquidGlass.standardSpring) {
+                            viewModel.goBack()
+                        }
                     }
                 }
             }
-            .padding(.top, 4)
+            .frame(maxWidth: 480)
+            .padding(.vertical, 32)
+            .padding(.horizontal, 28)
+            .background(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(viewModel.isTargetedForDrop ? LiquidGlass.brandAccent.opacity(0.12) : Color.white.opacity(0.03))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .strokeBorder(
+                        viewModel.isTargetedForDrop ? LiquidGlass.brandAccent : Color.white.opacity(0.16),
+                        style: StrokeStyle(lineWidth: viewModel.isTargetedForDrop ? 2 : 1.5, dash: [7, 5])
+                    )
+            )
+            .scaleEffect(viewModel.isTargetedForDrop ? 1.02 : 1.0)
+            .animation(LiquidGlass.quickSpring, value: viewModel.isTargetedForDrop)
 
             Spacer()
         }
