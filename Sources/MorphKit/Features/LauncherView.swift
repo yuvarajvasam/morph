@@ -69,27 +69,6 @@ public struct LauncherView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
             }
         }
-        .overlay {
-            // Raycast Contextual Action Panel (⌘K)
-            if viewModel.isShowingActionPanel {
-                ZStack {
-                    Color.black.opacity(0.40)
-                        .ignoresSafeArea()
-                        .onTapGesture {
-                            withAnimation(LiquidGlass.quickSpring) {
-                                viewModel.isShowingActionPanel = false
-                            }
-                        }
-
-                    ActionPanelView(viewModel: viewModel) {
-                        withAnimation(LiquidGlass.quickSpring) {
-                            viewModel.isShowingActionPanel = false
-                        }
-                    }
-                }
-                .transition(.opacity.combined(with: .scale(scale: 0.97)))
-            }
-        }
         .overlay(alignment: .top) {
             // Transient Toast status (e.g. "Path Copied")
             if let msg = viewModel.copyStatusMessage {
@@ -238,14 +217,6 @@ public struct LauncherView: View {
             }
 
             Divider()
-
-            Button {
-                withAnimation(LiquidGlass.quickSpring) {
-                    viewModel.isShowingActionPanel = true
-                }
-            } label: {
-                Label("Actions Palette (⌘K)", systemImage: "command")
-            }
 
             Button {
                 viewModel.openFilePicker()
@@ -478,24 +449,15 @@ public struct LauncherView: View {
 
     private func listCommandRow(index: Int, command: ConversionCommand) -> some View {
         let isSelected = (index == viewModel.selectedIndex)
-        let isFavorite = viewModel.preferences.isFavorite(id: command.id)
 
         return HStack(spacing: 12) {
             // Compact Squircle icon matching app style
             ToolSquircleIcon(command: command, size: 30, cornerRadius: 7.5)
 
             VStack(alignment: .leading, spacing: 1.5) {
-                HStack(spacing: 6) {
-                    Text(command.title)
-                        .font(.system(size: 13, weight: isSelected ? .semibold : .medium))
-                        .foregroundStyle(Color.white)
-
-                    if isFavorite {
-                        Image(systemName: "star.fill")
-                            .font(.system(size: 9))
-                            .foregroundStyle(Color.yellow)
-                    }
-                }
+                Text(command.title)
+                    .font(.system(size: 13, weight: isSelected ? .semibold : .medium))
+                    .foregroundStyle(Color.white)
 
                 Text(command.subtitle)
                     .font(.system(size: 11))
@@ -550,13 +512,26 @@ public struct LauncherView: View {
             } else {
                 ScrollViewReader { proxy in
                     ScrollView {
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(minimum: 68, maximum: 92), spacing: 8), count: 7), spacing: 14) {
-                            ForEach(Array(commands.enumerated()), id: \.element.id) { index, command in
-                                gridCommandCell(index: index, command: command)
+                        VStack(spacing: 8) {
+                            // Top Shelf (Most Used Apps) in Grid Mode
+                            if viewModel.searchQuery.isEmpty && viewModel.selectedCategory == nil && viewModel.droppedFiles.isEmpty {
+                                topShelfView
+                                    .padding(.top, 2)
+                                    .padding(.bottom, 6)
+
+                                Divider()
+                                    .overlay(Color.white.opacity(0.08))
+                                    .padding(.horizontal, 16)
                             }
+
+                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(minimum: 68, maximum: 92), spacing: 8), count: 7), spacing: 14) {
+                                ForEach(Array(commands.enumerated()), id: \.element.id) { index, command in
+                                    gridCommandCell(index: index, command: command)
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 4)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
                     }
                     .scrollIndicators(.hidden)
                     .onChange(of: viewModel.selectedIndex) { _, newIndex in
@@ -858,59 +833,37 @@ public struct LauncherView: View {
         .fixedSize()
     }
 
-    // MARK: - Bottom Right Actions Pill (Matching Reference Images 1, 2)
+    // MARK: - Bottom Right Primary Action Pill
 
     @ViewBuilder
     private var bottomRightActionsPill: some View {
-        HStack(spacing: 12) {
-            // Primary Action Button (e.g. "Toggle Todo ↩", "Compress Image ⌘ ↩", "Select ↩")
-            Button {
-                executePrimaryAction()
-            } label: {
-                HStack(spacing: 5) {
-                    Text(primaryActionTitle)
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(Color.white.opacity(0.88))
+        Button {
+            executePrimaryAction()
+        } label: {
+            HStack(spacing: 5) {
+                Text(primaryActionTitle)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Color.white.opacity(0.88))
 
-                    if viewModel.activeCommand != nil {
-                        KeycapBadge("⌘")
-                        KeycapBadge("↩")
-                    } else {
-                        KeycapBadge("↩")
-                    }
+                if viewModel.activeCommand != nil {
+                    KeycapBadge("⌘")
+                    KeycapBadge("↩")
+                } else {
+                    KeycapBadge("↩")
                 }
             }
-            .buttonStyle(.plain)
-
-            // Actions Palette Shortcut (Actions ⌘ K)
-            Button {
-                withAnimation(LiquidGlass.quickSpring) {
-                    viewModel.isShowingActionPanel.toggle()
-                }
-            } label: {
-                HStack(spacing: 5) {
-                    Text("Actions")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(Color.white.opacity(0.88))
-
-                    HStack(spacing: 2) {
-                        KeycapBadge("⌘")
-                        KeycapBadge("K")
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(
+                Capsule()
+                    .fill(Color.white.opacity(0.08))
+                    .overlay {
+                        Capsule().strokeBorder(Color.white.opacity(0.06), lineWidth: 0.5)
                     }
-                }
-            }
-            .buttonStyle(.plain)
-            .help("Actions Palette (⌘K)")
+            )
+            .contentShape(Capsule())
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .background(
-            Capsule()
-                .fill(Color.white.opacity(0.08))
-                .overlay {
-                    Capsule().strokeBorder(Color.white.opacity(0.06), lineWidth: 0.5)
-                }
-        )
+        .buttonStyle(.plain)
     }
 
     private var primaryActionTitle: String {

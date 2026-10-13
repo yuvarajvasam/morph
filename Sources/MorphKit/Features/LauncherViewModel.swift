@@ -118,20 +118,30 @@ public final class LauncherViewModel: ObservableObject {
             return suggestions
         }
 
-        if let category = selectedCategory, searchQuery.isEmpty {
-            return registry.allCommands.filter { $0.category == category }
+        let baseCommands: [ConversionCommand]
+        if let category = selectedCategory {
+            baseCommands = registry.allCommands.filter { $0.matches(category: category) }
+        } else {
+            baseCommands = registry.allCommands
         }
 
-        return registry.search(query: searchQuery)
+        if searchQuery.isEmpty {
+            return baseCommands
+        } else {
+            let searched = registry.search(query: searchQuery)
+            return baseCommands.filter { cmd in searched.contains(where: { $0.id == cmd.id }) }
+        }
     }
 
     public var topShelfCommands: [ConversionCommand] {
         let defaultIDs = ["image.compress", "image.convert", "pdf.merge", "archive.compress", "qr.generate"]
-        let userFavorites = favoriteCommands
-        if userFavorites.count >= 5 {
-            return Array(userFavorites.prefix(5))
+        var list: [ConversionCommand] = []
+        for cmd in recentCommands {
+            if !list.contains(where: { $0.id == cmd.id }) {
+                list.append(cmd)
+            }
+            if list.count == 5 { break }
         }
-        var list = userFavorites
         for id in defaultIDs {
             if !list.contains(where: { $0.id == id }), let cmd = registry.command(id: id) {
                 list.append(cmd)

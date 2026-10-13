@@ -67,6 +67,13 @@ public struct ConversionCommand: Identifiable, Sendable, Equatable {
         self.supportsMultipleFiles = supportsMultipleFiles
     }
 
+    public func matches(category: ConversionCategory) -> Bool {
+        if self.category == category { return true }
+        if category == .image && (id == "image.toPDF" || id == "pdf.toImage") { return true }
+        if category == .pdf && id == "image.toPDF" { return true }
+        return false
+    }
+
     public func matches(query: String) -> Bool {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         if trimmed.isEmpty { return true }

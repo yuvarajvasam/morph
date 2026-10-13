@@ -147,22 +147,6 @@ public final class FloatingPanelController: NSObject, NSWindowDelegate {
                 }
             }
 
-            // Command + K (Toggle Raycast Action Panel)
-            if event.modifierFlags.contains(.command) && event.charactersIgnoringModifiers == "k" {
-                withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
-                    self.viewModel.isShowingActionPanel.toggle()
-                }
-                return nil
-            }
-
-            // Command + D (Toggle Favorite)
-            if event.modifierFlags.contains(.command) && event.charactersIgnoringModifiers == "d" {
-                if let cmd = self.viewModel.selectedCommandForActions {
-                    self.viewModel.preferences.toggleFavorite(id: cmd.id)
-                    return nil
-                }
-            }
-
             // Option + Command + C (Copy File Path)
             if event.modifierFlags.contains([.command, .option]) && event.charactersIgnoringModifiers == "c" {
                 let targetURL = self.viewModel.currentResult?.primaryOutputURL ?? self.viewModel.droppedFiles.first?.url

@@ -82,11 +82,10 @@ public func runVisualVerification() async throws {
     vmDrop.handleDroppedURLs([samplePhotoURL])
     render(LauncherView(viewModel: vmDrop), filename: "04_launcher_dropped_file.png")
 
-    // 5. Contextual Action Panel (⌘K)
-    let vmAction = LauncherViewModel()
-    vmAction.handleDroppedURLs([samplePhotoURL])
-    vmAction.isShowingActionPanel = true
-    render(LauncherView(viewModel: vmAction), filename: "05_launcher_action_panel.png")
+    // 5. Category Selection Mode (Images Category with Respective Tools)
+    let vmCat = LauncherViewModel()
+    vmCat.selectedCategory = .image
+    render(LauncherView(viewModel: vmCat), filename: "05_launcher_category_images.png")
 
     // 6. Image Compression Tool Screen
     let vmImage = LauncherViewModel()

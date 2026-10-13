@@ -654,16 +654,6 @@ public struct SettingsWindowView: View {
                 .padding(.top, 4)
             }
             .padding(.top, 6)
-
-            settingRow(title: "Show Favorites in Compact Mode", subtitle: "Show your favorites as icons in the compact window") {
-                Toggle("", isOn: Binding(
-                    get: { preferences.viewMode == .list },
-                    set: { isCompact in preferences.viewMode = isCompact ? .list : .grid }
-                ))
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .tint(LiquidGlass.brandAccent)
-            }
         }
     }
 
