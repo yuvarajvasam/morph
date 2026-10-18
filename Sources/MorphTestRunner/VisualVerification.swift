@@ -8,7 +8,7 @@ import PDFKit
 public func runVisualVerification() async throws {
     print("\n🎨 RUNNING VISUAL VERIFICATION & SCREENSHOT CAPTURE...")
 
-    let outputDir = URL(fileURLWithPath: "/Users/yuvi/.gemini/antigravity-ide/brain/f45f6497-095e-4242-8928-438d1c004fcd")
+    let outputDir = URL(fileURLWithPath: "/Users/yuvi/.gemini/antigravity-ide/brain/d48a4a65-eb0b-4633-a7f1-2b9e5efe9c2c")
     try? FileManager.default.createDirectory(at: outputDir, withIntermediateDirectories: true)
 
     let workDir = FileManager.default.currentDirectoryPath

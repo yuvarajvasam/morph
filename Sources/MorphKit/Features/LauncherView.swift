@@ -129,20 +129,21 @@ public struct LauncherView: View {
 
     private var integratedSearchBarHeader: some View {
         HStack(spacing: 10) {
-            // Morph Icon in place of search icon
-            ZStack {
-                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .fill(LiquidGlass.brandAccentGradient)
-                    .frame(width: 18, height: 18)
-                Image(systemName: "circle.grid.2x2.fill")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(Color.white)
-            }
+            // Navigation Capsule < > (Reference Image 1)
+            ToolbarNavigationCapsule(
+                canGoBack: viewModel.selectedCategory != nil || !viewModel.droppedFiles.isEmpty || !viewModel.searchQuery.isEmpty,
+                canGoForward: false,
+                onBack: {
+                    withAnimation(LiquidGlass.standardSpring) {
+                        viewModel.goBack()
+                    }
+                }
+            )
 
             // Search Text Field
             TextField(searchPlaceholder, text: $viewModel.searchQuery)
                 .textFieldStyle(.plain)
-                .font(.system(size: 15, weight: .regular))
+                .font(.system(size: 14, weight: .regular))
                 .foregroundStyle(Color.white)
                 .focused($isSearchFocused)
 
@@ -166,6 +167,73 @@ public struct LauncherView: View {
                 GlassPill("\(viewModel.droppedFiles.count) file\(viewModel.droppedFiles.count > 1 ? "s" : "")", icon: "paperclip", style: .accent)
             }
 
+            // View Mode Switcher Capsule [ ⊞ ᨈ ] (Reference Image 1)
+            ToolbarViewModeCapsule(viewMode: $preferences.viewMode) { _ in
+                viewModel.objectWillChange.send()
+            }
+
+            // Grouped Action Capsule [ ☵ ᨈ  ⎋  🏷  ••• ᨈ ] (Reference Image 1)
+            ToolbarGroupedActionCapsule(
+                sortMenu: {
+                    Section("Categories") {
+                        Button("All Tools") {
+                            withAnimation(LiquidGlass.quickSpring) {
+                                viewModel.selectedCategory = nil
+                                viewModel.selectedIndex = 0
+                            }
+                        }
+                        ForEach(CommandCategory.allCases) { cat in
+                            Button(cat.displayName) {
+                                withAnimation(LiquidGlass.quickSpring) {
+                                    viewModel.selectedCategory = cat
+                                    viewModel.selectedIndex = 0
+                                }
+                            }
+                        }
+                    }
+                },
+                onShare: {
+                    if let first = viewModel.droppedFiles.first {
+                        NSWorkspace.shared.open(first.url)
+                    } else {
+                        viewModel.openFilePicker()
+                    }
+                },
+                onTag: {
+                    withAnimation(LiquidGlass.quickSpring) {
+                        if viewModel.selectedCategory == nil {
+                            viewModel.selectedCategory = .image
+                        } else {
+                            viewModel.selectedCategory = nil
+                        }
+                    }
+                },
+                moreMenu: {
+                    Button {
+                        viewModel.openFilePicker()
+                    } label: {
+                        Label("Open Files... (⌘O)", systemImage: "folder")
+                    }
+
+                    Button {
+                        SettingsWindowController.shared.show()
+                    } label: {
+                        Label("Preferences... (⌘,)", systemImage: "gearshape")
+                    }
+
+                    if !viewModel.droppedFiles.isEmpty || viewModel.activeCommand != nil || !viewModel.searchQuery.isEmpty {
+                        Divider()
+                        Button(role: .destructive) {
+                            withAnimation(LiquidGlass.standardSpring) {
+                                viewModel.clearAll()
+                            }
+                        } label: {
+                            Label("Clear All (⎋)", systemImage: "xmark.circle")
+                        }
+                    }
+                }
+            )
+
             // Three dots menu button as a circular glass button on the right side
             ellipsisMenuButton
         }
@@ -177,20 +245,12 @@ public struct LauncherView: View {
 
     private var integratedToolNavigationHeader: some View {
         HStack(spacing: 12) {
-            // Clean Chevron Left Back Button
-            Button {
+            // Circular Back Button matching Reference Image 4
+            ToolbarBackButton {
                 withAnimation(LiquidGlass.standardSpring) {
                     viewModel.goBack()
                 }
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Color.white.opacity(0.85))
-                    .frame(width: 24, height: 24)
-                    .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
-            .help("Back (⎋)")
 
             // Clean Tool Title (Search is not needed inside a tool)
             if let activeCmd = viewModel.activeCommand {
@@ -212,6 +272,13 @@ public struct LauncherView: View {
             // Dropped File Badge
             if !viewModel.droppedFiles.isEmpty {
                 GlassPill("\(viewModel.droppedFiles.count) file\(viewModel.droppedFiles.count > 1 ? "s" : "")", icon: "paperclip", style: .accent)
+            }
+
+            // Quick Share Circular Button (matching Reference Image 2) when file or result is present
+            if let primaryURL = viewModel.currentResult?.primaryOutputURL ?? viewModel.droppedFiles.first?.url {
+                ToolbarShareButton {
+                    NSWorkspace.shared.open(primaryURL)
+                }
             }
         }
         .padding(.horizontal, 16)
@@ -1353,6 +1420,32 @@ public struct LauncherView: View {
             bottomLeftToolPill
 
             Spacer()
+
+            // Multi-Action Capsule (matching Reference Image 5) when files are dropped
+            if !viewModel.droppedFiles.isEmpty && viewModel.activeCommand == nil {
+                ToolbarMultiActionCapsule(
+                    isDeleteEnabled: true,
+                    onFilter: {
+                        withAnimation(LiquidGlass.quickSpring) {
+                            if viewModel.selectedCategory == nil {
+                                viewModel.selectedCategory = .image
+                            } else {
+                                viewModel.selectedCategory = nil
+                            }
+                        }
+                    },
+                    onDelete: {
+                        withAnimation(LiquidGlass.standardSpring) {
+                            viewModel.droppedFiles = []
+                        }
+                    },
+                    onAdd: {
+                        viewModel.openFilePicker()
+                    }
+                )
+
+                Spacer()
+            }
 
             // BOTTOM RIGHT: Primary Action [↩] + Actions [⌘] [K] (Image 1, 2)
             bottomRightActionsPill

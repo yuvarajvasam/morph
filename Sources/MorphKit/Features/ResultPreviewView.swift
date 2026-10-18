@@ -18,10 +18,10 @@ public struct ResultPreviewView: View {
         VStack(alignment: .leading, spacing: LiquidGlass.spaceMD) {
             // Header
             HStack {
-                HStack(spacing: 6) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(Color.green)
-                        .font(.system(size: 15))
+                HStack(spacing: 8) {
+                    ToolbarCheckmarkButton {
+                        // Success indicator matching Reference Image 3 (Right)
+                    }
                     Text("Operation Complete")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Color.primary)
@@ -216,22 +216,36 @@ public struct ResultPreviewView: View {
 
             Spacer(minLength: 4)
 
-            // Quick Actions Bar (Share, Save As, Finder)
+            // Quick Actions Bar (Edit, Share, Save As, Finder)
             if let primaryURL = result.primaryOutputURL {
-                HStack(spacing: 8) {
+                HStack(spacing: 10) {
+                    // Edit Pill Button matching Reference Image 2 (Left)
+                    ToolbarPillButton("Edit", icon: "pencil") {
+                        viewModel.openFile(url: primaryURL)
+                    }
+
+                    // Share Circle Button matching Reference Image 2 (Right)
                     ShareLink(item: primaryURL) {
-                        HStack(spacing: 4) {
+                        ZStack {
+                            Circle()
+                                .fill(Color(red: 24 / 255, green: 25 / 255, blue: 28 / 255).opacity(0.85))
+                                .overlay(
+                                    Circle().strokeBorder(
+                                        LinearGradient(
+                                            colors: [Color.white.opacity(0.20), Color.white.opacity(0.06)],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        ),
+                                        lineWidth: 0.6
+                                    )
+                                )
+                                .shadow(color: Color.black.opacity(0.25), radius: 2.5, x: 0, y: 1.5)
+                                .frame(width: 28, height: 28)
+
                             Image(systemName: "square.and.arrow.up")
-                                .font(.system(size: 11))
-                            Text("Share")
-                                .font(.system(size: 11, weight: .medium))
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(Color.white.opacity(0.92))
                         }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(
-                            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .fill(Color.primary.opacity(0.06))
-                        )
                     }
                     .buttonStyle(.plain)
                     .help("Share processed file via AirDrop, Mail, or Messages")
