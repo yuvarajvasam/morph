@@ -165,6 +165,9 @@ public struct LauncherView: View {
             if !viewModel.droppedFiles.isEmpty {
                 GlassPill("\(viewModel.droppedFiles.count) file\(viewModel.droppedFiles.count > 1 ? "s" : "")", icon: "paperclip", style: .accent)
             }
+
+            // Three dots menu button as a circular glass button on the right side
+            ellipsisMenuButton
         }
         .padding(.horizontal, 16)
         .frame(height: 48)
@@ -286,14 +289,23 @@ public struct LauncherView: View {
                 }
             }
         } label: {
-            Image(systemName: "ellipsis")
-                .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(Color.white.opacity(0.85))
-                .frame(width: 18, height: 16)
-                .contentShape(Rectangle())
+            ZStack {
+                Circle()
+                    .fill(Color.white.opacity(0.08))
+                    .overlay(
+                        Circle().strokeBorder(Color.white.opacity(0.12), lineWidth: 0.5)
+                    )
+                    .frame(width: 26, height: 26)
+
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Color.white.opacity(0.85))
+            }
+            .contentShape(Circle())
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
+        .menuOrder(.fixed)
         .fixedSize()
         .help("View options (Grid/List) & settings")
     }
@@ -1401,8 +1413,19 @@ public struct LauncherView: View {
                     .foregroundStyle(Color.white.opacity(0.88))
                     .lineLimit(1)
             } else {
-                // Three Dots Menu (...) in place of Morph
-                ellipsisMenuButton
+                // Morph Brand Emblem & Name
+                ZStack {
+                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        .fill(LiquidGlass.brandAccentGradient)
+                        .frame(width: 16, height: 16)
+                    Image(systemName: "circle.grid.2x2.fill")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(Color.white)
+                }
+
+                Text("Morph")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Color.white.opacity(0.88))
             }
         }
         .padding(.horizontal, 10)
