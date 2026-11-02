@@ -333,14 +333,32 @@ public struct SettingsWindowView: View {
 
     private var detailPane: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Top Navigation History (< and > buttons matching Reference Image 1)
+            // Top Navigation History (< and > buttons matching reference image)
             HStack(spacing: 12) {
-                ToolbarNavigationCapsule(
-                    canGoBack: true,
-                    canGoForward: true,
-                    onBack: { navigateTab(forward: false) },
-                    onForward: { navigateTab(forward: true) }
-                )
+                HStack(spacing: 2) {
+                    Button {
+                        navigateTab(forward: false)
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Color.white.opacity(0.70))
+                            .frame(width: 26, height: 24)
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        navigateTab(forward: true)
+                    } label: {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Color.white.opacity(0.70))
+                            .frame(width: 26, height: 24)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 4)
+                .padding(.vertical, 2)
+                .background(Capsule().fill(Color.white.opacity(0.08)))
 
                 Spacer()
             }

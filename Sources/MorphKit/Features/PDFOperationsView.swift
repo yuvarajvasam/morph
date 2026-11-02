@@ -427,21 +427,29 @@ public struct PDFOperationsView: View {
                                     onTap: {}
                                 )
 
-                                ToolbarNavigationCapsule(
-                                    canGoBack: position > 0,
-                                    canGoForward: position < viewModel.pageReorderList.count - 1,
-                                    onBack: {
+                                HStack(spacing: 8) {
+                                    Button {
                                         if position > 0 {
                                             viewModel.movePage(from: position, to: position - 1)
                                         }
-                                    },
-                                    onForward: {
+                                    } label: {
+                                        Image(systemName: "chevron.left")
+                                            .font(.system(size: 10, weight: .bold))
+                                    }
+                                    .disabled(position == 0)
+                                    .buttonStyle(.plain)
+
+                                    Button {
                                         if position < viewModel.pageReorderList.count - 1 {
                                             viewModel.movePage(from: position, to: position + 1)
                                         }
+                                    } label: {
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 10, weight: .bold))
                                     }
-                                )
-                                .scaleEffect(0.85)
+                                    .disabled(position >= viewModel.pageReorderList.count - 1)
+                                    .buttonStyle(.plain)
+                                }
                                 .padding(.top, 2)
                             }
                         }
