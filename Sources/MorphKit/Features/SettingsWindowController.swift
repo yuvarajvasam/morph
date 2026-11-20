@@ -11,6 +11,10 @@ public final class MorphSettingsWindow: NSWindow {
         SettingsWindowController.shared.hide()
     }
     public override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        if event.modifierFlags.contains(.command) && event.charactersIgnoringModifiers == "q" {
+            NSApp.terminate(nil)
+            return true
+        }
         if event.modifierFlags.contains(.command) && event.charactersIgnoringModifiers == "w" {
             SettingsWindowController.shared.hide()
             return true

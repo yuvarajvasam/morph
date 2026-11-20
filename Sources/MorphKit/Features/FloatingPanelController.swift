@@ -4,6 +4,14 @@ import AppKit
 public final class MorphFloatingPanel: NSPanel {
     public override var canBecomeKey: Bool { true }
     public override var canBecomeMain: Bool { true }
+
+    public override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        if event.modifierFlags.contains(.command) && event.charactersIgnoringModifiers == "q" {
+            NSApp.terminate(nil)
+            return true
+        }
+        return super.performKeyEquivalent(with: event)
+    }
 }
 
 @MainActor
@@ -13,6 +21,10 @@ public final class FloatingPanelController: NSObject, NSWindowDelegate {
     public let viewModel = LauncherViewModel()
     private var panel: MorphFloatingPanel?
     private var eventMonitor: Any?
+
+    public var isVisible: Bool {
+        panel?.isVisible == true
+    }
 
     public override init() {
         super.init()

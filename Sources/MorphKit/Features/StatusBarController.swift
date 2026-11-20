@@ -39,7 +39,7 @@ final class StatusBarDropDestinationView: NSView {
 }
 
 @MainActor
-public final class StatusBarController: NSObject, NSPopoverDelegate {
+public final class StatusBarController: NSObject, NSPopoverDelegate, NSMenuDelegate {
     public static let shared = StatusBarController()
 
     private var statusItem: NSStatusItem?
@@ -210,6 +210,7 @@ public final class StatusBarController: NSObject, NSPopoverDelegate {
         let menu = NSMenu()
 
         let openItem = NSMenuItem(title: "Open Drop Shelf", action: #selector(openDropShelfAction), keyEquivalent: "d")
+        openItem.keyEquivalentModifierMask = [.command]
         openItem.target = self
         menu.addItem(openItem)
 
@@ -223,23 +224,28 @@ public final class StatusBarController: NSObject, NSPopoverDelegate {
         menu.addItem(NSMenuItem.separator())
 
         let quitItem = NSMenuItem(title: "Quit Morph", action: #selector(quitApp), keyEquivalent: "q")
+        quitItem.keyEquivalentModifierMask = [.command]
         quitItem.target = self
         menu.addItem(quitItem)
 
+        menu.delegate = self
         statusItem?.menu = menu
         statusItem?.button?.performClick(nil)
+    }
+
+    public func menuDidClose(_ menu: NSMenu) {
         statusItem?.menu = nil
     }
 
-    @objc private func openDropShelfAction() {
+    @objc public func openDropShelfAction() {
         showShelfPopover()
     }
 
-    @objc private func showFloatingPodAction() {
+    @objc public func showFloatingPodAction() {
         FloatingDropTargetController.shared.show()
     }
 
-    @objc private func toggleLauncher() {
+    @objc public func toggleLauncher() {
         FloatingPanelController.shared.toggle()
     }
 
@@ -285,11 +291,11 @@ public final class StatusBarController: NSObject, NSPopoverDelegate {
         }
     }
 
-    @objc private func openSettings() {
+    @objc public func openSettings() {
         SettingsWindowController.shared.show()
     }
 
-    @objc private func quitApp() {
+    @objc public func quitApp() {
         NSApp.terminate(nil)
     }
 }

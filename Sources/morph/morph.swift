@@ -8,6 +8,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Spotlight/Raycast style accessory application
         NSApp.setActivationPolicy(.accessory)
 
+        // Setup Application Main Menu and Universal Shortcuts (⌘Q, ⌘,, ⌘D, ⌘W, text editing)
+        AppMenuManager.shared.setup()
+
         // Apply appearance mode from preferences
         PreferencesManager.shared.applyAppearance()
 
