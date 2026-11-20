@@ -135,6 +135,8 @@ public final class StatusBarController: NSObject, NSPopoverDelegate, NSMenuDeleg
             popover.appearance = NSAppearance(named: .vibrantDark)
             popover.delegate = self
             let hostingController = NSHostingController(rootView: DropShelfView(shelfManager: ShelfManager.shared))
+            hostingController.view.wantsLayer = true
+            hostingController.view.layer?.backgroundColor = NSColor.clear.cgColor
             popover.contentViewController = hostingController
             self.shelfPopover = popover
         }
@@ -144,6 +146,8 @@ public final class StatusBarController: NSObject, NSPopoverDelegate, NSMenuDeleg
             shelfPopover?.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             if let window = shelfPopover?.contentViewController?.view.window {
                 window.appearance = NSAppearance(named: .vibrantDark)
+                window.isOpaque = false
+                window.backgroundColor = .clear
             }
         }
     }

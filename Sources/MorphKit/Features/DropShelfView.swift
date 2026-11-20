@@ -52,8 +52,23 @@ public struct DropShelfView: View {
         .frame(width: 440)
         .background(
             ZStack {
-                VisualEffectView(material: .popover, blendingMode: .behindWindow, cornerRadius: 0)
-                Color(red: 0.08, green: 0.09, blue: 0.12).opacity(0.85)
+                // Desktop wallpaper translucency blur
+                VisualEffectView(
+                    material: .hudWindow,
+                    blendingMode: .behindWindow,
+                    state: .active,
+                    cornerRadius: 0
+                )
+
+                // App's signature atmospheric liquid glass gradient tint
+                LinearGradient(
+                    colors: [
+                        Color(red: 14 / 255, green: 26 / 255, blue: 34 / 255).opacity(0.72),
+                        Color(red: 8 / 255, green: 16 / 255, blue: 22 / 255).opacity(0.82)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
             }
         )
         .animation(.easeInOut(duration: 0.22), value: viewModel.isCompactMode)
