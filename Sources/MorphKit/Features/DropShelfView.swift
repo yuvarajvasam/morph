@@ -52,24 +52,9 @@ public struct DropShelfView: View {
         .frame(width: 440)
         .background(
             ZStack {
-                VisualEffectView(material: .hudWindow, blendingMode: .behindWindow, cornerRadius: 18)
+                VisualEffectView(material: .popover, blendingMode: .behindWindow, cornerRadius: 0)
                 Color(red: 0.08, green: 0.09, blue: 0.12).opacity(0.85)
             }
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(
-                    LinearGradient(
-                        colors: [
-                            Color.white.opacity(0.28),
-                            Color.white.opacity(0.08)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    ),
-                    lineWidth: 1
-                )
         )
         .animation(.easeInOut(duration: 0.22), value: viewModel.isCompactMode)
     }
@@ -343,6 +328,7 @@ public struct DropShelfView: View {
             }
             .contentShape(Rectangle())
             .onDrag {
+                StatusBarController.shared.isDraggingItemFromShelf = true
                 if item.isWebLink {
                     return NSItemProvider(object: item.url as NSURL)
                 } else {
@@ -534,6 +520,14 @@ public struct DropShelfView: View {
                             .overlay(
                                 Capsule().stroke(Color.white.opacity(0.12), lineWidth: 1)
                             )
+                            .onDrag {
+                                StatusBarController.shared.isDraggingItemFromShelf = true
+                                if item.isWebLink {
+                                    return NSItemProvider(object: item.url as NSURL)
+                                } else {
+                                    return NSItemProvider(contentsOf: item.url) ?? NSItemProvider()
+                                }
+                            }
                         }
                     }
                 }
@@ -687,6 +681,7 @@ public struct DropShelfView: View {
     }
 
     private func handleUniversalDrops(_ providers: [NSItemProvider]) -> Bool {
+        StatusBarController.shared.openedByDrag = false
         var handled = false
         for provider in providers {
             // 1. File or Folder URL

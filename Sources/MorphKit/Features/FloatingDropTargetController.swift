@@ -4,6 +4,7 @@ import SwiftUI
 /// AppKit destination view capturing drag-and-drop events directly at the window layer
 final class FloatingDropDestinationOverlayView: NSView {
     weak var controller: FloatingDropTargetController?
+    private var hoverSpringTimer: Timer?
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -17,6 +18,18 @@ final class FloatingDropDestinationOverlayView: NSView {
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
         FloatingDropTargetViewModel.shared.isTargeted = true
+
+        // When a file, folder, or link is placed/held over the icon, reveal the menu bar shelf section
+        hoverSpringTimer?.invalidate()
+        hoverSpringTimer = Timer.scheduledTimer(withTimeInterval: 0.15, repeats: false) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard FloatingDropTargetViewModel.shared.isTargeted else { return }
+                self?.controller?.hide(animated: false)
+                StatusBarController.shared.openedByDrag = true
+                StatusBarController.shared.showShelfPopover()
+            }
+        }
+
         return .copy
     }
 
@@ -26,10 +39,15 @@ final class FloatingDropDestinationOverlayView: NSView {
 
     override func draggingExited(_ sender: NSDraggingInfo?) {
         FloatingDropTargetViewModel.shared.isTargeted = false
+        hoverSpringTimer?.invalidate()
+        hoverSpringTimer = nil
     }
 
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        hoverSpringTimer?.invalidate()
+        hoverSpringTimer = nil
         FloatingDropTargetViewModel.shared.isTargeted = false
+        StatusBarController.shared.openedByDrag = false
         let pasteboard = sender.draggingPasteboard
         var urls: [URL] = []
 
@@ -60,7 +78,7 @@ final class FloatingDropDestinationOverlayView: NSView {
 
     override func mouseDown(with event: NSEvent) {
         controller?.hide(animated: false)
-        StatusBarController.shared.toggleShelf()
+        StatusBarController.shared.showShelfPopover()
     }
 }
 
@@ -70,7 +88,9 @@ public final class FloatingDropTargetController: NSObject {
 
     private var panel: NSPanel?
     private var globalDragMonitor: Any?
+    private var localDragMonitor: Any?
     private var globalMouseUpMonitor: Any?
+    private var localMouseUpMonitor: Any?
     private var hideWorkItem: DispatchWorkItem?
     private var isMonitoring = false
 
@@ -91,11 +111,27 @@ public final class FloatingDropTargetController: NSObject {
             }
         }
 
-        // Monitor global mouse release
+        // Monitor local mouse drag events within Morph's own windows
+        localDragMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDragged]) { [weak self] event in
+            Task { @MainActor [weak self] in
+                self?.handleGlobalMouseDrag(event)
+            }
+            return event
+        }
+
+        // Monitor global mouse release across all applications
         globalMouseUpMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseUp]) { [weak self] event in
             Task { @MainActor [weak self] in
                 self?.handleGlobalMouseUp(event)
             }
+        }
+
+        // Monitor local mouse release within Morph's own windows
+        localMouseUpMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseUp]) { [weak self] event in
+            Task { @MainActor [weak self] in
+                self?.handleGlobalMouseUp(event)
+            }
+            return event
         }
     }
 
@@ -104,9 +140,17 @@ public final class FloatingDropTargetController: NSObject {
             NSEvent.removeMonitor(monitor)
             globalDragMonitor = nil
         }
+        if let monitor = localDragMonitor {
+            NSEvent.removeMonitor(monitor)
+            localDragMonitor = nil
+        }
         if let monitor = globalMouseUpMonitor {
             NSEvent.removeMonitor(monitor)
             globalMouseUpMonitor = nil
+        }
+        if let monitor = localMouseUpMonitor {
+            NSEvent.removeMonitor(monitor)
+            localMouseUpMonitor = nil
         }
         isMonitoring = false
         hide(animated: false)
@@ -122,13 +166,14 @@ public final class FloatingDropTargetController: NSObject {
         hostingView.wantsLayer = true
         hostingView.layer?.backgroundColor = NSColor.clear.cgColor
 
-        let overlay = FloatingDropDestinationOverlayView(frame: NSRect(x: 0, y: 0, width: 96, height: 96))
+        let windowSize: CGFloat = 70
+        let overlay = FloatingDropDestinationOverlayView(frame: NSRect(x: 0, y: 0, width: windowSize, height: windowSize))
         overlay.autoresizingMask = [.width, .height]
         overlay.controller = self
         hostingView.addSubview(overlay)
 
         let targetPanel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 96, height: 96),
+            contentRect: NSRect(x: 0, y: 0, width: windowSize, height: windowSize),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -148,21 +193,22 @@ public final class FloatingDropTargetController: NSObject {
 
     public func updatePanelPosition() {
         guard let panel else { return }
-        let podWidth: CGFloat = 96
-        let podHeight: CGFloat = 96
+        let windowSize: CGFloat = 70
+        let podSize: CGFloat = 50
+        let topPadding: CGFloat = (windowSize - podSize) / 2
 
         var x: CGFloat
         var y: CGFloat
 
         if let buttonFrame = StatusBarController.shared.statusButtonFrameOnScreen {
-            // Positioned right below the menu bar icon, horizontally centered with it
-            x = buttonFrame.midX - (podWidth / 2)
-            // Positioned right below the bottom of the menu bar
-            y = buttonFrame.minY - podHeight - 2
+            // Horizontally centered with the status bar icon
+            x = buttonFrame.midX - (windowSize / 2)
+            // Positioned so the visible 50x50 pod sits exactly 2pt below the menu bar bottom edge
+            y = buttonFrame.minY - windowSize + topPadding - 2
         } else if let screen = NSScreen.main {
             let screenRect = screen.visibleFrame
-            x = screenRect.maxX - podWidth - 16
-            y = screenRect.maxY - podHeight - 2
+            x = screenRect.maxX - windowSize - 14
+            y = screenRect.maxY - windowSize + topPadding - 2
         } else {
             return
         }
@@ -170,7 +216,7 @@ public final class FloatingDropTargetController: NSObject {
         // Clamp within main screen boundaries to avoid screen edge clipping
         if let screen = NSScreen.main {
             let screenRect = screen.frame
-            x = max(screenRect.minX + 4, min(x, screenRect.maxX - podWidth - 4))
+            x = max(screenRect.minX + 4, min(x, screenRect.maxX - windowSize - 4))
         }
 
         panel.setFrameOrigin(NSPoint(x: x, y: y))
@@ -183,7 +229,9 @@ public final class FloatingDropTargetController: NSObject {
             .fileURL,
             NSPasteboard.PasteboardType("public.file-url"),
             NSPasteboard.PasteboardType("NSFilenamesPboardType"),
-            NSPasteboard.PasteboardType("com.apple.finder.node")
+            NSPasteboard.PasteboardType("com.apple.finder.node"),
+            .URL,
+            NSPasteboard.PasteboardType("public.url")
         ]
         if types.contains(where: { recognizedTypes.contains($0) }) {
             return true
@@ -195,22 +243,57 @@ public final class FloatingDropTargetController: NSObject {
     }
 
     private func handleGlobalMouseDrag(_ event: NSEvent) {
-        // When the menu bar drop section is shown, the drag target pod must NOT be shown
+        let dragging = isDraggingFiles() || StatusBarController.shared.isDraggingItemFromShelf
+
+        // 1. When the menu bar drop section (popover) is shown
         if StatusBarController.shared.isShelfPopoverShown {
             if panel?.isVisible == true {
                 hide(animated: false)
             }
+            if dragging {
+                let mouseLoc = NSEvent.mouseLocation
+                if !StatusBarController.shared.isMouseOverPopoverOrButton(mouseLoc) {
+                    // When a file is dragged out of the menu section, the menu section should not be shown!
+                    StatusBarController.shared.hideShelfPopover()
+                }
+            }
             return
         }
 
-        if isDraggingFiles() {
+        // 2. When popover is NOT shown:
+        if StatusBarController.shared.isDraggingItemFromShelf {
+            // User is dragging a file out of the shelf to another app; keep the drop pod hidden
+            hide(animated: false)
+            return
+        }
+
+        if dragging {
             cancelHideTimer()
             show()
+        } else {
+            // Close immediately when a file is not active
+            hide(animated: false)
         }
     }
 
     private func handleGlobalMouseUp(_ event: NSEvent) {
-        hideAfterDelay(0.9)
+        cancelHideTimer()
+        // Close drag target immediately when a file is not active
+        hide(animated: false)
+        StatusBarController.shared.isDraggingItemFromShelf = false
+
+        if StatusBarController.shared.openedByDrag {
+            let mouseLoc = NSEvent.mouseLocation
+            if !StatusBarController.shared.isMouseOverPopoverOrButton(mouseLoc) {
+                StatusBarController.shared.hideShelfPopover()
+            } else {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+                    if StatusBarController.shared.openedByDrag {
+                        StatusBarController.shared.hideShelfPopover()
+                    }
+                }
+            }
+        }
     }
 
     public func show() {
@@ -226,21 +309,20 @@ public final class FloatingDropTargetController: NSObject {
 
         cancelHideTimer()
 
-        if !panel.isVisible || panel.alphaValue < 1.0 {
+        // Open immediately without animation lag
+        panel.alphaValue = 1.0
+        if !panel.isVisible {
             panel.orderFrontRegardless()
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = 0.22
-                panel.animator().alphaValue = 1.0
-            }
         }
     }
 
-    public func hide(animated: Bool = true) {
+    public func hide(animated: Bool = false) {
+        cancelHideTimer()
         guard let panel, panel.isVisible else { return }
 
         if animated {
             NSAnimationContext.runAnimationGroup({ context in
-                context.duration = 0.25
+                context.duration = 0.15
                 panel.animator().alphaValue = 0.0
             }, completionHandler: { [weak panel] in
                 DispatchQueue.main.async {
@@ -250,6 +332,7 @@ public final class FloatingDropTargetController: NSObject {
                 }
             })
         } else {
+            // Close immediately without animation delay
             panel.alphaValue = 0.0
             panel.orderOut(nil)
         }
@@ -258,7 +341,7 @@ public final class FloatingDropTargetController: NSObject {
     public func hideAfterDelay(_ delay: TimeInterval) {
         cancelHideTimer()
         let work = DispatchWorkItem { [weak self] in
-            self?.hide(animated: true)
+            self?.hide(animated: false)
         }
         self.hideWorkItem = work
         DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
@@ -271,6 +354,7 @@ public final class FloatingDropTargetController: NSObject {
 
     public func handleFilesDropped(_ urls: [URL]) {
         guard !urls.isEmpty else { return }
+        StatusBarController.shared.openedByDrag = false
         NSSound(named: "Pop")?.play()
         ShelfManager.shared.addItems(urls: urls)
         // Hide the floating target before showing the drop shelf popover

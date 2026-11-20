@@ -15,6 +15,7 @@ final class StatusBarDropDestinationView: NSView {
     }
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        controller?.openedByDrag = true
         controller?.handleDragEntered(sender)
         return .copy
     }
@@ -24,6 +25,7 @@ final class StatusBarDropDestinationView: NSView {
     }
 
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        controller?.openedByDrag = false
         return controller?.handleDrop(sender) ?? false
     }
 
@@ -44,8 +46,37 @@ public final class StatusBarController: NSObject, NSPopoverDelegate {
     private var dropOverlayView: StatusBarDropDestinationView?
     private var shelfPopover: NSPopover?
 
+    /// Flag set when the shelf popover was opened via a drag-hover event
+    public var openedByDrag: Bool = false
+
+    /// Flag set when a file or item is actively being dragged out from within the shelf
+    public var isDraggingItemFromShelf: Bool = false
+
     public var isShelfPopoverShown: Bool {
         return shelfPopover?.isShown == true
+    }
+
+    public var popoverWindow: NSWindow? {
+        return shelfPopover?.contentViewController?.view.window
+    }
+
+    public var popoverFrameOnScreen: NSRect? {
+        guard let window = popoverWindow else { return nil }
+        return window.frame
+    }
+
+    public func isMouseOverPopoverOrButton(_ mouseLoc: NSPoint) -> Bool {
+        if let frame = popoverFrameOnScreen {
+            if frame.insetBy(dx: -4, dy: -4).contains(mouseLoc) {
+                return true
+            }
+        }
+        if let buttonFrame = statusButtonFrameOnScreen {
+            if buttonFrame.insetBy(dx: -8, dy: -8).contains(mouseLoc) {
+                return true
+            }
+        }
+        return false
     }
 
     public var statusButtonFrameOnScreen: NSRect? {
@@ -101,6 +132,7 @@ public final class StatusBarController: NSObject, NSPopoverDelegate {
             let popover = NSPopover()
             popover.contentSize = NSSize(width: 440, height: 380)
             popover.behavior = .transient
+            popover.appearance = NSAppearance(named: .vibrantDark)
             popover.delegate = self
             let hostingController = NSHostingController(rootView: DropShelfView(shelfManager: ShelfManager.shared))
             popover.contentViewController = hostingController
@@ -110,6 +142,9 @@ public final class StatusBarController: NSObject, NSPopoverDelegate {
         if shelfPopover?.isShown != true {
             NSApp.activate(ignoringOtherApps: true)
             shelfPopover?.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            if let window = shelfPopover?.contentViewController?.view.window {
+                window.appearance = NSAppearance(named: .vibrantDark)
+            }
         }
     }
 
@@ -117,7 +152,14 @@ public final class StatusBarController: NSObject, NSPopoverDelegate {
         FloatingDropTargetController.shared.hide(animated: false)
     }
 
+    public func popoverDidClose(_ notification: Notification) {
+        openedByDrag = false
+        isDraggingItemFromShelf = false
+    }
+
     public func hideShelfPopover() {
+        openedByDrag = false
+        isDraggingItemFromShelf = false
         shelfPopover?.performClose(nil)
     }
 
@@ -130,10 +172,12 @@ public final class StatusBarController: NSObject, NSPopoverDelegate {
     }
 
     public func handleDragEntered(_ sender: NSDraggingInfo) {
+        openedByDrag = true
         showShelfPopover()
     }
 
     public func handleDrop(_ sender: NSDraggingInfo) -> Bool {
+        openedByDrag = false
         let pasteboard = sender.draggingPasteboard
         var urls: [URL] = []
 
