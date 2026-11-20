@@ -44,6 +44,16 @@ public final class StatusBarController: NSObject, NSPopoverDelegate {
     private var dropOverlayView: StatusBarDropDestinationView?
     private var shelfPopover: NSPopover?
 
+    public var isShelfPopoverShown: Bool {
+        return shelfPopover?.isShown == true
+    }
+
+    public var statusButtonFrameOnScreen: NSRect? {
+        guard let button = statusItem?.button, let window = button.window else { return nil }
+        let rectInWindow = button.convert(button.bounds, to: nil)
+        return window.convertToScreen(rectInWindow)
+    }
+
     public func setupStatusBar() {
         guard statusItem == nil else { return }
 
@@ -84,6 +94,9 @@ public final class StatusBarController: NSObject, NSPopoverDelegate {
     public func showShelfPopover() {
         guard let button = statusItem?.button else { return }
 
+        // Hide floating drop target immediately when shelf popover is shown
+        FloatingDropTargetController.shared.hide(animated: false)
+
         if shelfPopover == nil {
             let popover = NSPopover()
             popover.contentSize = NSSize(width: 440, height: 380)
@@ -98,6 +111,10 @@ public final class StatusBarController: NSObject, NSPopoverDelegate {
             NSApp.activate(ignoringOtherApps: true)
             shelfPopover?.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         }
+    }
+
+    public func popoverWillShow(_ notification: Notification) {
+        FloatingDropTargetController.shared.hide(animated: false)
     }
 
     public func hideShelfPopover() {
@@ -148,52 +165,9 @@ public final class StatusBarController: NSObject, NSPopoverDelegate {
     public func showMenu() {
         let menu = NSMenu()
 
-        // App Header
-        let headerItem = NSMenuItem(title: "Morph — Drop Shelf & Utilities", action: nil, keyEquivalent: "")
-        headerItem.isEnabled = false
-        menu.addItem(headerItem)
-
-        menu.addItem(NSMenuItem.separator())
-
-        let shelfItem = NSMenuItem(title: "Open Drop Shelf", action: #selector(openDropShelfAction), keyEquivalent: "d")
-        shelfItem.target = self
-        menu.addItem(shelfItem)
-
-        let targetPodItem = NSMenuItem(title: "Show Floating Drop Target", action: #selector(showFloatingPodAction), keyEquivalent: "")
-        targetPodItem.target = self
-        menu.addItem(targetPodItem)
-
-        let toggleItem = NSMenuItem(title: "Toggle Command Launcher", action: #selector(toggleLauncher), keyEquivalent: " ")
-        toggleItem.keyEquivalentModifierMask = [.option]
-        toggleItem.target = self
-        menu.addItem(toggleItem)
-
-        menu.addItem(NSMenuItem.separator())
-
-        // Quick Actions
-        let compressImageItem = NSMenuItem(title: "Compress Image...", action: #selector(quickCompressImage), keyEquivalent: "")
-        compressImageItem.target = self
-        menu.addItem(compressImageItem)
-
-        let convertImageItem = NSMenuItem(title: "Convert Image Format...", action: #selector(quickConvertImage), keyEquivalent: "")
-        convertImageItem.target = self
-        menu.addItem(convertImageItem)
-
-        let compressPDFItem = NSMenuItem(title: "Compress PDF...", action: #selector(quickCompressPDF), keyEquivalent: "")
-        compressPDFItem.target = self
-        menu.addItem(compressPDFItem)
-
-        let mergePDFItem = NSMenuItem(title: "Merge PDFs...", action: #selector(quickMergePDF), keyEquivalent: "")
-        mergePDFItem.target = self
-        menu.addItem(mergePDFItem)
-
-        let createArchiveItem = NSMenuItem(title: "Create Archive...", action: #selector(quickCreateArchive), keyEquivalent: "")
-        createArchiveItem.target = self
-        menu.addItem(createArchiveItem)
-
-        let generateQRItem = NSMenuItem(title: "Generate QR Code...", action: #selector(quickGenerateQR), keyEquivalent: "")
-        generateQRItem.target = self
-        menu.addItem(generateQRItem)
+        let openItem = NSMenuItem(title: "Open Drop Shelf", action: #selector(openDropShelfAction), keyEquivalent: "d")
+        openItem.target = self
+        menu.addItem(openItem)
 
         menu.addItem(NSMenuItem.separator())
 

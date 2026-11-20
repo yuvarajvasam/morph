@@ -59,6 +59,7 @@ final class FloatingDropDestinationOverlayView: NSView {
     }
 
     override func mouseDown(with event: NSEvent) {
+        controller?.hide(animated: false)
         StatusBarController.shared.toggleShelf()
     }
 }
@@ -145,12 +146,33 @@ public final class FloatingDropTargetController: NSObject {
         updatePanelPosition()
     }
 
-    private func updatePanelPosition() {
-        guard let panel, let screen = NSScreen.main else { return }
-        let screenRect = screen.visibleFrame
-        // Positioned in top-right area right below the menu bar
-        let x = screenRect.maxX - 130
-        let y = screenRect.maxY - 110
+    public func updatePanelPosition() {
+        guard let panel else { return }
+        let podWidth: CGFloat = 96
+        let podHeight: CGFloat = 96
+
+        var x: CGFloat
+        var y: CGFloat
+
+        if let buttonFrame = StatusBarController.shared.statusButtonFrameOnScreen {
+            // Positioned right below the menu bar icon, horizontally centered with it
+            x = buttonFrame.midX - (podWidth / 2)
+            // Positioned right below the bottom of the menu bar
+            y = buttonFrame.minY - podHeight - 2
+        } else if let screen = NSScreen.main {
+            let screenRect = screen.visibleFrame
+            x = screenRect.maxX - podWidth - 16
+            y = screenRect.maxY - podHeight - 2
+        } else {
+            return
+        }
+
+        // Clamp within main screen boundaries to avoid screen edge clipping
+        if let screen = NSScreen.main {
+            let screenRect = screen.frame
+            x = max(screenRect.minX + 4, min(x, screenRect.maxX - podWidth - 4))
+        }
+
         panel.setFrameOrigin(NSPoint(x: x, y: y))
     }
 
@@ -161,14 +183,26 @@ public final class FloatingDropTargetController: NSObject {
             .fileURL,
             NSPasteboard.PasteboardType("public.file-url"),
             NSPasteboard.PasteboardType("NSFilenamesPboardType"),
-            NSPasteboard.PasteboardType("com.apple.finder.node"),
-            NSPasteboard.PasteboardType("Apple URL pasteboard type"),
-            NSPasteboard.PasteboardType("public.url")
+            NSPasteboard.PasteboardType("com.apple.finder.node")
         ]
-        return types.contains(where: { recognizedTypes.contains($0) })
+        if types.contains(where: { recognizedTypes.contains($0) }) {
+            return true
+        }
+        if let urls = dragPB.readObjects(forClasses: [NSURL.self], options: nil) as? [URL], !urls.isEmpty {
+            return true
+        }
+        return false
     }
 
     private func handleGlobalMouseDrag(_ event: NSEvent) {
+        // When the menu bar drop section is shown, the drag target pod must NOT be shown
+        if StatusBarController.shared.isShelfPopoverShown {
+            if panel?.isVisible == true {
+                hide(animated: false)
+            }
+            return
+        }
+
         if isDraggingFiles() {
             cancelHideTimer()
             show()
@@ -180,6 +214,12 @@ public final class FloatingDropTargetController: NSObject {
     }
 
     public func show() {
+        // When the menu bar drop section (popover) is shown, the drag target pod must NOT be shown
+        guard !StatusBarController.shared.isShelfPopoverShown else {
+            hide(animated: false)
+            return
+        }
+
         setupPanel()
         guard let panel else { return }
         updatePanelPosition()
@@ -233,7 +273,8 @@ public final class FloatingDropTargetController: NSObject {
         guard !urls.isEmpty else { return }
         NSSound(named: "Pop")?.play()
         ShelfManager.shared.addItems(urls: urls)
+        // Hide the floating target before showing the drop shelf popover
+        hide(animated: false)
         StatusBarController.shared.showShelfPopover()
-        hide(animated: true)
     }
 }
