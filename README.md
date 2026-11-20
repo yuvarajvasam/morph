@@ -286,6 +286,24 @@ swift run morph-test-runner
 
 ---
 
+## 🛠️ Development with Axiom
+
+Morph integrates [Axiom](https://github.com/CharlesWiltgen/Axiom) — battle-tested skills, rules, and CLI developer utilities for modern Apple OS development (Swift 6, SwiftUI, Liquid Glass, AppKit interop, and accessibility).
+
+### Developer Tools (`tools/bin/`)
+- **`axbuild`**: A build and test runner that saves the full log and outputs clean structured JSON summaries of compiler diagnostics and failed tests without truncation:
+  ```bash
+  ./tools/bin/axbuild swift build
+  ./tools/bin/axbuild swift test
+  ```
+- **`xcproject`**: An inspection utility that parses Xcode project structures and build settings safely without mutating project files.
+
+### Axiom Skills & Autonomous Agents (`.agents/`)
+- **27 Apple Engineering Skill Categories** in `.agents/skills/` (including `axiom-macos`, `axiom-swiftui`, `axiom-design`, `axiom-concurrency`, `axiom-performance`, `axiom-accessibility`, and `axiom-tools`).
+- **44 Autonomous Review Agents** in `.agents/agents/` (such as `concurrency-auditor`, `liquid-glass-auditor`, `memory-auditor`, `swiftui-architecture-auditor`, and `accessibility-auditor`).
+
+---
+
 ## 🔒 Privacy & Safety Guarantee
 
 - **Zero Overwriting**: Morph generates unique destination names (`doc-compressed (1).pdf`) if a target file already exists.

@@ -13,3 +13,4 @@ TestOutputs/
 node_modules/
 **/node_modules/
 .swiftpm/
+.agents
