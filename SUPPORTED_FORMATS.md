@@ -230,7 +230,7 @@ In addition to matching Filee's core format conversions, Morph includes **3 Appl
 All supported conversions can be executed via:
 1. **The Native Liquid Glass Floating Launcher** (`⌥Space` or `swift run morph`)
 2. **The Headless CLI** (`morph [command] [args]`)
-3. **The Raycast Extension** (`raycast-extension/`)
+3. **The Menu Bar Drop Shelf & Floating 3D Drop Target** (Drag and drop files/links directly)
 
 ```bash
 # Check status of all native & modular engines

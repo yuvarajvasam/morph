@@ -289,7 +289,7 @@ public struct SettingsWindowView: View {
         } label: {
             HStack(spacing: 9) {
                 if tab.isToolExtension {
-                    // Colored icon container matching Raycast extension items
+                    // Colored icon container for tool engine items
                     ZStack {
                         RoundedRectangle(cornerRadius: 5, style: .continuous)
                             .fill(tab.extensionColor)

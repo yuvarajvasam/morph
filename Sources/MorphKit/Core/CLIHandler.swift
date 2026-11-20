@@ -592,7 +592,7 @@ public final class CLIHandler {
           engines                         List status of all native & modular tools
 
         FLAGS:
-          --json                          Output structured JSON for Raycast / scripting
+          --json                          Output structured JSON for scripting / automation
           --preset <p>                    Compression preset: light, balanced, maximum
           --output <dir|file>             Destination directory or filename
           -h, --help                      Show this help message

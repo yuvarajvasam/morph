@@ -49,7 +49,7 @@ enum MorphApp {
         let args = Array(CommandLine.arguments.dropFirst())
 
         if !args.isEmpty {
-            // Headless CLI mode (e.g. for Raycast extension, scripts, terminal)
+            // Headless CLI mode (e.g. for scripts, terminal, automation)
             let exitCode = await CLIHandler.run(arguments: args)
             exit(exitCode)
         } else {

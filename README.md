@@ -155,7 +155,7 @@ When an external CLI tool is missing, Morph:
 
 ## 💻 Headless CLI Reference
 
-Morph includes a built-in headless CLI for automation, shell scripts, and Raycast extensions:
+Morph includes a built-in headless CLI for automation and shell scripts:
 
 ```bash
 # Check status of all native & modular engines
@@ -196,23 +196,6 @@ morph merge doc1.pdf doc2.pdf --output merged.pdf
 morph split book.pdf --range "1-5, 10"
 morph to-image presentation.pdf --dpi 300
 ```
-
----
-
-## ⚡️ Raycast Extension
-
-A complete Raycast extension template is included in `raycast-extension/`:
-1. Navigate to `raycast-extension/`
-2. Install dependencies: `npm install`
-3. Link into Raycast: `npm run dev`
-
-Included Raycast Commands:
-- **Compress Image or PDF** (`compress`)
-- **Convert Image Format** (`convert`)
-- **Merge PDFs** (`merge-pdf`)
-- **Extract Text with OCR** (`ocr`)
-- **Generate Apple App Icon** (`make-icon`)
-- **Convert Video or Audio** (`convert-media`)
 
 ---
 
@@ -278,8 +261,7 @@ morph/
 │       ├── main.swift         # Comprehensive automated unit test runner (14 suites)
 │       └── Verification.swift # Live real-world file conversion pipeline validator
 ├── bundle.sh                  # Application packaging and codesigning script
-├── Package.swift              # Swift Package Manager configuration
-└── raycast-extension/         # Full Raycast extension integration
+└── Package.swift              # Swift Package Manager configuration
 ```
 
 ---
