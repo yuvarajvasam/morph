@@ -76,186 +76,124 @@ public struct DropShelfView: View {
 
     // MARK: - 1. Top Toolbar
     private var headerBar: some View {
-        HStack(spacing: 0) {
-            // Left Group: Add (+) | Collapse (︽)
+        GlassEffectContainer {
             HStack(spacing: 0) {
-                Button(action: openFilePicker) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.85))
-                        .frame(width: 28, height: 28)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .help("Add files or folders to shelf")
-
-                Rectangle()
-                    .fill(Color.white.opacity(0.18))
-                    .frame(width: 1, height: 14)
-
-                Button(action: {
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.75)) {
-                        viewModel.isCompactMode.toggle()
+                // Left Group: Add (+) | Collapse (︽)
+                HStack(spacing: 0) {
+                    Button(action: openFilePicker) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.85))
+                            .frame(width: 28, height: 28)
+                            .contentShape(Rectangle())
                     }
-                }) {
-                    Image(systemName: viewModel.isCompactMode ? "chevron.down" : "chevron.up")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(.white.opacity(0.75))
-                        .frame(width: 28, height: 28)
-                        .contentShape(Rectangle())
+                    .buttonStyle(.plain)
+                    .help("Add files or folders to shelf")
+
+                    Rectangle()
+                        .fill(Color.white.opacity(0.18))
+                        .frame(width: 1, height: 14)
+
+                    Button(action: {
+                        withAnimation(.spring(response: 0.28, dampingFraction: 0.75)) {
+                            viewModel.isCompactMode.toggle()
+                        }
+                    }) {
+                        Image(systemName: viewModel.isCompactMode ? "chevron.down" : "chevron.up")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.white.opacity(0.75))
+                            .frame(width: 28, height: 28)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .help(viewModel.isCompactMode ? "Expand shelf" : "Collapse shelf")
                 }
-                .buttonStyle(.plain)
-                .help(viewModel.isCompactMode ? "Expand shelf" : "Collapse shelf")
-            }
-            .background(Color.white.opacity(0.08))
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .strokeBorder(
-                        LinearGradient(
-                            colors: [
-                                Color.white.opacity(0.24),
-                                Color.white.opacity(0.06),
-                                Color.clear
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        ),
-                        lineWidth: 0.75
-                    )
-            )
+                .glassEffect(.regular.interactive(), in: ConcentricRectangle(cornerRadius: 8, minimumRadius: 4))
 
-            Spacer()
+                Spacer()
 
-            // Center: Collection / Workspace Selector Pill
-            Menu {
-                Section("Workspaces") {
-                    ForEach(shelfManager.availableCollections, id: \.self) { collection in
-                        Button(action: {
-                            shelfManager.switchCollection(to: collection)
-                        }) {
-                            HStack {
-                                Text(collection)
-                                if shelfManager.activeCollection == collection {
-                                    Spacer()
-                                    Image(systemName: "checkmark")
+                // Center: Collection / Workspace Selector Pill
+                Menu {
+                    Section("Workspaces") {
+                        ForEach(shelfManager.availableCollections, id: \.self) { collection in
+                            Button(action: {
+                                shelfManager.switchCollection(to: collection)
+                            }) {
+                                HStack {
+                                    Text(collection)
+                                    if shelfManager.activeCollection == collection {
+                                        Spacer()
+                                        Image(systemName: "checkmark")
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                Divider()
+                    Divider()
 
-                Button("Reveal in Finder") {
-                    if let selected = shelfManager.selectedItemId,
-                       let item = shelfManager.items.first(where: { $0.id == selected }),
-                       !item.isWebLink {
-                        NSWorkspace.shared.activateFileViewerSelecting([item.url])
-                    } else if let first = shelfManager.items.first(where: { !$0.isWebLink }) {
-                        NSWorkspace.shared.activateFileViewerSelecting([first.url])
+                    Button("Reveal in Finder") {
+                        if let selected = shelfManager.selectedItemId,
+                           let item = shelfManager.items.first(where: { $0.id == selected }),
+                           !item.isWebLink {
+                            NSWorkspace.shared.activateFileViewerSelecting([item.url])
+                        } else if let first = shelfManager.items.first(where: { !$0.isWebLink }) {
+                            NSWorkspace.shared.activateFileViewerSelecting([first.url])
+                        }
                     }
-                }
-                .disabled(shelfManager.items.allSatisfy { $0.isWebLink })
+                    .disabled(shelfManager.items.allSatisfy { $0.isWebLink })
 
-                Button("Clear Shelf", role: .destructive) {
-                    shelfManager.clearShelf()
+                    Button("Clear Shelf", role: .destructive) {
+                        shelfManager.clearShelf()
+                    }
+                    .disabled(shelfManager.items.isEmpty)
+                } label: {
+                    HStack(spacing: 5) {
+                        Text(shelfManager.activeCollection)
+                            .font(.system(size: 13, weight: .medium))
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 9, weight: .semibold))
+                            .opacity(0.8)
+                    }
+                    .foregroundColor(.white.opacity(0.92))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 5)
+                    .glassEffect(.regular.interactive(), in: Capsule())
                 }
-                .disabled(shelfManager.items.isEmpty)
-            } label: {
-                HStack(spacing: 5) {
-                    Text(shelfManager.activeCollection)
-                        .font(.system(size: 13, weight: .medium))
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 9, weight: .semibold))
-                        .opacity(0.8)
+                .menuStyle(.borderlessButton)
+
+                Spacer()
+
+                // Right Group: Launch Morph Panel (❐) & Settings (⚙)
+                HStack(spacing: 6) {
+                    Button(action: {
+                        FloatingPanelController.shared.toggle()
+                    }) {
+                        Image(systemName: "square.on.square")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.white.opacity(0.85))
+                            .frame(width: 28, height: 28)
+                            .glassEffect(.regular.interactive(), in: ConcentricRectangle(cornerRadius: 8, minimumRadius: 4))
+                    }
+                    .buttonStyle(.plain)
+                    .help("Toggle Morph Floating Launcher (⌥Space)")
+
+                    Button(action: {
+                        SettingsWindowController.shared.show()
+                    }) {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.white.opacity(0.85))
+                            .frame(width: 28, height: 28)
+                            .glassEffect(.regular.interactive(), in: ConcentricRectangle(cornerRadius: 8, minimumRadius: 4))
+                    }
+                    .buttonStyle(.plain)
+                    .help("Settings (⌘,)")
                 }
-                .foregroundColor(.white.opacity(0.92))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 5)
-                .background(Color.white.opacity(0.09))
-                .clipShape(Capsule())
-                .overlay(
-                    Capsule()
-                        .strokeBorder(
-                            LinearGradient(
-                                colors: [
-                                    Color.white.opacity(0.28),
-                                    Color.white.opacity(0.08),
-                                    Color.clear
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            ),
-                            lineWidth: 0.75
-                        )
-                )
             }
-            .menuStyle(.borderlessButton)
-
-            Spacer()
-
-            // Right Group: Launch Morph Panel (❐) & Settings (⚙)
-            HStack(spacing: 6) {
-                Button(action: {
-                    FloatingPanelController.shared.toggle()
-                }) {
-                    Image(systemName: "square.on.square")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.white.opacity(0.85))
-                        .frame(width: 28, height: 28)
-                        .background(Color.white.opacity(0.08))
-                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .strokeBorder(
-                                    LinearGradient(
-                                        colors: [
-                                            Color.white.opacity(0.24),
-                                            Color.white.opacity(0.06),
-                                            Color.clear
-                                        ],
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    ),
-                                    lineWidth: 0.75
-                                )
-                        )
-                }
-                .buttonStyle(.plain)
-                .help("Toggle Morph Floating Launcher (⌥Space)")
-
-                Button(action: {
-                    SettingsWindowController.shared.show()
-                }) {
-                    Image(systemName: "gearshape")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.white.opacity(0.85))
-                        .frame(width: 28, height: 28)
-                        .background(Color.white.opacity(0.08))
-                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .strokeBorder(
-                                    LinearGradient(
-                                        colors: [
-                                            Color.white.opacity(0.24),
-                                            Color.white.opacity(0.06),
-                                            Color.clear
-                                        ],
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    ),
-                                    lineWidth: 0.75
-                                )
-                        )
-                }
-                .buttonStyle(.plain)
-                .help("Settings (⌘,)")
-            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
     }
 
     // MARK: - 2. Expanded Shelf Grid
@@ -665,12 +603,14 @@ public struct DropShelfView: View {
             } else {
                 // Interactive Action Pills (Drop Target + Tap to Execute)
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(ShelfActionType.allCases) { action in
-                            actionPill(for: action)
+                    GlassEffectContainer(spacing: 8) {
+                        HStack(spacing: 8) {
+                            ForEach(ShelfActionType.allCases) { action in
+                                actionPill(for: action)
+                            }
                         }
+                        .padding(.vertical, 2)
                     }
-                    .padding(.vertical, 2)
                 }
             }
         }
@@ -680,6 +620,7 @@ public struct DropShelfView: View {
     private func actionPill(for action: ShelfActionType) -> some View {
         let isTargeted = viewModel.draggedActionTarget == action
         let tint = action.tintColor
+        let actionTint = Color(red: tint.red, green: tint.green, blue: tint.blue)
 
         return HStack(spacing: 5) {
             Image(systemName: action.iconName)
@@ -687,26 +628,12 @@ public struct DropShelfView: View {
             Text(action.rawValue)
                 .font(.system(size: 11, weight: .medium))
         }
-        .foregroundColor(isTargeted ? .white : Color(red: tint.red, green: tint.green, blue: tint.blue))
+        .foregroundColor(isTargeted ? .white : actionTint)
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
-        .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(isTargeted ? Color(red: tint.red, green: tint.green, blue: tint.blue) : Color.white.opacity(0.07))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .strokeBorder(
-                    LinearGradient(
-                        colors: [
-                            isTargeted ? Color.white : Color(red: tint.red, green: tint.green, blue: tint.blue).opacity(0.45),
-                            isTargeted ? Color.white.opacity(0.5) : Color(red: tint.red, green: tint.green, blue: tint.blue).opacity(0.15)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    ),
-                    lineWidth: isTargeted ? 1.0 : 0.75
-                )
+        .glassEffect(
+            isTargeted ? .regular.tint(actionTint).interactive() : .regular.interactive(),
+            in: ConcentricRectangle(cornerRadius: 8, minimumRadius: 4)
         )
         .scaleEffect(isTargeted ? 1.05 : 1.0)
         .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isTargeted)

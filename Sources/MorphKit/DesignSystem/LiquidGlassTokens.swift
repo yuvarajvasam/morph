@@ -298,5 +298,6 @@ public extension Font {
 @MainActor
 public final class HoverState: ObservableObject {
     @Published public var isHovered: Bool = false
+    @Published public var isPressed: Bool = false
     public init() {}
 }

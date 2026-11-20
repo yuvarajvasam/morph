@@ -324,33 +324,35 @@ public struct LauncherView: View {
 
     private var categoryChipsView: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                // "All Tools" Chip
-                categoryChip(
-                    title: "All Tools",
-                    icon: "square.grid.2x2",
-                    isSelected: viewModel.selectedCategory == nil
-                ) {
-                    withAnimation(LiquidGlass.quickSpring) {
-                        viewModel.selectedCategory = nil
-                        viewModel.selectedIndex = 0
-                    }
-                }
-
-                // Category Chips
-                ForEach(ConversionCategory.allCases) { cat in
+            GlassEffectContainer(spacing: 8) {
+                HStack(spacing: 8) {
+                    // "All Tools" Chip
                     categoryChip(
-                        title: cat.displayName,
-                        icon: cat.icon,
-                        isSelected: viewModel.selectedCategory == cat
+                        title: "All Tools",
+                        icon: "square.grid.2x2",
+                        isSelected: viewModel.selectedCategory == nil
                     ) {
                         withAnimation(LiquidGlass.quickSpring) {
-                            if viewModel.selectedCategory == cat {
-                                viewModel.selectedCategory = nil
-                            } else {
-                                viewModel.selectedCategory = cat
-                            }
+                            viewModel.selectedCategory = nil
                             viewModel.selectedIndex = 0
+                        }
+                    }
+
+                    // Category Chips
+                    ForEach(ConversionCategory.allCases) { cat in
+                        categoryChip(
+                            title: cat.displayName,
+                            icon: cat.icon,
+                            isSelected: viewModel.selectedCategory == cat
+                        ) {
+                            withAnimation(LiquidGlass.quickSpring) {
+                                if viewModel.selectedCategory == cat {
+                                    viewModel.selectedCategory = nil
+                                } else {
+                                    viewModel.selectedCategory = cat
+                                }
+                                viewModel.selectedIndex = 0
+                            }
                         }
                     }
                 }
@@ -369,24 +371,11 @@ public struct LauncherView: View {
             }
             .padding(.horizontal, 11)
             .padding(.vertical, 5)
-            .background {
-                if isSelected {
-                    Capsule()
-                        .fill(Color.white.opacity(0.18))
-                        .overlay {
-                            Capsule()
-                                .strokeBorder(Color.white.opacity(0.35), lineWidth: 0.75)
-                        }
-                } else {
-                    Capsule()
-                        .fill(Color.white.opacity(0.06))
-                        .overlay {
-                            Capsule()
-                                .strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5)
-                        }
-                }
-            }
-            .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.70))
+            .glassEffect(
+                isSelected ? .regular.tint(LiquidGlass.brandAccent).interactive() : .regular.interactive(),
+                in: Capsule()
+            )
+            .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.80))
         }
         .buttonStyle(.plain)
     }
@@ -1353,14 +1342,16 @@ public struct LauncherView: View {
     // MARK: - Persistent Footer Bar (Exact Representation from Reference Images 1, 2, 3, 4)
 
     private var persistentFooterBar: some View {
-        HStack(alignment: .center, spacing: 0) {
-            // BOTTOM LEFT: Tool Icon + Tool Name Pill (Image 1, 2, 3, 4)
-            bottomLeftToolPill
+        GlassEffectContainer {
+            HStack(alignment: .center, spacing: 0) {
+                // BOTTOM LEFT: Tool Icon + Tool Name Pill (Image 1, 2, 3, 4)
+                bottomLeftToolPill
 
-            Spacer()
+                Spacer()
 
-            // BOTTOM RIGHT: Primary Action [↩] + Actions [⌘] [K] (Image 1, 2)
-            bottomRightActionsPill
+                // BOTTOM RIGHT: Primary Action [↩] + Actions [⌘] [K] (Image 1, 2)
+                bottomRightActionsPill
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
@@ -1435,13 +1426,7 @@ public struct LauncherView: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
-        .background(
-            Capsule()
-                .fill(Color.white.opacity(0.08))
-                .overlay {
-                    Capsule().strokeBorder(Color.white.opacity(0.06), lineWidth: 0.5)
-                }
-        )
+        .glassEffect(.regular, in: Capsule())
         .fixedSize()
     }
 
@@ -1460,8 +1445,8 @@ public struct LauncherView: View {
                 }
 
                 Text(primaryActionTitle)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(viewModel.unsupportedFileNotice != nil ? Color.orange.opacity(0.95) : Color.white.opacity(0.88))
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(viewModel.unsupportedFileNotice != nil ? Color.orange.opacity(0.95) : Color.white)
 
                 if viewModel.activeCommand != nil && viewModel.unsupportedFileNotice == nil {
                     KeycapBadge("⌘")
@@ -1470,14 +1455,13 @@ public struct LauncherView: View {
                     KeycapBadge("↩")
                 }
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(
-                Capsule()
-                    .fill(viewModel.unsupportedFileNotice != nil ? Color.orange.opacity(0.12) : Color.white.opacity(0.08))
-                    .overlay {
-                        Capsule().strokeBorder(viewModel.unsupportedFileNotice != nil ? Color.orange.opacity(0.32) : Color.white.opacity(0.06), lineWidth: 0.5)
-                    }
+            .padding(.horizontal, 11)
+            .padding(.vertical, 5.5)
+            .glassEffect(
+                viewModel.unsupportedFileNotice != nil ?
+                    .regular.tint(Color.orange).interactive() :
+                    (viewModel.activeCommand != nil ? .regular.tint(LiquidGlass.brandAccent).interactive() : .regular.interactive()),
+                in: Capsule()
             )
             .contentShape(Capsule())
         }

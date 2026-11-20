@@ -27,92 +27,53 @@ public struct FloatingDropTargetView: View {
         ZStack {
             // Background Obsidian Liquid Glass Pod (Axiom Regular Liquid Glass)
             ZStack {
-                // Desktop optical vibrancy blur
-                VisualEffectView(
-                    material: .hudWindow,
-                    blendingMode: .behindWindow,
-                    state: .active,
-                    cornerRadius: 14
-                )
-
-                // Atmospheric dark glass tint
-                LinearGradient(
-                    colors: [
-                        Color(red: 14 / 255, green: 26 / 255, blue: 34 / 255).opacity(0.85),
-                        Color(red: 8 / 255, green: 16 / 255, blue: 22 / 255).opacity(0.92)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay(
-                // Specular highlight rim (Lensing & Edge Lighting)
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(
-                        LinearGradient(
-                            colors: [
-                                Color.white.opacity(viewModel.isTargeted ? 0.85 : 0.32),
-                                Color.white.opacity(viewModel.isTargeted ? 0.30 : 0.08),
-                                Color.clear
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        ),
-                        lineWidth: viewModel.isTargeted ? 1.5 : 0.75
-                    )
-            )
-            // Dual-layer shadows: ambient shadow + contact shadow
-            .shadow(color: Color.black.opacity(0.35), radius: 6, x: 0, y: 3)
-            .shadow(
-                color: viewModel.isTargeted ? LiquidGlass.brandAccent.opacity(0.60) : Color.black.opacity(0.12),
-                radius: viewModel.isTargeted ? 10 : 3,
-                x: 0,
-                y: 1.5
-            )
-            .frame(width: 50, height: 50)
-
-            // New Sleek Illuminated Drop Tray Icon
-            VStack(spacing: 3) {
-                // Descending Animated Neon Arrow
-                Image(systemName: "arrow.down")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [
-                                Color(red: 0.40, green: 0.85, blue: 1.0),
-                                Color(red: 0.75, green: 0.45, blue: 1.0)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .offset(y: viewModel.isTargeted ? 2.5 : (viewModel.pulseOffset * 1.5))
-                    .shadow(color: Color.cyan.opacity(0.6), radius: 4)
-
-                // Frosted Glass Holding Shelf / Tray
-                ZStack {
-                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .fill(Color.white.opacity(0.12))
-                        .frame(width: 28, height: 5)
-
-                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .stroke(
+                // Sleek Illuminated Drop Tray Icon
+                VStack(spacing: 3) {
+                    // Descending Animated Neon Arrow
+                    Image(systemName: "arrow.down")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(
                             LinearGradient(
                                 colors: [
-                                    Color.cyan.opacity(0.8),
-                                    Color.white.opacity(0.4)
+                                    Color(red: 0.40, green: 0.85, blue: 1.0),
+                                    Color(red: 0.75, green: 0.45, blue: 1.0)
                                 ],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            ),
-                            lineWidth: 1
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
                         )
-                        .frame(width: 28, height: 5)
+                        .offset(y: viewModel.isTargeted ? 2.5 : (viewModel.pulseOffset * 1.5))
+                        .shadow(color: Color.cyan.opacity(0.6), radius: 4)
+
+                    // Frosted Glass Holding Shelf / Tray
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 3, style: .continuous)
+                            .fill(Color.white.opacity(0.12))
+                            .frame(width: 28, height: 5)
+
+                        RoundedRectangle(cornerRadius: 3, style: .continuous)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [
+                                        Color.cyan.opacity(0.8),
+                                        Color.white.opacity(0.4)
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                ),
+                                lineWidth: 1
+                            )
+                            .frame(width: 28, height: 5)
+                    }
                 }
+                .scaleEffect(viewModel.isTargeted ? 1.08 : 1.0)
+                .animation(.spring(response: 0.28, dampingFraction: 0.65), value: viewModel.isTargeted)
             }
-            .scaleEffect(viewModel.isTargeted ? 1.08 : 1.0)
-            .animation(.spring(response: 0.28, dampingFraction: 0.65), value: viewModel.isTargeted)
+            .frame(width: 50, height: 50)
+            .glassEffect(
+                viewModel.isTargeted ? .regular.tint(LiquidGlass.brandAccent).interactive() : .regular.interactive(),
+                in: ConcentricRectangle(cornerRadius: 14, minimumRadius: 6)
+            )
 
             // Saved Items Count Badge in Top Right
             if shelfManager.items.count > 0 {
