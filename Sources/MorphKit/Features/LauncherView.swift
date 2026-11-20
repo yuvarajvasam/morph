@@ -791,17 +791,10 @@ public struct LauncherView: View {
                                     HStack(spacing: 9) {
                                         ToolSquircleIcon(command: command, size: 28, cornerRadius: 7)
 
-                                        VStack(alignment: .leading, spacing: 1.5) {
-                                            Text(command.title)
-                                                .font(.system(size: 12.5, weight: isSelected ? .semibold : .medium))
-                                                .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.90))
-                                                .lineLimit(1)
-
-                                            Text(command.subtitle)
-                                                .font(.system(size: 10))
-                                                .foregroundStyle(Color.white.opacity(0.45))
-                                                .lineLimit(1)
-                                        }
+                                        Text(command.title)
+                                            .font(.system(size: 12.5, weight: isSelected ? .semibold : .medium))
+                                            .foregroundStyle(isSelected ? Color.white : Color.white.opacity(0.90))
+                                            .lineLimit(1)
 
                                         Spacer()
 
