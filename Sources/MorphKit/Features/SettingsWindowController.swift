@@ -93,7 +93,7 @@ public final class SettingsWindowController: NSObject, NSWindowDelegate {
 
         guard let window else { return }
         window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        NSApp.activate()
     }
 
     public func hide() {

@@ -95,7 +95,7 @@ public final class FloatingPanelController: NSObject, NSWindowDelegate {
 
         panel.center()
         panel.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        NSApp.activate()
     }
 
     public func hide() {

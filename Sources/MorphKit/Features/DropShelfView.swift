@@ -83,7 +83,7 @@ public struct DropShelfView: View {
                     Button(action: openFilePicker) {
                         Image(systemName: "plus")
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.85))
+                            .foregroundStyle(.white.opacity(0.85))
                             .frame(width: 28, height: 28)
                             .contentShape(Rectangle())
                     }
@@ -101,7 +101,7 @@ public struct DropShelfView: View {
                     }) {
                         Image(systemName: viewModel.isCompactMode ? "chevron.down" : "chevron.up")
                             .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(.white.opacity(0.75))
+                            .foregroundStyle(.white.opacity(0.75))
                             .frame(width: 28, height: 28)
                             .contentShape(Rectangle())
                     }
@@ -155,7 +155,7 @@ public struct DropShelfView: View {
                             .font(.system(size: 9, weight: .semibold))
                             .opacity(0.8)
                     }
-                    .foregroundColor(.white.opacity(0.92))
+                    .foregroundStyle(.white.opacity(0.92))
                     .padding(.horizontal, 12)
                     .padding(.vertical, 5)
                     .glassEffect(.regular.interactive(), in: Capsule())
@@ -171,7 +171,7 @@ public struct DropShelfView: View {
                     }) {
                         Image(systemName: "square.on.square")
                             .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(.white.opacity(0.85))
+                            .foregroundStyle(.white.opacity(0.85))
                             .frame(width: 28, height: 28)
                             .glassEffect(.regular.interactive(), in: ConcentricRectangle(cornerRadius: 8, minimumRadius: 4))
                     }
@@ -183,7 +183,7 @@ public struct DropShelfView: View {
                     }) {
                         Image(systemName: "gearshape")
                             .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(.white.opacity(0.85))
+                            .foregroundStyle(.white.opacity(0.85))
                             .frame(width: 28, height: 28)
                             .glassEffect(.regular.interactive(), in: ConcentricRectangle(cornerRadius: 8, minimumRadius: 4))
                     }
@@ -244,12 +244,12 @@ public struct DropShelfView: View {
 
                     Image(systemName: "plus")
                         .font(.system(size: 26, weight: .light))
-                        .foregroundColor(.white.opacity(viewModel.isAddHovered ? 1.0 : 0.75))
+                        .foregroundStyle(.white.opacity(viewModel.isAddHovered ? 1.0 : 0.75))
                 }
 
                 Text("Add to Grid")
                     .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(.white.opacity(0.72))
+                    .foregroundStyle(.white.opacity(0.72))
                     .lineLimit(1)
                     .frame(width: 68)
             }
@@ -276,12 +276,12 @@ public struct DropShelfView: View {
 
                 Image(systemName: "arrow.down")
                     .font(.system(size: 24, weight: .semibold))
-                    .foregroundColor(viewModel.isDropBarHovered ? .cyan : .white.opacity(0.75))
+                    .foregroundStyle(viewModel.isDropBarHovered ? .cyan : .white.opacity(0.75))
             }
 
             Text("Drop Bar")
                 .font(.system(size: 10, weight: .medium))
-                .foregroundColor(.white.opacity(0.72))
+                .foregroundStyle(.white.opacity(0.72))
                 .lineLimit(1)
                 .frame(width: 68)
         }
@@ -315,7 +315,7 @@ public struct DropShelfView: View {
                     }) {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 14))
-                            .foregroundColor(.white.opacity(0.92))
+                            .foregroundStyle(.white.opacity(0.92))
                             .background(Circle().fill(Color.black.opacity(0.75)))
                     }
                     .buttonStyle(.plain)
@@ -350,7 +350,7 @@ public struct DropShelfView: View {
             // Filename / Domain Title Label (Strictly bounded, middle-truncated, tooltip supported)
             Text(item.name)
                 .font(.system(size: 10, weight: .regular))
-                .foregroundColor(.white.opacity(0.88))
+                .foregroundStyle(.white.opacity(0.88))
                 .lineLimit(2)
                 .truncationMode(.middle)
                 .multilineTextAlignment(.center)
@@ -378,12 +378,12 @@ public struct DropShelfView: View {
                 VStack(spacing: 2) {
                     Image(systemName: "folder.fill")
                         .font(.system(size: 32))
-                        .foregroundColor(Color(red: 0.35, green: 0.70, blue: 0.98))
+                        .foregroundStyle(Color(red: 0.35, green: 0.70, blue: 0.98))
 
                     if let count = item.itemCount {
                         Text("\(count) items")
                             .font(.system(size: 8, weight: .medium))
-                            .foregroundColor(.white.opacity(0.6))
+                            .foregroundStyle(.white.opacity(0.6))
                     }
                 }
             }
@@ -401,7 +401,7 @@ public struct DropShelfView: View {
                 } else {
                     Image(systemName: "photo")
                         .font(.system(size: 26))
-                        .foregroundColor(.white.opacity(0.6))
+                        .foregroundStyle(.white.opacity(0.6))
                 }
             }
 
@@ -419,7 +419,7 @@ public struct DropShelfView: View {
 
                 Image(systemName: "music.note")
                     .font(.system(size: 30, weight: .medium))
-                    .foregroundColor(Color(white: 0.55))
+                    .foregroundStyle(Color(white: 0.55))
             }
 
         case .link:
@@ -437,12 +437,12 @@ public struct DropShelfView: View {
                 VStack(spacing: 4) {
                     Image(systemName: "globe")
                         .font(.system(size: 24, weight: .light))
-                        .foregroundColor(Color.cyan)
+                        .foregroundStyle(Color.cyan)
                         .shadow(color: Color.cyan.opacity(0.5), radius: 4)
 
                     Text(item.name)
                         .font(.system(size: 8, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.9))
+                        .foregroundStyle(.white.opacity(0.9))
                         .lineLimit(1)
                         .padding(.horizontal, 4)
                         .padding(.vertical, 1)
@@ -464,7 +464,7 @@ public struct DropShelfView: View {
                 } else {
                     Image(systemName: item.category.iconName)
                         .font(.system(size: 28))
-                        .foregroundColor(.white.opacity(0.65))
+                        .foregroundStyle(.white.opacity(0.65))
                 }
             }
         }
@@ -487,7 +487,7 @@ public struct DropShelfView: View {
 
                 Image(systemName: "circle.circle")
                     .font(.system(size: 20, weight: .medium))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
             }
             .help("Morph Drop Pod")
 
@@ -495,7 +495,7 @@ public struct DropShelfView: View {
             if shelfManager.items.isEmpty {
                 Text("Drop files here to store temporarily")
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.white.opacity(0.5))
+                    .foregroundStyle(.white.opacity(0.5))
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 6) {
@@ -503,11 +503,11 @@ public struct DropShelfView: View {
                             HStack(spacing: 5) {
                                 Image(systemName: item.category.iconName)
                                     .font(.system(size: 10))
-                                    .foregroundColor(.cyan)
+                                    .foregroundStyle(.cyan)
 
                                 Text(item.name)
                                     .font(.system(size: 10, weight: .medium))
-                                    .foregroundColor(.white.opacity(0.85))
+                                    .foregroundStyle(.white.opacity(0.85))
                                     .lineLimit(1)
                             }
                             .padding(.horizontal, 8)
@@ -544,7 +544,7 @@ public struct DropShelfView: View {
                     Image(systemName: "chevron.down")
                         .font(.system(size: 9, weight: .semibold))
                 }
-                .foregroundColor(.white.opacity(0.85))
+                .foregroundStyle(.white.opacity(0.85))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
                 .background(Color.white.opacity(0.1))
@@ -567,7 +567,7 @@ public struct DropShelfView: View {
             HStack {
                 Text("Actions")
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.55))
+                    .foregroundStyle(.white.opacity(0.55))
                     .textCase(.uppercase)
 
                 Spacer()
@@ -579,12 +579,12 @@ public struct DropShelfView: View {
                             .frame(width: 14, height: 14)
                         Text(shelfManager.statusMessage ?? "Processing...")
                             .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(.cyan)
+                            .foregroundStyle(.cyan)
                     }
                 } else if let msg = shelfManager.statusMessage {
                     Text(msg)
                         .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(.green.opacity(0.9))
+                        .foregroundStyle(.green.opacity(0.9))
                 }
             }
 
@@ -593,7 +593,7 @@ public struct DropShelfView: View {
                 HStack {
                     Text("Empty")
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(.white.opacity(0.45))
+                        .foregroundStyle(.white.opacity(0.45))
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
                         .background(Color.white.opacity(0.06))
@@ -628,7 +628,7 @@ public struct DropShelfView: View {
             Text(action.rawValue)
                 .font(.system(size: 11, weight: .medium))
         }
-        .foregroundColor(isTargeted ? .white : actionTint)
+        .foregroundStyle(isTargeted ? .white : actionTint)
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
         .glassEffect(

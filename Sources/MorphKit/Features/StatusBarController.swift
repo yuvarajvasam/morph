@@ -132,7 +132,7 @@ public final class StatusBarController: NSObject, NSPopoverDelegate, NSMenuDeleg
             let popover = NSPopover()
             popover.contentSize = NSSize(width: 440, height: 380)
             popover.behavior = .transient
-            popover.appearance = NSAppearance(named: .vibrantDark)
+            popover.appearance = NSAppearance(named: .darkAqua)
             popover.delegate = self
             let hostingController = NSHostingController(rootView: DropShelfView(shelfManager: ShelfManager.shared))
             hostingController.view.wantsLayer = true
@@ -142,10 +142,10 @@ public final class StatusBarController: NSObject, NSPopoverDelegate, NSMenuDeleg
         }
 
         if shelfPopover?.isShown != true {
-            NSApp.activate(ignoringOtherApps: true)
+            NSApp.activate()
             shelfPopover?.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             if let window = shelfPopover?.contentViewController?.view.window {
-                window.appearance = NSAppearance(named: .vibrantDark)
+                window.appearance = NSAppearance(named: .darkAqua)
                 window.isOpaque = false
                 window.backgroundColor = .clear
             }
@@ -190,7 +190,7 @@ public final class StatusBarController: NSObject, NSPopoverDelegate, NSMenuDeleg
             urls.append(contentsOf: items)
         }
 
-        if urls.isEmpty, let propertyList = pasteboard.propertyList(forType: NSPasteboard.PasteboardType("NSFilenamesPboardType")) as? [String] {
+        if urls.isEmpty, let propertyList = pasteboard.propertyList(forType: .fileURL) as? [String] {
             urls.append(contentsOf: propertyList.map { URL(fileURLWithPath: $0) })
         }
 

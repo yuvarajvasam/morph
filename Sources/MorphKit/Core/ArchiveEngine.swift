@@ -65,7 +65,7 @@ public final class ArchiveEngine: @unchecked Sendable {
         try process.run()
         process.waitUntilExit()
 
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        let data = (try? pipe.fileHandleForReading.readToEnd()) ?? Data()
         guard let output = String(data: data, encoding: .utf8) else {
             return (0, 0, [])
         }

@@ -82,7 +82,7 @@ public struct FloatingDropTargetView: View {
                         Spacer()
                         Text("\(shelfManager.items.count)")
                             .font(.system(size: 9, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundStyle(Color.white)
                             .frame(minWidth: 15, minHeight: 15)
                             .padding(.horizontal, 3)
                             .background(Color.cyan)

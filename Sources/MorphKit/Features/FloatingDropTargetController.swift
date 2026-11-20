@@ -55,7 +55,7 @@ final class FloatingDropDestinationOverlayView: NSView {
             urls.append(contentsOf: items)
         }
 
-        if urls.isEmpty, let propertyList = pasteboard.propertyList(forType: NSPasteboard.PasteboardType("NSFilenamesPboardType")) as? [String] {
+        if urls.isEmpty, let propertyList = pasteboard.propertyList(forType: .fileURL) as? [String] {
             urls.append(contentsOf: propertyList.map { URL(fileURLWithPath: $0) })
         }
 
@@ -228,7 +228,6 @@ public final class FloatingDropTargetController: NSObject {
         let recognizedTypes: [NSPasteboard.PasteboardType] = [
             .fileURL,
             NSPasteboard.PasteboardType("public.file-url"),
-            NSPasteboard.PasteboardType("NSFilenamesPboardType"),
             NSPasteboard.PasteboardType("com.apple.finder.node"),
             .URL,
             NSPasteboard.PasteboardType("public.url")
