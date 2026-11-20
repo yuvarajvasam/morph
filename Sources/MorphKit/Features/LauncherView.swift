@@ -419,6 +419,8 @@ public struct LauncherView: View {
                         ArchiveOperationsView(viewModel: viewModel)
                     case .qrBarcode:
                         QRCodeOperationsView(viewModel: viewModel)
+                    case .media, .ocr, .office, .icon, .data:
+                        UniversalOperationsView(viewModel: viewModel)
                     }
                 }
             } else {
@@ -1046,6 +1048,16 @@ public struct LauncherView: View {
             return "Drag and drop an archive or files to compress / extract"
         case .qrBarcode:
             return "Drag and drop an image containing a QR code or barcode to scan"
+        case .media:
+            return "Drag and drop video (MP4, MOV, MKV) or audio files here, or browse files"
+        case .ocr:
+            return "Drag and drop documents, scans, or photos here for OCR text extraction"
+        case .office:
+            return "Drag and drop Word, Excel, PowerPoint, or Markdown files here"
+        case .icon:
+            return "Drag and drop image or SVG files to convert to macOS .icns icons"
+        case .data:
+            return "Drag and drop JSON, Property List (.plist), or CSV data files here"
         }
     }
 
@@ -1501,6 +1513,23 @@ public struct LauncherView: View {
             case "archive.extract": return "Extract Archive"
             case "qr.generate": return "Generate QR"
             case "barcode.generate": return "Generate Barcode"
+            case "ocr.imageToText", "ocr.pdfToText": return "Extract Text"
+            case "ocr.searchablePDF": return "Make Searchable"
+            case "icon.generateICNS": return "Create ICNS"
+            case "icon.extractFromICNS": return "Extract PNG"
+            case "vector.toPDF": return "Render PDF"
+            case "vector.toImage": return "Rasterize SVG"
+            case "video.convert": return "Convert Video"
+            case "video.compress": return "Compress Video"
+            case "video.toGIF": return "Create GIF"
+            case "video.extractAudio": return "Extract Audio"
+            case "audio.convert": return "Convert Audio"
+            case "office.toPDF": return "Convert to PDF"
+            case "markdown.toPDF": return "Render PDF"
+            case "data.convert": return "Convert Data"
+            case "data.prettify": return "Beautify JSON"
+            case "metadata.strip": return "Strip Metadata"
+            case "metadata.inspect": return "Inspect Tags"
             default: return "Execute"
             }
         } else if viewModel.currentResult != nil {

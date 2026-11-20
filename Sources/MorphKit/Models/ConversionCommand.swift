@@ -3,8 +3,13 @@ import Foundation
 public enum ConversionCategory: String, CaseIterable, Identifiable, Sendable {
     case image = "Images"
     case pdf = "PDFs"
+    case media = "Audio & Video"
+    case ocr = "OCR & Text"
+    case office = "Office & Docs"
+    case icon = "Icons & Vector"
     case archive = "Archives"
     case qrBarcode = "QR & Barcodes"
+    case data = "Data & Code"
 
     public var id: String { rawValue }
 
@@ -14,8 +19,13 @@ public enum ConversionCategory: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .image: return "Image"
         case .pdf: return "PDF"
+        case .media: return "Media"
+        case .ocr: return "OCR"
+        case .office: return "Office Doc"
+        case .icon: return "Icon / Vector"
         case .archive: return "Archive"
         case .qrBarcode: return "QR & Barcode"
+        case .data: return "Data"
         }
     }
 
@@ -23,8 +33,13 @@ public enum ConversionCategory: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .image: return "photo.on.rectangle.angled"
         case .pdf: return "doc.richtext"
+        case .media: return "play.rectangle.fill"
+        case .ocr: return "text.viewfinder"
+        case .office: return "doc.text.fill"
+        case .icon: return "app.dashed"
         case .archive: return "archivebox"
         case .qrBarcode: return "qrcode"
+        case .data: return "curlybraces"
         }
     }
 }

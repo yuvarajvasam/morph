@@ -6,12 +6,22 @@ public final class FileProcessor: Sendable {
 
     public let imageEngine = ImageEngine.shared
     public let pdfEngine = PDFEngine.shared
+    public let archiveEngine = ArchiveEngine.shared
+    public let qrEngine = QRCodeEngine.shared
+    public let ocrEngine = OCREngine.shared
+    public let iconEngine = IconEngine.shared
+    public let mediaEngine = MediaEngine.shared
+    public let officeEngine = OfficeEngine.shared
+    public let dataEngine = DataEngine.shared
+    public let metadataEngine = MetadataEngine.shared
+    public let vectorEngine = VectorEngine.shared
+    public let engineManager = EngineManager.shared
     public let safety = FileSafetyService.shared
     public let registry = ConversionRegistry.shared
 
     public init() {}
 
-    /// Inspects any file URL, determining if it is a supported image, a PDF, or unsupported.
+    /// Inspects any file URL, determining its format and category.
     public func inspect(url: URL) -> FileItem {
         let ext = url.pathExtension.lowercased()
 
@@ -34,6 +44,56 @@ public final class FileProcessor: Sendable {
                 category: .archive,
                 formatName: ext.uppercased(),
                 pageCount: count > 0 ? count : nil
+            )
+        } else if ["mp4", "mov", "mkv", "webm", "avi", "m4v", "flv", "mp3", "m4a", "wav", "aac", "flac", "ogg", "aiff"].contains(ext) {
+            let attributes = (try? FileManager.default.attributesOfItem(atPath: url.path)) ?? [:]
+            let size = attributes[.size] as? Int64 ?? 0
+            return FileItem(
+                url: url,
+                filename: url.lastPathComponent,
+                fileSize: size,
+                category: .media,
+                formatName: ext.uppercased()
+            )
+        } else if ["docx", "doc", "pptx", "ppt", "xlsx", "xls", "odt", "ods", "odp", "rtf", "md", "markdown"].contains(ext) {
+            let attributes = (try? FileManager.default.attributesOfItem(atPath: url.path)) ?? [:]
+            let size = attributes[.size] as? Int64 ?? 0
+            return FileItem(
+                url: url,
+                filename: url.lastPathComponent,
+                fileSize: size,
+                category: .office,
+                formatName: ext.uppercased()
+            )
+        } else if ext == "svg" {
+            let attributes = (try? FileManager.default.attributesOfItem(atPath: url.path)) ?? [:]
+            let size = attributes[.size] as? Int64 ?? 0
+            return FileItem(
+                url: url,
+                filename: url.lastPathComponent,
+                fileSize: size,
+                category: .vector,
+                formatName: "SVG"
+            )
+        } else if ext == "icns" {
+            let attributes = (try? FileManager.default.attributesOfItem(atPath: url.path)) ?? [:]
+            let size = attributes[.size] as? Int64 ?? 0
+            return FileItem(
+                url: url,
+                filename: url.lastPathComponent,
+                fileSize: size,
+                category: .icon,
+                formatName: "ICNS"
+            )
+        } else if ["json", "plist", "csv", "xml"].contains(ext) {
+            let attributes = (try? FileManager.default.attributesOfItem(atPath: url.path)) ?? [:]
+            let size = attributes[.size] as? Int64 ?? 0
+            return FileItem(
+                url: url,
+                filename: url.lastPathComponent,
+                fileSize: size,
+                category: .data,
+                formatName: ext.uppercased()
             )
         }
 

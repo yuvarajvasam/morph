@@ -46,6 +46,15 @@ public final class LauncherViewModel: ObservableObject {
     @Published public var qrScanResultText: String? = nil
     @Published public var isScanningQR: Bool = false
 
+    // Media & Universal Tool States
+    @Published public var mediaTargetFormat: String = "mp4"
+    @Published public var audioTargetFormat: String = "mp3"
+    @Published public var gifFPS: Int = 15
+    @Published public var gifWidth: Int = 480
+    @Published public var dataTargetFormat: String = "plist"
+    @Published public var vectorScale: CGFloat = 2.0
+    @Published public var vectorTargetFormat: ImageFormat = .png
+
     // Action Panel UI state
     @Published public var actionSearchQuery: String = ""
     @Published public var selectedActionIndex: Int = 0
@@ -766,6 +775,197 @@ public final class LauncherViewModel: ObservableObject {
                     outputFormat: "TEXT",
                     durationSeconds: 0.1,
                     notes: "Decoded text: \(joined)"
+                )
+
+            // MARK: - OCR & Vision
+            case "ocr.imageToText":
+                guard let first = droppedFiles.first else { throw ProcessingError.emptyInput }
+                progress = 0.3
+                let text = try await processor.ocrEngine.recognizeText(imageURL: first.url)
+                progress = 0.8
+                let res = try await processor.ocrEngine.exportText(
+                    text: text,
+                    baseFilename: first.filename,
+                    destinationDirectory: targetDirectory
+                )
+                self.currentResult = res
+
+            case "ocr.pdfToText":
+                guard let first = droppedFiles.first else { throw ProcessingError.emptyInput }
+                progress = 0.3
+                let text = try await processor.ocrEngine.recognizePDF(pdfURL: first.url)
+                progress = 0.8
+                let res = try await processor.ocrEngine.exportText(
+                    text: text,
+                    baseFilename: first.filename,
+                    destinationDirectory: targetDirectory
+                )
+                self.currentResult = res
+
+            case "ocr.searchablePDF":
+                guard let first = droppedFiles.first else { throw ProcessingError.emptyInput }
+                progress = 0.4
+                let res = try await processor.ocrEngine.createSearchablePDF(
+                    inputURL: first.url,
+                    destinationDirectory: targetDirectory
+                )
+                self.currentResult = res
+
+            // MARK: - Icons & Vectors
+            case "icon.generateICNS":
+                guard let first = droppedFiles.first else { throw ProcessingError.emptyInput }
+                progress = 0.4
+                let res = try await processor.iconEngine.convertToICNS(
+                    imageURL: first.url,
+                    destinationDirectory: targetDirectory
+                )
+                self.currentResult = res
+
+            case "icon.extractFromICNS":
+                guard let first = droppedFiles.first else { throw ProcessingError.emptyInput }
+                progress = 0.4
+                let res = try await processor.iconEngine.extractFromICNS(
+                    icnsURL: first.url,
+                    destinationDirectory: targetDirectory
+                )
+                self.currentResult = res
+
+            case "vector.toPDF":
+                guard let first = droppedFiles.first else { throw ProcessingError.emptyInput }
+                progress = 0.4
+                let res = try await processor.vectorEngine.svgToPDF(
+                    inputURL: first.url,
+                    destinationDirectory: targetDirectory
+                )
+                self.currentResult = res
+
+            case "vector.toImage":
+                guard let first = droppedFiles.first else { throw ProcessingError.emptyInput }
+                progress = 0.4
+                let res = try await processor.vectorEngine.svgToImage(
+                    inputURL: first.url,
+                    targetFormat: vectorTargetFormat,
+                    scale: vectorScale,
+                    destinationDirectory: targetDirectory
+                )
+                self.currentResult = res
+
+            // MARK: - Video & Audio (FFmpeg)
+            case "video.convert":
+                guard let first = droppedFiles.first else { throw ProcessingError.emptyInput }
+                progress = 0.3
+                let res = try await processor.mediaEngine.convertVideo(
+                    inputURL: first.url,
+                    targetFormat: mediaTargetFormat,
+                    crfPreset: imageSettings.compressionPreset,
+                    destinationDirectory: targetDirectory
+                )
+                self.currentResult = res
+
+            case "video.compress":
+                guard let first = droppedFiles.first else { throw ProcessingError.emptyInput }
+                progress = 0.3
+                let res = try await processor.mediaEngine.convertVideo(
+                    inputURL: first.url,
+                    targetFormat: first.url.pathExtension,
+                    crfPreset: imageSettings.compressionPreset,
+                    destinationDirectory: targetDirectory
+                )
+                self.currentResult = res
+
+            case "video.toGIF":
+                guard let first = droppedFiles.first else { throw ProcessingError.emptyInput }
+                progress = 0.3
+                let res = try await processor.mediaEngine.videoToGIF(
+                    inputURL: first.url,
+                    fps: gifFPS,
+                    width: gifWidth,
+                    destinationDirectory: targetDirectory
+                )
+                self.currentResult = res
+
+            case "video.extractAudio":
+                guard let first = droppedFiles.first else { throw ProcessingError.emptyInput }
+                progress = 0.3
+                let res = try await processor.mediaEngine.extractAudio(
+                    inputURL: first.url,
+                    targetFormat: audioTargetFormat,
+                    destinationDirectory: targetDirectory
+                )
+                self.currentResult = res
+
+            case "audio.convert":
+                guard let first = droppedFiles.first else { throw ProcessingError.emptyInput }
+                progress = 0.3
+                let res = try await processor.mediaEngine.convertAudio(
+                    inputURL: first.url,
+                    targetFormat: audioTargetFormat,
+                    destinationDirectory: targetDirectory
+                )
+                self.currentResult = res
+
+            // MARK: - Office & Documents
+            case "office.toPDF":
+                guard let first = droppedFiles.first else { throw ProcessingError.emptyInput }
+                progress = 0.3
+                let res = try await processor.officeEngine.officeToPDF(
+                    inputURL: first.url,
+                    destinationDirectory: targetDirectory
+                )
+                self.currentResult = res
+
+            case "markdown.toPDF":
+                guard let first = droppedFiles.first else { throw ProcessingError.emptyInput }
+                progress = 0.3
+                let res = try await processor.officeEngine.markdownToPDF(
+                    inputURL: first.url,
+                    destinationDirectory: targetDirectory
+                )
+                self.currentResult = res
+
+            // MARK: - Structured Data
+            case "data.convert":
+                guard let first = droppedFiles.first else { throw ProcessingError.emptyInput }
+                progress = 0.4
+                let res = try await processor.dataEngine.convertData(
+                    inputURL: first.url,
+                    targetFormat: dataTargetFormat,
+                    destinationDirectory: targetDirectory
+                )
+                self.currentResult = res
+
+            case "data.prettify":
+                guard let first = droppedFiles.first else { throw ProcessingError.emptyInput }
+                progress = 0.4
+                let res = try await processor.dataEngine.convertData(
+                    inputURL: first.url,
+                    targetFormat: "format",
+                    destinationDirectory: targetDirectory
+                )
+                self.currentResult = res
+
+            // MARK: - Metadata
+            case "metadata.strip":
+                guard let first = droppedFiles.first else { throw ProcessingError.emptyInput }
+                progress = 0.4
+                let res = try await processor.metadataEngine.stripMetadata(
+                    inputURL: first.url,
+                    destinationDirectory: targetDirectory
+                )
+                self.currentResult = res
+
+            case "metadata.inspect":
+                guard let first = droppedFiles.first else { throw ProcessingError.emptyInput }
+                let tags = processor.metadataEngine.inspectMetadata(url: first.url)
+                let formatted = tags.map { "• \($0.key): \($0.value)" }.sorted().joined(separator: "\n")
+                self.currentResult = ConversionResult(
+                    originalURL: first.url,
+                    outputURLs: [first.url],
+                    originalSize: first.fileSize,
+                    outputSize: first.fileSize,
+                    outputFormat: "METADATA",
+                    durationSeconds: 0.05,
+                    notes: formatted.isEmpty ? "No EXIF or metadata tags found in this file." : formatted
                 )
 
             default:

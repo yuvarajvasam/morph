@@ -37,6 +37,22 @@ public final class CLIHandler {
                 return try await handleToImage(args: remainingArgs, json: isJSON)
             case "to-pdf":
                 return try await handleToPDF(args: remainingArgs, json: isJSON)
+            case "ocr":
+                return try await handleOCR(args: remainingArgs, json: isJSON)
+            case "icon":
+                return try await handleIcon(args: remainingArgs, json: isJSON)
+            case "video":
+                return try await handleVideo(args: remainingArgs, json: isJSON)
+            case "audio":
+                return try await handleAudio(args: remainingArgs, json: isJSON)
+            case "office":
+                return try await handleOffice(args: remainingArgs, json: isJSON)
+            case "data":
+                return try await handleData(args: remainingArgs, json: isJSON)
+            case "metadata":
+                return try await handleMetadata(args: remainingArgs, json: isJSON)
+            case "engines":
+                return try await handleEngines(args: remainingArgs, json: isJSON)
             default:
                 print("❌ Unknown command '\(command)'. Run 'morph --help' for available commands.")
                 return 1
@@ -321,6 +337,216 @@ public final class CLIHandler {
         }
     }
 
+    // MARK: - OCR Command
+
+    private static func handleOCR(args: [String], json: Bool) async throws -> Int32 {
+        guard let path = args.first(where: { !$0.hasPrefix("-") }) else {
+            print("Usage: morph ocr <filepath> [--searchable] [--json]")
+            return 1
+        }
+        let url = URL(fileURLWithPath: path)
+        let isSearchable = args.contains("--searchable")
+        let outDir = resolveOutputDirectory(from: getFlagValue(args, flag: "--output"))
+
+        if isSearchable {
+            let res = try await OCREngine.shared.createSearchablePDF(inputURL: url, destinationDirectory: outDir)
+            printResult(res, json: json)
+        } else {
+            let text: String
+            if url.pathExtension.lowercased() == "pdf" {
+                text = try await OCREngine.shared.recognizePDF(pdfURL: url)
+            } else {
+                text = try await OCREngine.shared.recognizeText(imageURL: url)
+            }
+            let res = try await OCREngine.shared.exportText(text: text, baseFilename: url.lastPathComponent, destinationDirectory: outDir)
+            if json {
+                printResult(res, json: true)
+            } else {
+                print("📝 Recognized Text from \(url.lastPathComponent):\n")
+                print(text)
+                print("\n  👉 Saved to: \(res.outputURLs.first?.path ?? "")")
+            }
+        }
+        return 0
+    }
+
+    // MARK: - Icon Command
+
+    private static func handleIcon(args: [String], json: Bool) async throws -> Int32 {
+        guard let path = args.first(where: { !$0.hasPrefix("-") }) else {
+            print("Usage: morph icon <filepath> [--extract] [--json]")
+            return 1
+        }
+        let url = URL(fileURLWithPath: path)
+        let isExtract = args.contains("--extract") || url.pathExtension.lowercased() == "icns"
+        let outDir = resolveOutputDirectory(from: getFlagValue(args, flag: "--output"))
+
+        let res: ConversionResult
+        if isExtract {
+            res = try await IconEngine.shared.extractFromICNS(icnsURL: url, destinationDirectory: outDir)
+        } else {
+            res = try await IconEngine.shared.convertToICNS(imageURL: url, destinationDirectory: outDir)
+        }
+        printResult(res, json: json)
+        return 0
+    }
+
+    // MARK: - Video Command
+
+    private static func handleVideo(args: [String], json: Bool) async throws -> Int32 {
+        guard let path = args.first(where: { !$0.hasPrefix("-") }) else {
+            print("Usage: morph video <filepath> --to <mp4|mov|webm|gif> [--fps 15] [--width 480] [--json]")
+            return 1
+        }
+        let url = URL(fileURLWithPath: path)
+        let target = getFlagValue(args, flag: "--to") ?? "mp4"
+        let outDir = resolveOutputDirectory(from: getFlagValue(args, flag: "--output"))
+
+        let res: ConversionResult
+        if target.lowercased() == "gif" {
+            let fps = Int(getFlagValue(args, flag: "--fps") ?? "15") ?? 15
+            let width = Int(getFlagValue(args, flag: "--width") ?? "480") ?? 480
+            res = try await MediaEngine.shared.videoToGIF(inputURL: url, fps: fps, width: width, destinationDirectory: outDir)
+        } else {
+            let presetStr = getFlagValue(args, flag: "--preset")?.lowercased() ?? "balanced"
+            let preset: CompressionPreset = presetStr == "light" ? .light : (presetStr == "maximum" ? .maximum : .balanced)
+            res = try await MediaEngine.shared.convertVideo(inputURL: url, targetFormat: target, crfPreset: preset, destinationDirectory: outDir)
+        }
+        printResult(res, json: json)
+        return 0
+    }
+
+    // MARK: - Audio Command
+
+    private static func handleAudio(args: [String], json: Bool) async throws -> Int32 {
+        guard let path = args.first(where: { !$0.hasPrefix("-") }) else {
+            print("Usage: morph audio <filepath> --to <mp3|wav|m4a|aac> [--json]")
+            return 1
+        }
+        let url = URL(fileURLWithPath: path)
+        let target = getFlagValue(args, flag: "--to") ?? "mp3"
+        let outDir = resolveOutputDirectory(from: getFlagValue(args, flag: "--output"))
+
+        let ext = url.pathExtension.lowercased()
+        let res: ConversionResult
+        if ["mp4", "mov", "mkv", "webm", "avi", "m4v"].contains(ext) {
+            res = try await MediaEngine.shared.extractAudio(inputURL: url, targetFormat: target, destinationDirectory: outDir)
+        } else {
+            res = try await MediaEngine.shared.convertAudio(inputURL: url, targetFormat: target, destinationDirectory: outDir)
+        }
+        printResult(res, json: json)
+        return 0
+    }
+
+    // MARK: - Office Command
+
+    private static func handleOffice(args: [String], json: Bool) async throws -> Int32 {
+        guard let path = args.first(where: { !$0.hasPrefix("-") }) else {
+            print("Usage: morph office <filepath> [--json]")
+            return 1
+        }
+        let url = URL(fileURLWithPath: path)
+        let outDir = resolveOutputDirectory(from: getFlagValue(args, flag: "--output"))
+
+        let ext = url.pathExtension.lowercased()
+        let res: ConversionResult
+        if ext == "md" || ext == "markdown" {
+            res = try await OfficeEngine.shared.markdownToPDF(inputURL: url, destinationDirectory: outDir)
+        } else {
+            res = try await OfficeEngine.shared.officeToPDF(inputURL: url, destinationDirectory: outDir)
+        }
+        printResult(res, json: json)
+        return 0
+    }
+
+    // MARK: - Data Command
+
+    private static func handleData(args: [String], json: Bool) async throws -> Int32 {
+        guard let path = args.first(where: { !$0.hasPrefix("-") }) else {
+            print("Usage: morph data <filepath> --to <plist|json|csv> [--json]")
+            return 1
+        }
+        let url = URL(fileURLWithPath: path)
+        let target = getFlagValue(args, flag: "--to") ?? "plist"
+        let outDir = resolveOutputDirectory(from: getFlagValue(args, flag: "--output"))
+
+        let res = try await DataEngine.shared.convertData(inputURL: url, targetFormat: target, destinationDirectory: outDir)
+        printResult(res, json: json)
+        return 0
+    }
+
+    // MARK: - Metadata Command
+
+    private static func handleMetadata(args: [String], json: Bool) async throws -> Int32 {
+        guard let path = args.first(where: { !$0.hasPrefix("-") }) else {
+            print("Usage: morph metadata <filepath> [--strip] [--json]")
+            return 1
+        }
+        let url = URL(fileURLWithPath: path)
+        let isStrip = args.contains("--strip")
+        let outDir = resolveOutputDirectory(from: getFlagValue(args, flag: "--output"))
+
+        if isStrip {
+            let res = try await MetadataEngine.shared.stripMetadata(inputURL: url, destinationDirectory: outDir)
+            printResult(res, json: json)
+        } else {
+            let tags = MetadataEngine.shared.inspectMetadata(url: url)
+            if json {
+                let data = try JSONSerialization.data(withJSONObject: tags, options: [.prettyPrinted, .sortedKeys])
+                if let str = String(data: data, encoding: .utf8) {
+                    print(str)
+                }
+            } else {
+                print("📋 Metadata for \(url.lastPathComponent):")
+                if tags.isEmpty {
+                    print("  No EXIF or metadata tags found.")
+                } else {
+                    for (k, v) in tags.sorted(by: { $0.key < $1.key }) {
+                        print("  • \(k): \(v)")
+                    }
+                }
+            }
+        }
+        return 0
+    }
+
+    // MARK: - Engines Command
+
+    private static func handleEngines(args: [String], json: Bool) async throws -> Int32 {
+        let engines = await EngineManager.shared.allEngines()
+        if json {
+            let array: [[String: Any]] = engines.map { eng in
+                [
+                    "id": eng.id,
+                    "name": eng.name,
+                    "category": eng.category,
+                    "isNative": eng.isNative,
+                    "isAvailable": eng.isAvailable,
+                    "version": eng.version ?? "",
+                    "path": eng.path ?? "",
+                    "installCommand": eng.installCommand ?? "",
+                    "supportedConversions": eng.supportedConversions
+                ]
+            }
+            let data = try JSONSerialization.data(withJSONObject: array, options: .prettyPrinted)
+            if let str = String(data: data, encoding: .utf8) {
+                print(str)
+            }
+        } else {
+            print("⚡️ Morph Conversion Engines & Tools:\n")
+            print("NATIVE ENGINES (100% OFFLINE):")
+            for eng in engines.filter({ $0.isNative }) {
+                print("  ✅ \(eng.name) [\(eng.category)] — \(eng.path ?? "")")
+            }
+            print("\nMODULAR TOOLS:")
+            for eng in engines.filter({ !$0.isNative }) {
+                let status = eng.isAvailable ? "✅ Installed" : "⚠️  Missing (\(eng.installCommand ?? ""))"
+                print("  \(status): \(eng.name) [\(eng.category)]")
+            }
+        }
+        return 0
+    }
+
     private static func resolveOutputDirectory(from flagValue: String?) -> URL? {
         guard let flagValue, !flagValue.isEmpty else { return nil }
         let url = URL(fileURLWithPath: flagValue)
@@ -356,6 +582,14 @@ public final class CLIHandler {
           split <pdf> [options]           Split PDF into single pages or extract range (--range "1-3")
           to-image <pdf> [options]        Export PDF pages as PNG/JPEG images (--dpi 72|150|300)
           to-pdf <img1> <img2> ...        Combine images into a multi-page PDF document
+          ocr <file>                      Extract text or create searchable PDF (--searchable)
+          icon <file>                     Create Apple .icns or extract PNG (--extract)
+          video <file> --to <fmt>         Convert, compress, or make GIF (--to gif --fps 15)
+          audio <file> --to <fmt>         Convert audio or extract soundtrack from video
+          office <file>                   Convert Word, PowerPoint, Excel, or Markdown to PDF
+          data <file> --to <fmt>          Convert between JSON, Property List (.plist), CSV
+          metadata <file>                 Inspect or strip EXIF and GPS tags (--strip)
+          engines                         List status of all native & modular tools
 
         FLAGS:
           --json                          Output structured JSON for Raycast / scripting

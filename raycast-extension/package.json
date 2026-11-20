@@ -1,7 +1,7 @@
 {
   "name": "morph-raycast",
   "title": "Morph",
-  "description": "Privacy-first offline image and PDF utility powered by Morph",
+  "description": "Privacy-first offline file conversion & utilities powered by Morph",
   "icon": "icon.png",
   "author": "morph",
   "categories": [
@@ -29,6 +29,27 @@
       "title": "Merge PDFs",
       "subtitle": "Morph",
       "description": "Combine multiple PDFs into a single document",
+      "mode": "view"
+    },
+    {
+      "name": "ocr",
+      "title": "Extract Text (OCR)",
+      "subtitle": "Morph",
+      "description": "Extract text or generate searchable PDFs using Apple Vision",
+      "mode": "view"
+    },
+    {
+      "name": "make-icon",
+      "title": "Generate Apple App Icon (.icns)",
+      "subtitle": "Morph",
+      "description": "Create macOS .icns icons from images or extract PNG",
+      "mode": "view"
+    },
+    {
+      "name": "convert-media",
+      "title": "Convert Video or Audio",
+      "subtitle": "Morph",
+      "description": "Convert MP4, MOV, WebM, GIF, MP3, WAV via FFmpeg",
       "mode": "view"
     }
   ],

@@ -330,6 +330,210 @@ public final class ConversionRegistry: @unchecked Sendable {
                 ],
                 supportedExtensions: ["png", "jpg", "jpeg", "webp", "heic", "tiff"],
                 supportsMultipleFiles: false
+            ),
+            // MARK: - OCR & Vision Suite (Apple Vision Framework)
+            ConversionCommand(
+                id: "ocr.imageToText",
+                title: "Extract Text (OCR)",
+                subtitle: "Extract text from photos or screenshots using Apple Vision",
+                category: .ocr,
+                systemIcon: "text.viewfinder",
+                keywords: ["ocr", "text", "vision", "scan", "extract", "read", "copy"],
+                synonyms: ["extract text", "read text from image", "ocr photo", "image to text", "copy text from picture"],
+                supportedExtensions: ["png", "jpg", "jpeg", "heic", "webp", "tiff", "tif"],
+                supportsMultipleFiles: false
+            ),
+            ConversionCommand(
+                id: "ocr.pdfToText",
+                title: "Extract Text from PDF",
+                subtitle: "Extract text from scanned PDF pages using Apple Vision",
+                category: .ocr,
+                systemIcon: "doc.text.viewfinder",
+                keywords: ["ocr", "pdf", "text", "vision", "scanned"],
+                synonyms: ["ocr pdf", "extract text from pdf", "pdf to text", "scanned pdf to text"],
+                supportedExtensions: ["pdf"],
+                supportsMultipleFiles: false
+            ),
+            ConversionCommand(
+                id: "ocr.searchablePDF",
+                title: "Make PDF Searchable (OCR)",
+                subtitle: "Create searchable PDF with recognized text layer",
+                category: .ocr,
+                systemIcon: "doc.badge.magnifyingglass",
+                keywords: ["ocr", "searchable", "pdf", "layer", "scan"],
+                synonyms: ["make pdf searchable", "searchable pdf", "ocr document to pdf", "add text layer to pdf"],
+                supportedExtensions: ["pdf", "jpg", "jpeg", "png", "heic", "tiff", "tif"],
+                supportsMultipleFiles: false
+            ),
+            // MARK: - Icons & Vector Suite
+            ConversionCommand(
+                id: "icon.generateICNS",
+                title: "Generate macOS Icon (.icns)",
+                subtitle: "Create multi-resolution Apple .icns app icon from image",
+                category: .icon,
+                systemIcon: "app.dashed",
+                keywords: ["icon", "icns", "apple", "mac", "app", "favicon"],
+                synonyms: ["create icns", "png to icns", "make mac icon", "generate icon", "mac app icon"],
+                supportedExtensions: ["png", "jpg", "jpeg", "webp", "tiff", "tif", "svg"],
+                supportsMultipleFiles: false
+            ),
+            ConversionCommand(
+                id: "icon.extractFromICNS",
+                title: "Extract Icon Image",
+                subtitle: "Extract high-resolution 1024px PNG from macOS .icns file",
+                category: .icon,
+                systemIcon: "arrow.down.app",
+                keywords: ["icns", "png", "extract", "icon", "export"],
+                synonyms: ["icns to png", "extract icns", "convert icns to png", "open icns"],
+                supportedExtensions: ["icns"],
+                supportsMultipleFiles: false
+            ),
+            ConversionCommand(
+                id: "vector.toPDF",
+                title: "SVG to Vector PDF",
+                subtitle: "Render scalable SVG graphic into resolution-independent PDF",
+                category: .icon,
+                systemIcon: "point.topleft.down.to.point.bottomright.curvepath",
+                keywords: ["svg", "vector", "pdf", "scalable", "render"],
+                synonyms: ["svg to pdf", "convert svg to pdf", "vector to pdf", "save svg as pdf"],
+                supportedExtensions: ["svg"],
+                supportsMultipleFiles: false
+            ),
+            ConversionCommand(
+                id: "vector.toImage",
+                title: "SVG to Raster Image",
+                subtitle: "Rasterize SVG graphic to high-resolution PNG or JPEG",
+                category: .icon,
+                systemIcon: "photo.artframe",
+                keywords: ["svg", "png", "jpeg", "raster", "render"],
+                synonyms: ["svg to png", "svg to jpg", "convert svg to png", "rasterize svg"],
+                supportedExtensions: ["svg"],
+                supportsMultipleFiles: false
+            ),
+            // MARK: - Audio & Video Suite (FFmpeg)
+            ConversionCommand(
+                id: "video.convert",
+                title: "Convert Video",
+                subtitle: "Transcode video between MP4, MOV, MKV, WebM, and AVI (FFmpeg)",
+                category: .media,
+                systemIcon: "video.badge.plus",
+                keywords: ["video", "convert", "mp4", "mov", "mkv", "webm", "avi", "transcode", "ffmpeg"],
+                synonyms: ["convert video", "mov to mp4", "mkv to mp4", "webm to mp4", "change video format"],
+                supportedExtensions: ["mp4", "mov", "mkv", "webm", "avi", "m4v", "flv"],
+                supportsMultipleFiles: false
+            ),
+            ConversionCommand(
+                id: "video.compress",
+                title: "Compress Video",
+                subtitle: "Reduce video file size with Light, Balanced, or Maximum presets",
+                category: .media,
+                systemIcon: "arrow.down.right.and.arrow.up.left.square.fill",
+                keywords: ["compress", "shrink", "reduce", "video", "smaller", "size", "crf"],
+                synonyms: ["make video smaller", "reduce video size", "compress movie", "shrink video"],
+                supportedExtensions: ["mp4", "mov", "mkv", "webm", "avi", "m4v"],
+                supportsMultipleFiles: false
+            ),
+            ConversionCommand(
+                id: "video.toGIF",
+                title: "Video to Animated GIF",
+                subtitle: "Convert video clip to smooth animated GIF with palette mapping",
+                category: .media,
+                systemIcon: "play.square.stack",
+                keywords: ["gif", "animated", "video", "clip", "palette", "loop"],
+                synonyms: ["video to gif", "make gif from video", "mp4 to gif", "convert video to gif"],
+                supportedExtensions: ["mp4", "mov", "mkv", "webm", "avi", "m4v"],
+                supportsMultipleFiles: false
+            ),
+            ConversionCommand(
+                id: "video.extractAudio",
+                title: "Extract Audio from Video",
+                subtitle: "Extract soundtrack to MP3, AAC, M4A, or WAV",
+                category: .media,
+                systemIcon: "waveform.and.magnifyingglass",
+                keywords: ["extract", "audio", "soundtrack", "mp3", "video", "rip"],
+                synonyms: ["extract audio", "video to mp3", "rip audio from video", "get mp3 from video"],
+                supportedExtensions: ["mp4", "mov", "mkv", "webm", "avi", "m4v"],
+                supportsMultipleFiles: false
+            ),
+            ConversionCommand(
+                id: "audio.convert",
+                title: "Convert Audio",
+                subtitle: "Convert between MP3, M4A, WAV, AAC, FLAC, and OGG formats",
+                category: .media,
+                systemIcon: "waveform",
+                keywords: ["audio", "sound", "mp3", "wav", "m4a", "flac", "aac", "ogg"],
+                synonyms: ["convert audio", "wav to mp3", "flac to mp3", "m4a to mp3", "change audio format"],
+                supportedExtensions: ["mp3", "m4a", "wav", "aac", "flac", "ogg", "aiff"],
+                supportsMultipleFiles: false
+            ),
+            // MARK: - Office Documents Suite (LibreOffice & Pandoc)
+            ConversionCommand(
+                id: "office.toPDF",
+                title: "Office Document to PDF",
+                subtitle: "Convert Word, Excel, PowerPoint to PDF offline without Office (LibreOffice)",
+                category: .office,
+                systemIcon: "doc.text.fill",
+                keywords: ["office", "word", "excel", "powerpoint", "docx", "pptx", "xlsx", "pdf", "libreoffice"],
+                synonyms: ["docx to pdf", "word to pdf", "pptx to pdf", "excel to pdf", "convert docx to pdf"],
+                supportedExtensions: ["docx", "doc", "pptx", "ppt", "xlsx", "xls", "odt", "ods", "odp", "rtf"],
+                supportsMultipleFiles: false
+            ),
+            ConversionCommand(
+                id: "markdown.toPDF",
+                title: "Markdown to PDF",
+                subtitle: "Convert Markdown document (.md) into styled PDF",
+                category: .office,
+                systemIcon: "doc.richtext",
+                keywords: ["markdown", "md", "pdf", "pandoc", "document"],
+                synonyms: ["md to pdf", "markdown to pdf", "convert markdown to pdf", "render markdown"],
+                supportedExtensions: ["md", "markdown"],
+                supportsMultipleFiles: false
+            ),
+            // MARK: - Structured Data Suite
+            ConversionCommand(
+                id: "data.convert",
+                title: "Convert Data Format",
+                subtitle: "Convert between JSON, Property List (.plist), and CSV formats",
+                category: .data,
+                systemIcon: "curlybraces",
+                keywords: ["json", "plist", "csv", "data", "convert", "table"],
+                synonyms: ["json to plist", "plist to json", "json to csv", "csv to json", "convert json"],
+                supportedExtensions: ["json", "plist", "csv", "xml"],
+                supportsMultipleFiles: false
+            ),
+            ConversionCommand(
+                id: "data.prettify",
+                title: "Format & Beautify JSON",
+                subtitle: "Format and indent JSON or XML with clean 2-space indentation",
+                category: .data,
+                systemIcon: "text.alignleft",
+                keywords: ["json", "format", "beautify", "indent", "prettify", "clean"],
+                synonyms: ["prettify json", "format json", "indent json", "beautify json"],
+                supportedExtensions: ["json", "xml"],
+                supportsMultipleFiles: false
+            ),
+            // MARK: - Metadata Suite
+            ConversionCommand(
+                id: "metadata.strip",
+                title: "Strip Metadata & GPS",
+                subtitle: "Remove private EXIF, GPS location, and camera profiles",
+                category: .image,
+                systemIcon: "eye.slash",
+                keywords: ["metadata", "exif", "gps", "privacy", "strip", "remove", "clean"],
+                synonyms: ["remove exif", "strip gps", "clean metadata", "remove camera info", "privacy clean"],
+                supportedExtensions: ["jpg", "jpeg", "png", "heic", "tiff", "tif", "pdf"],
+                supportsMultipleFiles: false
+            ),
+            ConversionCommand(
+                id: "metadata.inspect",
+                title: "Inspect File Metadata",
+                subtitle: "View camera, lens, exposure, GPS, and technical tags",
+                category: .image,
+                systemIcon: "info.circle.fill",
+                keywords: ["metadata", "exif", "info", "camera", "lens", "gps", "details"],
+                synonyms: ["view exif", "check metadata", "camera info", "show gps tags", "inspect photo"],
+                supportedExtensions: ["jpg", "jpeg", "png", "heic", "tiff", "tif", "pdf", "mp4", "mov"],
+                supportsMultipleFiles: false
             )
         ]
     }
@@ -414,10 +618,24 @@ public final class ConversionRegistry: @unchecked Sendable {
             let ext = extensions[0]
             if ext == "pdf" {
                 return allCommands.filter {
-                    ["pdf.compress", "pdf.merge", "pdf.split", "pdf.toImage", "pdf.rotate", "pdf.extractPages", "pdf.removePages", "pdf.reorderPages"].contains($0.id)
+                    ["pdf.compress", "pdf.merge", "pdf.split", "pdf.toImage", "pdf.rotate", "pdf.extractPages", "pdf.removePages", "pdf.reorderPages", "ocr.pdfToText", "ocr.searchablePDF", "metadata.strip"].contains($0.id)
                 }
             } else if ["jpg", "jpeg", "png", "heic", "webp", "tiff", "tif"].contains(ext) {
-                return allCommands.filter { ["image.compress", "image.convert", "image.resize", "image.toPDF", "qr.scan"].contains($0.id) }
+                return allCommands.filter { ["image.compress", "image.convert", "image.resize", "image.toPDF", "ocr.imageToText", "icon.generateICNS", "metadata.strip", "metadata.inspect", "qr.scan"].contains($0.id) }
+            } else if ["mp4", "mov", "mkv", "webm", "avi", "m4v", "flv"].contains(ext) {
+                return allCommands.filter { ["video.convert", "video.compress", "video.toGIF", "video.extractAudio", "metadata.inspect"].contains($0.id) }
+            } else if ["mp3", "m4a", "wav", "aac", "flac", "ogg", "aiff"].contains(ext) {
+                return allCommands.filter { ["audio.convert"].contains($0.id) }
+            } else if ["docx", "doc", "pptx", "ppt", "xlsx", "xls", "odt", "ods", "odp", "rtf"].contains(ext) {
+                return allCommands.filter { ["office.toPDF"].contains($0.id) }
+            } else if ["md", "markdown"].contains(ext) {
+                return allCommands.filter { ["markdown.toPDF"].contains($0.id) }
+            } else if ext == "svg" {
+                return allCommands.filter { ["vector.toPDF", "vector.toImage", "icon.generateICNS"].contains($0.id) }
+            } else if ext == "icns" {
+                return allCommands.filter { ["icon.extractFromICNS"].contains($0.id) }
+            } else if ["json", "plist", "csv", "xml"].contains(ext) {
+                return allCommands.filter { ["data.convert", "data.prettify"].contains($0.id) }
             } else if allAreArchives {
                 return allCommands.filter { ["archive.extract", "archive.inspect"].contains($0.id) }
             } else {

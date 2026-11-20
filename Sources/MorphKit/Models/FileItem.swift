@@ -5,6 +5,14 @@ public enum FileCategory: String, Sendable {
     case image
     case pdf
     case archive
+    case media
+    case audio
+    case office
+    case vector
+    case data
+    case icon
+    case folder
+    case link
     case unsupported
 }
 
@@ -74,8 +82,78 @@ public struct FileItem: Identifiable, Sendable, Equatable {
             return parts.joined(separator: " • ")
         case .archive:
             return "\(formatName.uppercased()) Archive • \(formattedSize)"
+        case .media:
+            return "\(formatName.uppercased()) Media • \(formattedSize)"
+        case .audio:
+            return "\(formatName.uppercased()) Audio • \(formattedSize)"
+        case .folder:
+            return "\(formatName.uppercased()) Folder • \(formattedSize)"
+        case .link:
+            return "\(formatName.uppercased()) Link"
+        case .office:
+            return "\(formatName.uppercased()) Document • \(formattedSize)"
+        case .vector:
+            return "\(formatName.uppercased()) Vector • \(formattedSize)"
+        case .data:
+            return "\(formatName.uppercased()) Data • \(formattedSize)"
+        case .icon:
+            return "\(formatName.uppercased()) Icon • \(formattedSize)"
         case .unsupported:
             return "\(formatName) • \(formattedSize)"
+        }
+    }
+}
+
+extension FileCategory {
+    public static func category(for url: URL) -> FileCategory {
+        if url.scheme == "http" || url.scheme == "https" || url.pathExtension.lowercased() == "webloc" {
+            return .link
+        }
+
+        var isDir: ObjCBool = false
+        if url.isFileURL && FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir) && isDir.boolValue {
+            return .folder
+        }
+
+        let ext = url.pathExtension.lowercased()
+        switch ext {
+        case "jpg", "jpeg", "png", "heic", "heif", "webp", "tiff", "tif", "bmp", "gif", "ico", "dng", "cr2", "nef", "arw", "rw2":
+            return .image
+        case "pdf":
+            return .pdf
+        case "zip", "tar", "gz", "bz2", "7z", "rar":
+            return .archive
+        case "mp3", "m4a", "wav", "aac", "flac", "ogg", "opus", "aiff", "wma":
+            return .audio
+        case "mp4", "mov", "mkv", "webm", "avi", "m4v", "flv", "wmv":
+            return .media
+        case "docx", "doc", "pptx", "ppt", "xlsx", "xls", "odt", "rtf", "md", "markdown":
+            return .office
+        case "svg":
+            return .vector
+        case "json", "plist", "xml", "csv":
+            return .data
+        case "icns":
+            return .icon
+        default:
+            return .unsupported
+        }
+    }
+
+    public var iconName: String {
+        switch self {
+        case .image: return "photo"
+        case .pdf: return "doc.text.fill"
+        case .archive: return "archivebox.fill"
+        case .media: return "film"
+        case .audio: return "music.note"
+        case .folder: return "folder.fill"
+        case .link: return "globe"
+        case .office: return "doc.richtext"
+        case .vector: return "triangle.fill"
+        case .data: return "curlybraces"
+        case .icon: return "app.fill"
+        case .unsupported: return "doc"
         }
     }
 }

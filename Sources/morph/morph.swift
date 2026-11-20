@@ -16,6 +16,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             StatusBarController.shared.setupStatusBar()
         }
 
+        // Start floating drag-and-drop target monitor (shows floating portal when files are dragged)
+        FloatingDropTargetController.shared.startMonitoring()
+
         // Setup and display floating command launcher
         FloatingPanelController.shared.setupPanel()
         FloatingPanelController.shared.show()
@@ -34,6 +37,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        FloatingDropTargetController.shared.stopMonitoring()
         GlobalHotkeyManager.shared.unregister()
     }
 }

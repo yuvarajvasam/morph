@@ -25,7 +25,7 @@ export interface MorphFileInfo {
   filename: string;
   fileSize: number;
   formattedSize: string;
-  category: "image" | "pdf" | "unsupported";
+  category: "image" | "pdf" | "media" | "office" | "vector" | "data" | "icon" | "unsupported";
   format: string;
   width?: number;
   height?: number;
@@ -43,6 +43,18 @@ export interface MorphConversionResult {
   outputWidth?: number;
   outputHeight?: number;
   notes?: string;
+}
+
+export interface MorphEngineInfo {
+  id: string;
+  name: string;
+  category: string;
+  isNative: boolean;
+  isAvailable: boolean;
+  path: string;
+  version: string;
+  supportedConversions: string[];
+  installCommand: string;
 }
 
 export async function runMorphCLI(args: string[]): Promise<string> {
@@ -79,4 +91,90 @@ export async function mergePDFs(filePaths: string[], outputFilename?: string): P
   }
   const stdout = await runMorphCLI(args);
   return JSON.parse(stdout) as MorphConversionResult;
+}
+
+export async function extractTextOCR(
+  filePath: string,
+  searchablePdf = false
+): Promise<MorphConversionResult> {
+  const args = ["ocr", filePath, "--json"];
+  if (searchablePdf) {
+    args.push("--searchable");
+  }
+  const stdout = await runMorphCLI(args);
+  return JSON.parse(stdout) as MorphConversionResult;
+}
+
+export async function makeAppIcon(
+  filePath: string,
+  extractPng = false
+): Promise<MorphConversionResult> {
+  const args = ["icon", filePath, "--json"];
+  if (extractPng) {
+    args.push("--extract");
+  }
+  const stdout = await runMorphCLI(args);
+  return JSON.parse(stdout) as MorphConversionResult;
+}
+
+export async function convertVideo(
+  filePath: string,
+  targetFormat: string,
+  options?: { crf?: string; fps?: number; width?: number }
+): Promise<MorphConversionResult> {
+  const args = ["video", filePath, "--to", targetFormat, "--json"];
+  if (options?.crf) {
+    args.push("--crf", options.crf);
+  }
+  if (options?.fps) {
+    args.push("--fps", String(options.fps));
+  }
+  if (options?.width) {
+    args.push("--width", String(options.width));
+  }
+  const stdout = await runMorphCLI(args);
+  return JSON.parse(stdout) as MorphConversionResult;
+}
+
+export async function extractAudio(
+  filePath: string,
+  targetFormat: string
+): Promise<MorphConversionResult> {
+  const args = ["audio", filePath, "--to", targetFormat, "--json"];
+  const stdout = await runMorphCLI(args);
+  return JSON.parse(stdout) as MorphConversionResult;
+}
+
+export async function convertOffice(
+  filePath: string
+): Promise<MorphConversionResult> {
+  const args = ["office", filePath, "--json"];
+  const stdout = await runMorphCLI(args);
+  return JSON.parse(stdout) as MorphConversionResult;
+}
+
+export async function convertData(
+  filePath: string,
+  targetFormat: "json" | "plist" | "xml" | "csv",
+  pretty = true
+): Promise<MorphConversionResult> {
+  const args = ["data", filePath, "--to", targetFormat, "--json"];
+  if (pretty) {
+    args.push("--pretty");
+  }
+  const stdout = await runMorphCLI(args);
+  return JSON.parse(stdout) as MorphConversionResult;
+}
+
+export async function stripMetadata(
+  filePath: string
+): Promise<MorphConversionResult> {
+  const args = ["metadata", filePath, "--strip", "--json"];
+  const stdout = await runMorphCLI(args);
+  return JSON.parse(stdout) as MorphConversionResult;
+}
+
+export async function listEngines(): Promise<MorphEngineInfo[]> {
+  const stdout = await runMorphCLI(["engines", "--json"]);
+  return JSON.parse(stdout) as MorphEngineInfo[];
 }

@@ -16,9 +16,12 @@ public enum ProcessingError: LocalizedError, Sendable, Equatable {
     case emptyInput
     case pdfEncrypted
     case outOfMemory
+    case toolMissing(String)
 
     public var errorDescription: String? {
         switch self {
+        case .toolMissing(let details):
+            return details
         case .fileNotFound(let url):
             return "File not found at: \(url.path)"
         case .unreadableFile(let url):

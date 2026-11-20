@@ -16,13 +16,14 @@ public enum SettingsTab: String, CaseIterable, Identifiable {
     case pdfTools = "PDF Tools"
     case archiveTools = "Archive Tools"
     case qrBarcode = "QR & Barcode"
+    case engines = "Engines & Tools"
     case output = "Output Destination"
 
     public var id: String { rawValue }
 
     public var isToolExtension: Bool {
         switch self {
-        case .imageTools, .pdfTools, .archiveTools, .qrBarcode, .output:
+        case .imageTools, .pdfTools, .archiveTools, .qrBarcode, .engines, .output:
             return true
         default:
             return false
@@ -42,6 +43,7 @@ public enum SettingsTab: String, CaseIterable, Identifiable {
         case .pdfTools: return "doc.richtext.fill"
         case .archiveTools: return "archivebox.fill"
         case .qrBarcode: return "qrcode"
+        case .engines: return "cpu"
         case .output: return "folder.fill"
         }
     }
@@ -52,6 +54,7 @@ public enum SettingsTab: String, CaseIterable, Identifiable {
         case .pdfTools: return Color(red: 255/255, green: 69/255, blue: 58/255)
         case .archiveTools: return Color(red: 48/255, green: 176/255, blue: 199/255)
         case .qrBarcode: return Color(red: 52/255, green: 199/255, blue: 89/255)
+        case .engines: return Color(red: 175/255, green: 82/255, blue: 222/255)
         case .output: return Color(red: 255/255, green: 214/255, blue: 10/255)
         default: return Color.white.opacity(0.80)
         }
@@ -77,6 +80,7 @@ public enum SettingsTab: String, CaseIterable, Identifiable {
         case .pdfTools: return "Document compression, raster DPI, and page safeguards."
         case .archiveTools: return "Compression formats, auto-extract, and date preservation."
         case .qrBarcode: return "Error correction levels and vector export DPI."
+        case .engines: return "Native macOS engines and external CLI tools (FFmpeg, LibreOffice, Pandoc)."
         case .output: return "Save destinations, custom folders, and collision handling."
         }
     }
@@ -393,6 +397,8 @@ public struct SettingsWindowView: View {
                         archiveToolsDetailView
                     case .qrBarcode:
                         qrBarcodeDetailView
+                    case .engines:
+                        enginesDetailView
                     case .output:
                         outputDetailView
                     }
@@ -1129,6 +1135,12 @@ public struct SettingsWindowView: View {
                     .font(.system(size: 16))
             }
         }
+    }
+
+    // MARK: - Extension 5: Engines & Tools
+
+    private var enginesDetailView: some View {
+        EnginesDetailView()
     }
 
     // MARK: - Shared UI Helpers

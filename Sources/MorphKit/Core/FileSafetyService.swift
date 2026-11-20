@@ -58,6 +58,22 @@ public final class FileSafetyService: @unchecked Sendable {
         return candidateURL
     }
 
+    /// Convenience alias for generating a safe destination URL.
+    public func uniqueDestinationURL(
+        for originalURL: URL,
+        suffix: String,
+        newExtension: String? = nil,
+        in destinationDirectory: URL? = nil
+    ) -> URL {
+        let cleanSuffix = suffix.isEmpty ? "" : "-\(suffix)"
+        return generateSafeDestinationURL(
+            originalURL: originalURL,
+            suffix: cleanSuffix,
+            targetExtension: newExtension,
+            destinationDirectory: destinationDirectory
+        )
+    }
+
     /// Validates that the generated output exists, is non-empty, and can be decoded by system frameworks.
     public func validateOutputFile(url: URL, expectedCategory: FileCategory) throws {
         var isDir: ObjCBool = false
@@ -90,7 +106,11 @@ public final class FileSafetyService: @unchecked Sendable {
             guard (try? ArchiveEngine.shared.inspect(url: url)) != nil else {
                 throw ProcessingError.corruptedFile("Output archive could not be verified.")
             }
-        case .unsupported:
+        case .icon:
+            guard CGImageSourceCreateWithURL(url as CFURL, nil) != nil else {
+                throw ProcessingError.corruptedFile("Output icon could not be verified.")
+            }
+        case .media, .audio, .folder, .link, .office, .vector, .data, .unsupported:
             break
         }
     }

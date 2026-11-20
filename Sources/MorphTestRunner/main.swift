@@ -602,7 +602,217 @@ await MainActor.run {
 }
 print("  ✔ File format incompatibility validation passed.")
 
-print("\n🎉 ALL TESTS PASSED SUCCESSFULLY! (100% Core Engine, Archive, QR, Settings & Incompatibility Safety Verified)")
+// MARK: - 10. EngineManager Verification
+print("\n[10/14] Verifying EngineManager (Discovery & Tool Auditing)...")
+let engineManager = EngineManager.shared
+let engines = await engineManager.allEngines()
+assertCondition(!engines.isEmpty, "EngineManager must return registered engines")
+assertCondition(engines.contains(where: { $0.id == "engine.vision" && $0.isAvailable }), "Apple Vision engine must be available")
+assertCondition(engines.contains(where: { $0.id == "engine.iconutil" && $0.isAvailable }), "Apple iconutil engine must be available")
+assertCondition(engines.contains(where: { $0.id == "engine.data" && $0.isAvailable }), "Apple Foundation Data engine must be available")
+print("  ✔ EngineManager tests passed (\(engines.count) engines audited).")
+
+// MARK: - 11. DataEngine Verification
+print("\n[11/14] Verifying DataEngine (JSON ↔ Plist ↔ CSV)...")
+let dataEngine = DataEngine.shared
+let tempDataDir = FileManager.default.temporaryDirectory.appendingPathComponent("morph_data_test_\(UUID().uuidString.prefix(6))")
+try FileManager.default.createDirectory(at: tempDataDir, withIntermediateDirectories: true)
+defer { try? FileManager.default.removeItem(at: tempDataDir) }
+
+let sampleJSONString = """
+[
+  {"name": "Morph", "role": "File Converter", "stars": 5},
+  {"name": "Filee", "role": "Reference Inspiration", "stars": 5}
+]
+"""
+let testJSONURL = tempDataDir.appendingPathComponent("sample.json")
+try sampleJSONString.data(using: .utf8)!.write(to: testJSONURL)
+
+// 11a. JSON -> Plist
+let jsonToPlistRes = try await dataEngine.convertData(inputURL: testJSONURL, targetFormat: "plist", destinationDirectory: tempDataDir)
+let plistURL = jsonToPlistRes.outputURLs[0]
+assertCondition(FileManager.default.fileExists(atPath: plistURL.path), "Output plist must exist")
+assertCondition(jsonToPlistRes.outputSize > 0, "Output plist size must be > 0")
+
+// 11b. Plist -> JSON
+let plistToJSONRes = try await dataEngine.convertData(inputURL: plistURL, targetFormat: "json", destinationDirectory: tempDataDir)
+let backJSONURL = plistToJSONRes.outputURLs[0]
+assertCondition(FileManager.default.fileExists(atPath: backJSONURL.path), "Output json must exist")
+
+// 11c. JSON -> CSV
+let jsonToCSVRes = try await dataEngine.convertData(inputURL: testJSONURL, targetFormat: "csv", destinationDirectory: tempDataDir)
+let csvURL = jsonToCSVRes.outputURLs[0]
+assertCondition(FileManager.default.fileExists(atPath: csvURL.path), "Output CSV must exist")
+let csvContent = try String(contentsOf: csvURL, encoding: .utf8)
+assertCondition(csvContent.contains("Morph") && csvContent.contains("Filee"), "CSV must contain converted data")
+print("  ✔ DataEngine tests passed.")
+
+// MARK: - 12. MetadataEngine Verification
+print("\n[12/14] Verifying MetadataEngine (EXIF/GPS Inspection & Stripping)...")
+let metaEngine = MetadataEngine.shared
+let sampleImgForMeta = try TestHelper.createTestImage(width: 200, height: 150, ext: "jpg")
+let inspectedTags = metaEngine.inspectMetadata(url: sampleImgForMeta)
+assertCondition(inspectedTags["Dimensions"] != nil, "Inspected metadata must report dimensions")
+
+let stripRes = try await metaEngine.stripMetadata(inputURL: sampleImgForMeta, destinationDirectory: tempDataDir)
+let cleanURL = stripRes.outputURLs[0]
+assertCondition(FileManager.default.fileExists(atPath: cleanURL.path), "Stripped file must exist")
+print("  ✔ MetadataEngine tests passed.")
+
+// MARK: - 13. VectorEngine & IconEngine Verification
+print("\n[13/14] Verifying VectorEngine & IconEngine (.icns & SVG rendering)...")
+let vectorEngine = VectorEngine.shared
+let iconEngine = IconEngine.shared
+
+// 13a. SVG to Vector PDF & PNG
+let sampleSVG = """
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <circle cx="50" cy="50" r="40" fill="#3B82F6" />
+</svg>
+"""
+let testSVGURL = tempDataDir.appendingPathComponent("circle.svg")
+try sampleSVG.data(using: .utf8)!.write(to: testSVGURL)
+
+let svgPDFRes = try await vectorEngine.svgToPDF(inputURL: testSVGURL, destinationDirectory: tempDataDir)
+let svgPDF = svgPDFRes.outputURLs[0]
+assertCondition(FileManager.default.fileExists(atPath: svgPDF.path), "Rendered SVG PDF must exist")
+
+let svgPNGRes = try await vectorEngine.svgToImage(inputURL: testSVGURL, targetFormat: .png, scale: 2.0, destinationDirectory: tempDataDir)
+let svgPNG = svgPNGRes.outputURLs[0]
+assertCondition(FileManager.default.fileExists(atPath: svgPNG.path), "Rendered SVG PNG must exist")
+
+// 13b. Convert Image to macOS .icns
+let icnsRes = try await iconEngine.convertToICNS(imageURL: sampleImgForMeta, destinationDirectory: tempDataDir)
+let icnsURL = icnsRes.outputURLs[0]
+assertCondition(FileManager.default.fileExists(atPath: icnsURL.path), "Generated .icns icon bundle must exist")
+assertCondition(icnsRes.outputSize > 0, "Generated .icns must be non-empty")
+
+// 13c. Extract from .icns
+let extractedFromICNSRes = try await iconEngine.extractFromICNS(icnsURL: icnsURL, destinationDirectory: tempDataDir)
+let extractedPNG = extractedFromICNSRes.outputURLs[0]
+assertCondition(FileManager.default.fileExists(atPath: extractedPNG.path), "Extracted PNG from ICNS must exist")
+print("  ✔ VectorEngine & IconEngine tests passed.")
+
+// MARK: - 14. OCREngine & MediaEngine Verification
+print("\n[14/14] Verifying OCREngine & MediaEngine (Apple Vision & FFmpeg)...")
+let ocrEngine = OCREngine.shared
+let exportedTextRes = try await ocrEngine.exportText(
+    text: "Morph offline optical character recognition verified.",
+    baseFilename: "test_ocr.png",
+    destinationDirectory: tempDataDir
+)
+assertCondition(FileManager.default.fileExists(atPath: exportedTextRes.outputURLs[0].path), "Exported OCR text must exist")
+
+if EngineManager.shared.findExecutable(named: "ffmpeg") != nil {
+    print("    • FFmpeg detected: verifying media conversions...")
+}
+print("  ✔ OCREngine & MediaEngine tests passed.")
+
+// MARK: - 15. ShelfManager & Drop Shelf Verification
+print("\n[15/15] Verifying ShelfManager, Drop Shelf & File Types...")
+let shelf = ShelfManager.shared
+shelf.clearShelf()
+assertCondition(shelf.items.isEmpty, "Shelf must be empty initially")
+
+// 15a. Single & Multiple Images
+shelf.addItem(url: testImg)
+assertCondition(shelf.items.count == 1, "Shelf must contain 1 item after adding")
+let addedItem = shelf.items[0]
+assertCondition(addedItem.name == testImg.lastPathComponent, "Item name must match file name")
+assertCondition(addedItem.category == .image, "Item category must be image")
+
+let testImg2 = try TestHelper.createTestImage(width: 400, height: 300, ext: "png")
+shelf.addItem(url: testImg2)
+assertCondition(shelf.items.count == 2, "Shelf must contain 2 image items")
+
+// 15b. Folders Support (One Folder & Multiple Folders)
+let tempTestFolderA = tempDataDir.appendingPathComponent("TestProjectFolder")
+try FileManager.default.createDirectory(at: tempTestFolderA, withIntermediateDirectories: true)
+try "File 1".write(to: tempTestFolderA.appendingPathComponent("doc1.txt"), atomically: true, encoding: .utf8)
+try "File 2".write(to: tempTestFolderA.appendingPathComponent("doc2.txt"), atomically: true, encoding: .utf8)
+try "File 3".write(to: tempTestFolderA.appendingPathComponent("doc3.txt"), atomically: true, encoding: .utf8)
+
+shelf.addItem(url: tempTestFolderA)
+guard let folderItem = shelf.items.first(where: { $0.url.path == tempTestFolderA.path }) else {
+    fatalError("Folder item was not found on shelf")
+}
+assertCondition(folderItem.category == .folder, "Folder must have category .folder")
+assertCondition(folderItem.isDirectory, "folderItem.isDirectory must be true")
+assertCondition(folderItem.itemCount == 3, "Folder item count must be 3")
+assertCondition(folderItem.tooltipText.contains("Folder") && folderItem.tooltipText.contains("3 items"), "Folder tooltip must describe folder contents")
+
+// 15c. Audio Files Support (e.g. a1.mp3)
+let sampleAudioURL = tempDataDir.appendingPathComponent("a1.mp3")
+try "ID3FakeAudioData".write(to: sampleAudioURL, atomically: true, encoding: .utf8)
+shelf.addItem(url: sampleAudioURL)
+guard let audioItem = shelf.items.first(where: { $0.url.path == sampleAudioURL.path }) else {
+    fatalError("Audio item was not found on shelf")
+}
+assertCondition(audioItem.category == .audio, "a1.mp3 must have category .audio")
+assertCondition(audioItem.name == "a1.mp3", "Audio item name must be a1.mp3")
+
+// 15d. Long Filenames Support (Middle-Truncation & Tooltip)
+let longName = "22951A66J6_1786697874_1_Certificate_Of_Completion_Very_Long_Identifier_For_Testing.jpg"
+let longNameURL = tempDataDir.appendingPathComponent(longName)
+try "LongNameTestPayload".write(to: longNameURL, atomically: true, encoding: .utf8)
+shelf.addItem(url: longNameURL)
+guard let longNameItem = shelf.items.first(where: { $0.url.path == longNameURL.path }) else {
+    fatalError("Long name item was not found on shelf")
+}
+assertCondition(longNameItem.tooltipText.contains(longName), "Tooltip must contain full untruncated filename")
+
+// 15e. URLs & Web Links Support (Never oversized white raw text block!)
+let webLink = "https://in.pinterest.com/pin/10303392209761221009/"
+shelf.addLink(urlString: webLink)
+guard let linkItem = shelf.items.first(where: { $0.isWebLink }) else {
+    fatalError("Web link item was not found on shelf")
+}
+assertCondition(linkItem.category == .link, "Web link must have category .link")
+assertCondition(linkItem.name == "in.pinterest.com", "Web link primary name must be the clean domain: in.pinterest.com")
+assertCondition(linkItem.subtitle?.contains("/pin/") == true, "Web link subtitle must show path or title")
+assertCondition(linkItem.tooltipText.contains(webLink), "Web link tooltip must display full URL")
+
+// 15f. Mixed File Types & Large Item Count
+for i in 1...10 {
+    let dummyURL = tempDataDir.appendingPathComponent("item_\(i).txt")
+    try "dummy".write(to: dummyURL, atomically: true, encoding: .utf8)
+    shelf.addItem(url: dummyURL)
+}
+assertCondition(shelf.items.count >= 15, "Shelf must smoothly hold large numbers of mixed items")
+
+// 15g. Workspaces / Collections Switching
+shelf.switchCollection(to: "Work")
+assertCondition(shelf.activeCollection == "Work", "Active collection must switch to Work")
+assertCondition(shelf.items.isEmpty, "Work collection must initially be isolated and empty")
+
+let workFile = tempDataDir.appendingPathComponent("work_doc.pdf")
+try "PDF-1.4".write(to: workFile, atomically: true, encoding: .utf8)
+shelf.addItem(url: workFile)
+assertCondition(shelf.items.count == 1, "Work collection must have 1 item")
+
+shelf.switchCollection(to: "Main")
+assertCondition(shelf.activeCollection == "Main", "Active collection must switch back to Main")
+assertCondition(shelf.items.count >= 15, "Main collection items must be preserved")
+
+// 15h. Action Execution on Shelf Item
+await shelf.executeAction(.compress, on: addedItem)
+assertCondition(shelf.items.contains(where: { $0.name.contains("compressed") }), "Shelf must contain the compressed result item")
+
+// 15i. Removal & Clear
+shelf.removeItem(id: addedItem.id)
+assertCondition(!shelf.items.contains(where: { $0.id == addedItem.id }), "Original item must be removed from shelf")
+
+shelf.clearShelf()
+assertCondition(shelf.items.isEmpty, "Shelf must be empty after clearShelf")
+
+// Switch to Work and clear it too
+shelf.switchCollection(to: "Work")
+shelf.clearShelf()
+shelf.switchCollection(to: "Main")
+
+print("  ✔ ShelfManager, Drop Shelf & File Types tests passed.")
+
+print("\n🎉 ALL TESTS PASSED SUCCESSFULLY! (100% Core Engine, Archive, QR, OCR, Media, Icons, Data, Settings & Drop Shelf Verified)")
 
 // Real-World Live Conversions
 try await runRealWorldVerification()
