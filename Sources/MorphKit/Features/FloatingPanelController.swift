@@ -49,7 +49,7 @@ public final class FloatingPanelController: NSObject, NSWindowDelegate {
         newPanel.isMovableByWindowBackground = true
         newPanel.isOpaque = false
         newPanel.backgroundColor = .clear
-        newPanel.hasShadow = false
+        newPanel.hasShadow = true
         newPanel.invalidateShadow()
         newPanel.level = .floating
         newPanel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]

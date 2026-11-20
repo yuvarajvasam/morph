@@ -90,7 +90,7 @@ public struct DropShelfView: View {
                 .help("Add files or folders to shelf")
 
                 Rectangle()
-                    .fill(Color.white.opacity(0.22))
+                    .fill(Color.white.opacity(0.18))
                     .frame(width: 1, height: 14)
 
                 Button(action: {
@@ -111,7 +111,18 @@ public struct DropShelfView: View {
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.24),
+                                Color.white.opacity(0.06),
+                                Color.clear
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: 0.75
+                    )
             )
 
             Spacer()
@@ -166,7 +177,18 @@ public struct DropShelfView: View {
                 .clipShape(Capsule())
                 .overlay(
                     Capsule()
-                        .stroke(Color.white.opacity(0.14), lineWidth: 1)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.28),
+                                    Color.white.opacity(0.08),
+                                    Color.clear
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 0.75
+                        )
                 )
             }
             .menuStyle(.borderlessButton)
@@ -186,7 +208,18 @@ public struct DropShelfView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                         .overlay(
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.white.opacity(0.24),
+                                            Color.white.opacity(0.06),
+                                            Color.clear
+                                        ],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    ),
+                                    lineWidth: 0.75
+                                )
                         )
                 }
                 .buttonStyle(.plain)
@@ -203,7 +236,18 @@ public struct DropShelfView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                         .overlay(
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.white.opacity(0.24),
+                                            Color.white.opacity(0.06),
+                                            Color.clear
+                                        ],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    ),
+                                    lineWidth: 0.75
+                                )
                         )
                 }
                 .buttonStyle(.plain)
@@ -652,9 +696,16 @@ public struct DropShelfView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(
-                    isTargeted ? Color.white : Color(red: tint.red, green: tint.green, blue: tint.blue).opacity(0.3),
-                    lineWidth: 1
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [
+                            isTargeted ? Color.white : Color(red: tint.red, green: tint.green, blue: tint.blue).opacity(0.45),
+                            isTargeted ? Color.white.opacity(0.5) : Color(red: tint.red, green: tint.green, blue: tint.blue).opacity(0.15)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    ),
+                    lineWidth: isTargeted ? 1.0 : 0.75
                 )
         )
         .scaleEffect(isTargeted ? 1.05 : 1.0)

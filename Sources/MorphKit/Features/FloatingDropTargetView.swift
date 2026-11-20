@@ -25,38 +25,52 @@ public struct FloatingDropTargetView: View {
 
     public var body: some View {
         ZStack {
-            // Background Obsidian Liquid Glass Pod
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color(red: 0.13, green: 0.15, blue: 0.22).opacity(0.96),
-                            Color(red: 0.07, green: 0.08, blue: 0.12).opacity(0.98)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
+            // Background Obsidian Liquid Glass Pod (Axiom Regular Liquid Glass)
+            ZStack {
+                // Desktop optical vibrancy blur
+                VisualEffectView(
+                    material: .hudWindow,
+                    blendingMode: .behindWindow,
+                    state: .active,
+                    cornerRadius: 14
+                )
+
+                // Atmospheric dark glass tint
+                LinearGradient(
+                    colors: [
+                        Color(red: 14 / 255, green: 26 / 255, blue: 34 / 255).opacity(0.85),
+                        Color(red: 8 / 255, green: 16 / 255, blue: 22 / 255).opacity(0.92)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(
+                // Specular highlight rim (Lensing & Edge Lighting)
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(viewModel.isTargeted ? 0.85 : 0.32),
+                                Color.white.opacity(viewModel.isTargeted ? 0.30 : 0.08),
+                                Color.clear
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: viewModel.isTargeted ? 1.5 : 0.75
                     )
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(
-                            LinearGradient(
-                                colors: [
-                                    Color.white.opacity(viewModel.isTargeted ? 0.85 : 0.35),
-                                    Color.white.opacity(0.08)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: viewModel.isTargeted ? 1.6 : 1.0
-                        )
-                )
-                .shadow(color: Color.black.opacity(0.45), radius: 6, x: 0, y: 3)
-                .shadow(
-                    color: viewModel.isTargeted ? Color.cyan.opacity(0.60) : Color.clear,
-                    radius: 8
-                )
-                .frame(width: 50, height: 50)
+            )
+            // Dual-layer shadows: ambient shadow + contact shadow
+            .shadow(color: Color.black.opacity(0.35), radius: 6, x: 0, y: 3)
+            .shadow(
+                color: viewModel.isTargeted ? LiquidGlass.brandAccent.opacity(0.60) : Color.black.opacity(0.12),
+                radius: viewModel.isTargeted ? 10 : 3,
+                x: 0,
+                y: 1.5
+            )
+            .frame(width: 50, height: 50)
 
             // New Sleek Illuminated Drop Tray Icon
             VStack(spacing: 3) {
